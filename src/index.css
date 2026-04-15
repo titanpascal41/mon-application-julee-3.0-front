@@ -1,0 +1,540 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+
+* {
+  font-family: Inter, Arial, Helvetica, sans-serif;
+}
+
+/* Règle globale pour toutes les images - responsive par défaut */
+img {
+  max-width: 100%;
+  display: block;
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.Authentification {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.image {
+  position: relative;
+  flex-shrink: 0;
+  width: auto;
+  max-width: 550px;
+}
+
+.image img {
+  width: 100%;
+  max-width: 550px;
+  height: 100vh;
+  min-height: 100vh;
+  display: block;
+  object-fit: cover;
+}
+
+.nomlogo {
+  color: #fff;
+  position: absolute;
+  top: 60px;
+  left: 32px;
+  z-index: 1;
+  background: transparent;
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.nomlogotitre {
+  font-size: 75px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 1px;
+  position: absolute;
+  top: 200px;
+  left: 55px;
+}
+
+.nomlogosoustitre {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  position: absolute;
+  top: 270px;
+  left: 55px;
+  max-width: 440px;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.backsectionauth {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sectionAuth {
+  background-color: #fff;
+  border-radius: 30px;
+  display: flex;
+  justify-content: center;
+  color: #2c3e50;
+  align-items: center;
+  flex-direction: column;
+  z-index: 1;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+}
+
+.logoimage img {
+  width: 60px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 60/110;
+  display: block;
+  margin: 0 auto;
+}
+
+.logoimage img:hover {
+  transform: translateY(15px) translateX(15px);
+  transition: 2s;
+}
+
+.contener {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+  max-width: 300px;
+}
+
+.contener input {
+  height: 40px;
+  width: 100%;
+  max-width: 300px;
+  border-radius: 10px;
+  /* border-color: #DCCFB8; */
+  border: 2px solid rgba(74, 144, 226, 0.3);
+  padding: 0 10px;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  font-size: 16px; /* Évite le zoom automatique sur iOS */
+}
+
+input:focus::placeholder {
+  color: transparent;
+}
+
+.connecterzvous {
+  text-align: center;
+  line-height: 1.9;
+}
+
+.required {
+  color: red;
+  margin-left: 2px;
+}
+
+.message {
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.message-succes {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message-erreur {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.lebouton {
+  width: 100%;
+  max-width: 300px;
+  height: 39px;
+  background-color: #4a90e2;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease;
+}
+.lebouton:hover {
+  background-color: #5ba3f5;
+  transform: translateY(-1px);
+}
+
+.creationcompte a {
+  text-decoration: none;
+  text-align: center;
+  display: block;
+}
+.administrateur {
+  text-align: center;
+  width: 100%;
+}
+
+.administrateur a {
+  text-decoration: none;
+  text-align: center;
+  display: block;
+  white-space: nowrap;
+}
+
+.administrateur a:hover {
+  text-decoration: underline;
+}
+
+.creationcompte a:hover {
+  text-decoration: underline;
+}
+
+/* Écrans moyens (max-width: 1200px) */
+@media screen and (max-width: 1200px) {
+  .image {
+    max-width: 500px;
+  }
+
+  .image img {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    min-height: 100vh;
+  }
+
+  .nomlogosoustitre {
+    right: 50px;
+    max-width: calc(100% - 100px);
+  }
+}
+
+/* Tablettes (max-width: 1024px) */
+@media screen and (max-width: 1024px) {
+  .image {
+    max-width: 400px;
+  }
+
+  .image img {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    min-height: 100vh;
+  }
+
+  .nomlogotitre {
+    font-size: 60px;
+    top: 150px;
+    left: 40px;
+  }
+
+  .nomlogosoustitre {
+    font-size: 18px;
+    top: 220px;
+    left: 40px;
+    right: 40px;
+    max-width: calc(100% - 80px);
+  }
+
+  .sectionAuth {
+    padding: 30px;
+    max-width: 450px;
+  }
+}
+
+/* Tablettes en mode portrait (max-width: 768px) */
+@media screen and (max-width: 768px) {
+  .Authentification {
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .image {
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .image img {
+    width: 100%;
+    max-width: 100%;
+    height: 350px;
+    min-height: 350px;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .nomlogo {
+    top: 20px;
+    left: 20px;
+    right: 20px;
+  }
+
+  .nomlogotitre {
+    font-size: 50px;
+    top: 60px;
+    left: 20px;
+    right: 20px;
+    max-width: calc(100% - 40px);
+    word-wrap: break-word;
+  }
+
+  .nomlogosoustitre {
+    font-size: 17px;
+    top: 130px;
+    left: 20px;
+    right: 20px;
+    max-width: calc(100% - 40px);
+    width: auto;
+    word-wrap: break-word;
+    white-space: normal;
+  }
+
+  .backsectionauth {
+    width: 100%;
+    padding: 20px;
+    min-height: auto;
+    box-sizing: border-box;
+  }
+
+  .sectionAuth {
+    width: 100%;
+    max-width: 100%;
+    padding: 30px 20px;
+    border-radius: 20px;
+    margin-top: 20px;
+    box-sizing: border-box;
+  }
+
+  .contener {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .contener input {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .lebouton {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+/* iPhone XR et écrans similaires (max-width: 480px) */
+@media screen and (max-width: 480px) {
+  body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .Authentification {
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .image {
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+  }
+
+  .image img {
+    width: 100%;
+    max-width: 100%;
+    height: 250px;
+    min-height: 250px;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .nomlogo {
+    top: 20px;
+    left: 20px;
+    right: 20px;
+  }
+
+  .nomlogotitre {
+    font-size: 40px;
+    top: 40px;
+    left: 20px;
+    right: 20px;
+    max-width: calc(100% - 40px);
+    word-wrap: break-word;
+  }
+
+  .nomlogosoustitre {
+    font-size: 15px;
+    top: 95px;
+    left: 20px;
+    right: 20px;
+    max-width: calc(100% - 40px);
+    line-height: 1.4;
+    word-wrap: break-word;
+    white-space: normal;
+  }
+
+  .backsectionauth {
+    width: 100%;
+    padding: 15px;
+    min-height: auto;
+    box-sizing: border-box;
+  }
+
+  .sectionAuth {
+    width: 100%;
+    max-width: 100%;
+    padding: 25px 20px;
+    border-radius: 20px;
+    margin-top: 15px;
+    box-sizing: border-box;
+  }
+
+  .logoimage img {
+    width: 55px;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 60/110;
+  }
+
+  .connecterzvous {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .contener {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .contener label {
+    font-size: 14px;
+  }
+
+  .contener input {
+    height: 44px;
+    font-size: 16px;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .lebouton {
+    height: 44px;
+    font-size: 16px;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .creationcompte a,
+  .administrateur a {
+    font-size: 14px;
+  }
+}
+
+/* iPhone XR spécifique et écrans 414px-430px */
+@media screen and (max-width: 430px) and (min-width: 375px) {
+  .image img {
+    height: 280px;
+    min-height: 280px;
+  }
+
+  .nomlogotitre {
+    font-size: 42px;
+    top: 35px;
+  }
+
+  .nomlogosoustitre {
+    font-size: 16px;
+    top: 90px;
+    white-space: normal;
+  }
+
+  .sectionAuth {
+    padding: 30px 18px;
+  }
+
+  .contener input {
+    height: 46px;
+    font-size: 16px;
+  }
+
+  .lebouton {
+    height: 46px;
+    font-size: 16px;
+  }
+}
+
+/* Très petits écrans (max-width: 374px) */
+@media screen and (max-width: 374px) {
+  .image img {
+    height: 220px;
+    min-height: 220px;
+  }
+
+  .nomlogotitre {
+    font-size: 32px;
+    top: 25px;
+    left: 15px;
+    right: 15px;
+  }
+
+  .nomlogosoustitre {
+    font-size: 13px;
+    top: 70px;
+    left: 15px;
+    right: 15px;
+    white-space: normal;
+  }
+
+  .sectionAuth {
+    padding: 20px 15px;
+  }
+
+  .logoimage img {
+    width: 45px;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 60/110;
+  }
+
+  .contener input {
+    height: 42px;
+    font-size: 15px;
+  }
+
+  .lebouton {
+    height: 42px;
+    font-size: 15px;
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/static/css/main.a1774c84.css",
+    "main.js": "/static/js/main.d981ba4a.js",
+    "index.html": "/index.html",
+    "static/media/abstrait-bleu-degrade-bleu-fonce-lisse-vignette-noire-studio_1258-53689.avif": "/static/media/abstrait-bleu-degrade-bleu-fonce-lisse-vignette-noire-studio_1258-53689.c8bf4bb373ed74e5a98d.avif",
+    "main.a1774c84.css.map": "/static/css/main.a1774c84.css.map",
+    "main.d981ba4a.js.map": "/static/js/main.d981ba4a.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.a1774c84.css",
+    "static/js/main.d981ba4a.js"
+  ]
+}

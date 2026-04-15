@@ -1,0 +1,263 @@
+.permission-test-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.test-header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.test-header h1 {
+  margin: 0 0 8px 0;
+  color: #1f2937;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.test-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+.status-section,
+.actions-section,
+.message-section,
+.user-info-section,
+.instructions-section {
+  margin-bottom: 32px;
+}
+
+.status-section h2,
+.actions-section h2,
+.message-section h2,
+.user-info-section h2,
+.instructions-section h2 {
+  margin: 0 0 16px 0;
+  color: #1f2937;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.status-label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.status-value {
+  font-weight: 600;
+}
+
+.status-value.connected {
+  color: #059669;
+}
+
+.status-value.disconnected {
+  color: #dc2626;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.test-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.test-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.test-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.test-btn.primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.test-btn.primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.test-btn.secondary {
+  background: #10b981;
+  color: white;
+}
+
+.test-btn.secondary:hover:not(:disabled) {
+  background: #059669;
+}
+
+.test-btn.warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.test-btn.warning:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.test-btn.danger {
+  background: #ef4444;
+  color: white;
+}
+
+.test-btn.danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.message-box {
+  padding: 16px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.message-box.success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #bbf7d0;
+}
+
+.message-box.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.message-box.info {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.user-details {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.detail-value {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.instructions-list {
+  padding-left: 20px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.instructions-list li {
+  margin-bottom: 8px;
+}
+
+.instructions-list strong {
+  color: #1f2937;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .permission-test-container {
+    padding: 16px;
+  }
+
+  .test-header h1 {
+    font-size: 24px;
+  }
+
+  .status-grid,
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .status-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* Animations */
+.test-btn {
+  transition: all 0.2s ease;
+}
+
+.message-box {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
