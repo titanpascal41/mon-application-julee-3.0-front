@@ -128,7 +128,7 @@ const Authentification = () => {
                 value={motDePasseConnexion}
                 onChange={(e) => changerMotDePasseConnexion(e.target.value)}
                 required
-                placeholder="****************"
+                placeholder="entrez votre mot de passe"
                 autoComplete="new-password"
                 style={{
                   width: "100%",
@@ -167,10 +167,9 @@ const Authentification = () => {
             <br />
             <div
               className="creationcompte"
-              style={{ textAlign: "center", color: "#666", fontSize: "0.9em" }}
+              style={{ textAlign: "justify", color: "#666", fontSize: "0.9em" }}
             >
-              Seuls les administrateurs peuvent créer des comptes.
-              <br />
+              Seuls les administrateurs peuvent créer des comptes.<br />
               Contactez votre administrateur pour obtenir un accès.
             </div>
           </div>

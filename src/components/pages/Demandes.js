@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./PageStyles.css";
 import {
   creerDemande,
@@ -220,6 +220,15 @@ const Demandes = ({ activeSubPage }) => {
 
   const handleNouvelleDemandeNext = () => {
     if (nouvelleDemandeStep < 6) {
+      // Validation étape 1 : nom du projet obligatoire
+      if (nouvelleDemandeStep === 1 && !nouvelleDemandeFormData.nomProjet?.trim()) {
+        setDemandeMessage({
+          type: "error",
+          text: "Le nom du projet est obligatoire pour passer à l'étape suivante.",
+        });
+        scrollToFormTop();
+        return;
+      }
       if (nouvelleDemandeStep === 1) scrollToFormTop();
       setNouvelleDemandeStep(nouvelleDemandeStep + 1);
       setDemandeMessage({ type: "", text: "" });
@@ -357,6 +366,7 @@ const Demandes = ({ activeSubPage }) => {
   const [showDeleteDraftModal, setShowDeleteDraftModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedDemandeDetail, setSelectedDemandeDetail] = useState(null);
+  const [showRoadmapModal, setShowRoadmapModal] = useState(false);
   const [showStatusEditModal, setShowStatusEditModal] = useState(false);
   const [selectedDemandeIdForStatus, setSelectedDemandeIdForStatus] = useState(null);
   const [newStatusValue, setNewStatusValue] = useState("");
@@ -1205,6 +1215,19 @@ const Demandes = ({ activeSubPage }) => {
           demande.dateReception || prev.dateReception || "",
         ),
         lienIngridCDC: demande.lienIngridCDC || prev.lienIngridCDC || "",
+        // Étape 2: Clarification — formatage obligatoire (ISO → YYYY-MM-DD)
+        dateTransmissionBacklog: formatDateForInput(demande.dateTransmissionBacklog || prev.dateTransmissionBacklog || ""),
+        dateConfirmationValidation: formatDateForInput(demande.dateConfirmationValidation || prev.dateConfirmationValidation || ""),
+        // Étape 3: Planification — formatage obligatoire (ISO → YYYY-MM-DD)
+        dateDemandePlanificationDev: formatDateForInput(demande.dateDemandePlanificationDev || prev.dateDemandePlanificationDev || ""),
+        dateDemandePlanificationTif: formatDateForInput(demande.dateDemandePlanificationTif || prev.dateDemandePlanificationTif || ""),
+        dateRetourEquipesDev: formatDateForInput(demande.dateRetourEquipesDev || prev.dateRetourEquipesDev || ""),
+        dateRetourEquipesTif: formatDateForInput(demande.dateRetourEquipesTif || prev.dateRetourEquipesTif || ""),
+        dateCommunicationPlanningClient: formatDateForInput(demande.dateCommunicationPlanningClient || prev.dateCommunicationPlanningClient || ""),
+        // Étape 4: Réalisation
+        dateEffectiveLivraisonTIF: formatDateForInput(demande.dateEffectiveLivraisonTIF || prev.dateEffectiveLivraisonTIF || ""),
+        // Suspension
+        dateSuspension: formatDateForInput(demande.dateSuspension || prev.dateSuspension || ""),
         sprintsData: demande.sprintsData || prev.sprintsData || [],
         statutLivraisonClient: demande.statutLivraison || demande.statutLivraisonClient || prev.statutLivraisonClient || "en attente",
         dateEffectiveLivraisonClient: formatDateForInput(demande.dateEffectiveLivraisonClient || prev.dateEffectiveLivraisonClient || ""),
@@ -1531,6 +1554,28 @@ const Demandes = ({ activeSubPage }) => {
                 </div>
               ))}
             </div>
+
+            {/* Aperçu du nom du projet */}
+            {nouvelleDemandeFormData.nomProjet && nouvelleDemandeStep > 1 && (
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                borderRadius: "10px",
+                padding: "12px 20px",
+                marginBottom: "24px",
+                boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+              }}>
+                <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <i className="fa-solid fa-folder-open" style={{ fontSize: "15px", color: "white" }}></i>
+                </div>
+                <div>
+                  <div style={{ fontSize: "10px", fontWeight: "600", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>Projet en cours</div>
+                  <div style={{ fontSize: "15px", fontWeight: "700", color: "white" }}>{nouvelleDemandeFormData.nomProjet}</div>
+                </div>
+              </div>
+            )}
 
             {/* Formulaire selon l'étape */}
             <form autoComplete="off" onSubmit={handleNouvelleDemandeSubmit}>
@@ -2069,6 +2114,7 @@ const Demandes = ({ activeSubPage }) => {
 
                     {/* Roadmap — Vue Gantt */}
                     {parseInt(nouvelleDemandeFormData.nombreSprint) > 0 && (() => {
+                      const MONTH_NAMES = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
                       const sprints = Array.from({ length: parseInt(nouvelleDemandeFormData.nombreSprint) }, (_, i) => ({
                         num: i + 1,
                         ...((nouvelleDemandeFormData.sprintsData || [])[i] || {}),
@@ -2084,73 +2130,92 @@ const Demandes = ({ activeSubPage }) => {
                           </div>
                         </div>
                       );
-                      const minTs = Math.min(...allDates.map((d) => new Date(d).getTime()));
-                      const maxTs = Math.max(...allDates.map((d) => new Date(d).getTime()));
-                      const totalMs = maxTs - minTs || 1;
+                      const allTs = allDates.map((d) => new Date(d).getTime());
+                      const rawMin = new Date(Math.min(...allTs));
+                      const rawMax = new Date(Math.max(...allTs));
+                      const timelineStart = new Date(rawMin.getFullYear(), rawMin.getMonth(), 1);
+                      const timelineEnd = new Date(rawMax.getFullYear(), rawMax.getMonth() + 1, 1);
+                      const totalMs = timelineEnd.getTime() - timelineStart.getTime();
+                      const months = [];
+                      const cur = new Date(timelineStart);
+                      while (cur < timelineEnd) {
+                        months.push({ year: cur.getFullYear(), month: cur.getMonth() });
+                        cur.setMonth(cur.getMonth() + 1);
+                      }
+                      const quarterMap = {};
+                      months.forEach((m) => {
+                        const q = `Q${Math.floor(m.month / 3) + 1} ${m.year}`;
+                        if (!quarterMap[q]) quarterMap[q] = 0;
+                        quarterMap[q]++;
+                      });
+                      const quarters = Object.entries(quarterMap);
                       const toPercent = (dateStr) => {
                         if (!dateStr) return null;
-                        return Math.max(0, Math.min(100, ((new Date(dateStr).getTime() - minTs) / totalMs) * 100));
+                        return Math.max(0, Math.min(100, ((new Date(dateStr).getTime() - timelineStart.getTime()) / totalMs) * 100));
                       };
                       return (
                         <div style={{ marginTop: "32px" }}>
                           <h4 style={{ fontSize: "16px", fontWeight: "600", color: "#1a1a1a", marginBottom: "12px" }}>Roadmap — Vue Gantt</h4>
-                          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "16px" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "12px", color: "#6b7280" }}>
-                              <span>{formatDateForDisplay(new Date(minTs).toISOString())}</span>
-                              <span>{formatDateForDisplay(new Date(maxTs).toISOString())}</span>
-                            </div>
-                            {sprints.map((sprint, i) => {
-                              const pTIF = toPercent(sprint.datePrevTIF);
-                              const pClient = toPercent(sprint.datePrevClient);
-                              const eTIF = toPercent(sprint.dateEffTIF);
-                              const eClient = toPercent(sprint.dateEffClient);
-                              return (
-                                <div key={i} style={{ marginBottom: "12px" }}>
-                                  <div style={{ fontSize: "12px", color: "#374151", marginBottom: "3px", fontWeight: "500" }}>
-                                    Sprint {sprint.num}{sprint.chantier ? ` — ${sprint.chantier}` : ""}
-                                  </div>
-                                  <div style={{ position: "relative", height: "24px", background: "#f3f4f6", borderRadius: "6px", overflow: "hidden" }}>
-                                    {pTIF !== null && pClient !== null && (
-                                      <div style={{
-                                        position: "absolute",
-                                        left: `${Math.min(pTIF, pClient)}%`,
-                                        width: `${Math.max(1, Math.abs(pClient - pTIF))}%`,
-                                        height: "100%",
-                                        background: "#3b82f6",
-                                        borderRadius: "4px",
-                                        opacity: 0.75,
-                                      }} title={`Planifié TIF→Client`} />
+                          <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflow: "auto" }}>
+                            <div style={{ minWidth: "600px", display: "grid", gridTemplateColumns: `140px repeat(${months.length}, 1fr)` }}>
+                              {/* Trimestres */}
+                              <div style={{ background: "#F3F4F6", borderRight: "1px solid #D1D5DB", borderBottom: "1px solid #D1D5DB" }} />
+                              {quarters.map(([q, count]) => (
+                                <div key={q} style={{ gridColumn: `span ${count}`, background: "#F3F4F6", padding: "4px 8px", fontSize: "11px", fontWeight: "700", color: "#374151", textAlign: "center", borderRight: "1px solid #D1D5DB", borderBottom: "1px solid #D1D5DB" }}>{q}</div>
+                              ))}
+                              {/* Mois */}
+                              <div style={{ background: "#F9FAFB", borderRight: "1px solid #D1D5DB", borderBottom: "2px solid #D1D5DB", padding: "4px 8px", fontSize: "11px", color: "#6B7280", fontWeight: "600" }}>Sprint</div>
+                              {months.map((m, i) => (
+                                <div key={i} style={{ background: "#F9FAFB", padding: "4px 2px", fontSize: "11px", color: "#6B7280", fontWeight: "500", borderRight: "1px solid #E5E7EB", borderBottom: "2px solid #D1D5DB", textAlign: "center", whiteSpace: "nowrap", overflow: "hidden" }}>{MONTH_NAMES[m.month]}</div>
+                              ))}
+                              {/* Sprints */}
+                              {sprints.map((sprint, i) => {
+                                const pTIF = toPercent(sprint.datePrevTIF);
+                                const pClient = toPercent(sprint.datePrevClient);
+                                const eTIF = toPercent(sprint.dateEffTIF);
+                                const eClient = toPercent(sprint.dateEffClient);
+                                const hasPlan = pTIF !== null && pClient !== null;
+                                const hasReal = eTIF !== null && eClient !== null;
+                                return (
+                                  <React.Fragment key={i}>
+                                    {/* Bandeau sprint */}
+                                    <div style={{ background: "#6B7280", padding: "5px 10px", display: "flex", alignItems: "center", borderBottom: "1px solid #E5E7EB" }}>
+                                      <span style={{ fontSize: "11px", fontWeight: "700", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>SPRINT {sprint.num}</span>
+                                    </div>
+                                    {months.map((_, mi) => (
+                                      <div key={mi} style={{ background: "#F3F4F6", height: "24px", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB" }} />
+                                    ))}
+                                    {/* Barre Planifié */}
+                                    {hasPlan && (
+                                      <>
+                                        <div style={{ padding: "3px 10px 3px 18px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center" }}>{sprint.chantier || "Planifié"}</div>
+                                        <div style={{ gridColumn: `span ${months.length}`, position: "relative", height: "26px", borderBottom: "1px solid #F3F4F6" }}>
+                                          {months.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi + 1) / months.length) * 100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
+                                          <div style={{ position: "absolute", left: `${Math.min(pTIF, pClient)}%`, width: `${Math.max(1, Math.abs(pClient - pTIF))}%`, top: "3px", bottom: "3px", background: "#4A90E2", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
+                                            <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Planifié</span>
+                                          </div>
+                                        </div>
+                                      </>
                                     )}
-                                    {eTIF !== null && eClient !== null && (
-                                      <div style={{
-                                        position: "absolute",
-                                        left: `${Math.min(eTIF, eClient)}%`,
-                                        width: `${Math.max(1, Math.abs(eClient - eTIF))}%`,
-                                        height: "60%",
-                                        top: "20%",
-                                        background: "#10b981",
-                                        borderRadius: "4px",
-                                        opacity: 0.9,
-                                      }} title={`Réalisé TIF→Client`} />
+                                    {/* Barre Réalisé */}
+                                    {hasReal && (
+                                      <>
+                                        <div style={{ padding: "3px 10px 3px 18px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center" }}>Réalisé</div>
+                                        <div style={{ gridColumn: `span ${months.length}`, position: "relative", height: "26px", borderBottom: "1px solid #F3F4F6" }}>
+                                          {months.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi + 1) / months.length) * 100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
+                                          <div style={{ position: "absolute", left: `${Math.min(eTIF, eClient)}%`, width: `${Math.max(1, Math.abs(eClient - eTIF))}%`, top: "3px", bottom: "3px", background: "#10B981", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
+                                            <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Réalisé</span>
+                                          </div>
+                                        </div>
+                                      </>
                                     )}
-                                    {pTIF !== null && (
-                                      <div style={{ position: "absolute", left: `${pTIF}%`, top: 0, bottom: 0, width: "2px", background: "#1d4ed8", opacity: 0.6 }} title="Date prév. TIF" />
-                                    )}
-                                    {pClient !== null && (
-                                      <div style={{ position: "absolute", left: `${pClient}%`, top: 0, bottom: 0, width: "2px", background: "#1d4ed8", opacity: 0.6 }} title="Date livraison prév." />
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                            <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "12px", color: "#6b7280" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                <div style={{ width: "14px", height: "8px", background: "#3b82f6", borderRadius: "2px", opacity: 0.75 }} />
-                                <span>Planifié</span>
-                              </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                <div style={{ width: "14px", height: "8px", background: "#10b981", borderRadius: "2px" }} />
-                                <span>Réalisé</span>
+                                  </React.Fragment>
+                                );
+                              })}
+                              {/* Légende */}
+                              <div style={{ gridColumn: "1 / -1", display: "flex", gap: "16px", padding: "8px 12px", fontSize: "12px", color: "#6B7280", borderTop: "1px solid #E5E7EB" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ width: "14px", height: "8px", background: "#4A90E2", borderRadius: "2px" }} /><span>Planifié</span></div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ width: "14px", height: "8px", background: "#10B981", borderRadius: "2px" }} /><span>Réalisé</span></div>
                               </div>
                             </div>
                           </div>
@@ -3475,7 +3540,7 @@ const Demandes = ({ activeSubPage }) => {
                                   whiteSpace: "nowrap",
                                 }}
                               >
-                                Supprimer
+                                Terminer
                               </button>
                             </PermissionGuard>
                           </div>
@@ -3509,16 +3574,39 @@ const Demandes = ({ activeSubPage }) => {
           if (!val) return false;
           try { new URL(val); return val.startsWith("http://") || val.startsWith("https://"); } catch { return false; }
         };
-        const InfoField = ({ label, value, full }) => (
-          <div style={{ gridColumn: full ? "1 / -1" : undefined }}>
-            <div style={{ fontSize: "11px", fontWeight: "600", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>{label}</div>
-            <div style={{ fontSize: "14px", color: "#1F2937", background: "#F9FAFB", borderRadius: "6px", padding: "8px 10px", border: "1px solid #E5E7EB", wordBreak: "break-all" }}>
-              {value && isUrl(value)
-                ? <a href={value} target="_blank" rel="noopener noreferrer" style={{ color: "#4A90E2", textDecoration: "underline" }}>{value}</a>
-                : (value || "-")}
+        const StatusBadge = ({ value }) => {
+          if (!value) return <span style={{ color: "#9CA3AF" }}>-</span>;
+          const styles = {
+            "en attente": { bg: "#F3F4F6", color: "#1F2937", label: "En attente" },
+            "en cours":   { bg: "#DBEAFE", color: "#1E40AF", label: "En cours" },
+            "terminé":    { bg: "#D1FAE5", color: "#065F46", label: "Terminé" },
+            "livré au client": { bg: "#D1FAE5", color: "#065F46", label: "Livré au client" },
+          };
+          const s = styles[value.toLowerCase()] || { bg: "#F3F4F6", color: "#1F2937", label: value };
+          return (
+            <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "600", backgroundColor: s.bg, color: s.color }}>
+              {s.label}
+            </span>
+          );
+        };
+
+        const STATUT_FIELDS = ["statutCodage", "statutTIF", "statutPresentationDocs", "statutRecette", "statutLivraison", "statutLivraisonClient"];
+
+        const InfoField = ({ label, value, full, fieldName }) => {
+          const isStatut = fieldName && STATUT_FIELDS.includes(fieldName);
+          return (
+            <div style={{ gridColumn: full ? "1 / -1" : undefined }}>
+              <div style={{ fontSize: "11px", fontWeight: "600", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>{label}</div>
+              <div style={{ fontSize: "14px", color: "#1F2937", background: "#F9FAFB", borderRadius: "6px", padding: "8px 10px", border: "1px solid #E5E7EB", wordBreak: "break-all", minHeight: "36px", display: "flex", alignItems: "center" }}>
+                {isStatut
+                  ? <StatusBadge value={value || "en attente"} />
+                  : value && isUrl(value)
+                    ? <a href={value} target="_blank" rel="noopener noreferrer" style={{ color: "#4A90E2", textDecoration: "underline" }}>{value}</a>
+                    : (value || "-")}
+              </div>
             </div>
-          </div>
-        );
+          );
+        };
 
         const Section = ({ icon, title, color, children }) => (
           <div style={{ marginBottom: "24px" }}>
@@ -3615,7 +3703,69 @@ const Demandes = ({ activeSubPage }) => {
                   <InfoField label="Date retour des équipes TIF" value={formatDateForDisplay(selectedDemandeDetail.dateRetourEquipesTif)} />
                   <InfoField label="Date communication planning client" value={formatDateForDisplay(selectedDemandeDetail.dateCommunicationPlanningClient)} />
                   <InfoField label="Nombre de sprints" value={selectedDemandeDetail.nombreSprint} />
-                  <InfoField label="Roadmap" value={selectedDemandeDetail.roadmap} full />
+                  {/* Tableau sprints */}
+                  {selectedDemandeDetail.sprintsData && selectedDemandeDetail.sprintsData.length > 0 && (
+                    <div style={{ gridColumn: "1 / -1" }}>
+                      <div style={{ fontSize: "11px", fontWeight: "600", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Planification par sprint</div>
+                      <div style={{ overflowX: "auto", border: "1px solid #E5E7EB", borderRadius: "8px" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", minWidth: "700px" }}>
+                          <thead>
+                            <tr style={{ background: "#F9FAFB", borderBottom: "2px solid #E5E7EB" }}>
+                              <th style={{ padding: "8px 10px", textAlign: "left", color: "#6B7280", fontWeight: "600", whiteSpace: "nowrap" }}>Sprint</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", color: "#6B7280", fontWeight: "600", whiteSpace: "nowrap" }}>Chantier</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", color: "#6B7280", fontWeight: "600", whiteSpace: "nowrap" }}>Date Prév. TIF</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", color: "#6B7280", fontWeight: "600", whiteSpace: "nowrap" }}>Date Eff. TIF</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", color: "#6B7280", fontWeight: "600", whiteSpace: "nowrap" }}>Motif retard TIF</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", color: "#6B7280", fontWeight: "600", whiteSpace: "nowrap" }}>Date Prév. Client</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", color: "#6B7280", fontWeight: "600", whiteSpace: "nowrap" }}>Date Eff. Client</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", color: "#6B7280", fontWeight: "600", whiteSpace: "nowrap" }}>Motif retard Client</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", color: "#6B7280", fontWeight: "600", whiteSpace: "nowrap" }}>Charges</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", color: "#6B7280", fontWeight: "600", whiteSpace: "nowrap" }}>Nb Fonct.</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {selectedDemandeDetail.sprintsData.map((s, idx) => (
+                              <tr key={idx} style={{ borderBottom: "1px solid #F3F4F6", background: idx % 2 === 0 ? "#fff" : "#FAFAFA" }}>
+                                <td style={{ padding: "7px 10px", fontWeight: "700", color: "#374151", whiteSpace: "nowrap" }}>Sprint {idx + 1}</td>
+                                <td style={{ padding: "7px 10px", color: "#374151" }}>{s.chantier || <span style={{ color: "#D1D5DB" }}>—</span>}</td>
+                                <td style={{ padding: "7px 10px", color: "#374151", whiteSpace: "nowrap" }}>{formatDateForDisplay(s.datePrevTIF) || <span style={{ color: "#D1D5DB" }}>—</span>}</td>
+                                <td style={{ padding: "7px 10px", color: "#374151", whiteSpace: "nowrap" }}>{formatDateForDisplay(s.dateEffTIF) || <span style={{ color: "#D1D5DB" }}>—</span>}</td>
+                                <td style={{ padding: "7px 10px", color: s.motifRetardTIF ? "#EF4444" : "#9CA3AF" }}>{s.motifRetardTIF || "Aucun"}</td>
+                                <td style={{ padding: "7px 10px", color: "#374151", whiteSpace: "nowrap" }}>{formatDateForDisplay(s.datePrevClient) || <span style={{ color: "#D1D5DB" }}>—</span>}</td>
+                                <td style={{ padding: "7px 10px", color: "#374151", whiteSpace: "nowrap" }}>{formatDateForDisplay(s.dateEffClient) || <span style={{ color: "#D1D5DB" }}>—</span>}</td>
+                                <td style={{ padding: "7px 10px", color: s.motifRetardClient ? "#EF4444" : "#9CA3AF" }}>{s.motifRetardClient || "Aucun"}</td>
+                                <td style={{ padding: "7px 10px", color: "#374151", textAlign: "right" }}>{s.charges || <span style={{ color: "#D1D5DB" }}>—</span>}</td>
+                                <td style={{ padding: "7px 10px", color: "#374151", textAlign: "right" }}>{s.nbFonctionnalites || <span style={{ color: "#D1D5DB" }}>—</span>}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                  {/* Bouton Roadmap */}
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "600", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>Roadmap</div>
+                    {selectedDemandeDetail.sprintsData && selectedDemandeDetail.sprintsData.length > 0 ? (
+                      <button
+                        onClick={() => setShowRoadmapModal(true)}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: "8px",
+                          padding: "8px 16px", borderRadius: "8px", border: "none", cursor: "pointer",
+                          background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                          color: "white", fontSize: "13px", fontWeight: "600",
+                          boxShadow: "0 2px 6px rgba(74,144,226,0.3)",
+                        }}
+                      >
+                        <i className="fa-solid fa-chart-gantt"></i>
+                        Voir la Roadmap
+                      </button>
+                    ) : (
+                      <div style={{ fontSize: "14px", color: "#9CA3AF", background: "#F9FAFB", borderRadius: "6px", padding: "8px 10px", border: "1px solid #E5E7EB" }}>
+                        Aucun sprint renseigné
+                      </div>
+                    )}
+                  </div>
                   {selectedDemandeDetail.motifsRetardTIF && (
                     <InfoField label="Motifs retard TIF" value={selectedDemandeDetail.motifsRetardTIF} full />
                   )}
@@ -3629,8 +3779,8 @@ const Demandes = ({ activeSubPage }) => {
               {selectedDemandeDetail.typeProjet !== "Prospecte" &&
                 selectedDemandeDetail.typeProjet !== "Evolution" && (
                 <Section icon="fa-solid fa-code" title="Réalisation – Codage + TIF" color={typeColor}>
-                  <InfoField label="Statut de codage" value={selectedDemandeDetail.statutCodage} />
-                  <InfoField label="Statut TIF" value={selectedDemandeDetail.statutTIF} />
+                  <InfoField label="Statut de codage" value={selectedDemandeDetail.statutCodage} fieldName="statutCodage" />
+                  <InfoField label="Statut TIF" value={selectedDemandeDetail.statutTIF} fieldName="statutTIF" />
                 </Section>
               )}
 
@@ -3648,7 +3798,7 @@ const Demandes = ({ activeSubPage }) => {
               {selectedDemandeDetail.typeProjet !== "Prospecte" &&
                 selectedDemandeDetail.typeProjet !== "Evolution" && (
                 <Section icon="fa-solid fa-truck" title="Livraison effective au client" color={typeColor}>
-                  <InfoField label="Statut livraison client" value={selectedDemandeDetail.statutLivraisonClient} />
+                  <InfoField label="Statut livraison client" value={selectedDemandeDetail.statutLivraisonClient} fieldName="statutLivraisonClient" />
                   <InfoField label="Date effective livraison client" value={formatDateForDisplay(selectedDemandeDetail.dateEffectiveLivraisonClient)} />
                   {selectedDemandeDetail.motifsRetardClient && (
                     <InfoField label="Motifs de retard client" value={selectedDemandeDetail.motifsRetardClient} full />
@@ -3664,6 +3814,160 @@ const Demandes = ({ activeSubPage }) => {
                   onClick={closeDetailModal}
                   style={{ background: "#F3F4F6", border: "none", borderRadius: "8px", padding: "10px 32px", fontSize: "14px", fontWeight: "600", color: "#374151", cursor: "pointer" }}
                 >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Modal Roadmap / Gantt */}
+      {showRoadmapModal && selectedDemandeDetail && (() => {
+        const MONTH_NAMES = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
+        const sprints = (selectedDemandeDetail.sprintsData || []).map((s, i) => ({ num: i + 1, ...s }));
+        const allDates = sprints.flatMap((s) =>
+          [s.datePrevTIF, s.dateEffTIF, s.datePrevClient, s.dateEffClient].filter(Boolean)
+        );
+        const hasData = allDates.length >= 2;
+
+        if (!hasData) return (
+          <div className="modal-overlay" onClick={() => setShowRoadmapModal(false)} style={{ zIndex: 1300 }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: "white", borderRadius: "14px", padding: "40px", textAlign: "center", color: "#9CA3AF" }}>
+              <i className="fa-solid fa-calendar-xmark" style={{ fontSize: "36px", marginBottom: "12px", display: "block" }}></i>
+              Aucune date renseignée dans les sprints.
+              <br /><br />
+              <button onClick={() => setShowRoadmapModal(false)} style={{ background: "#F3F4F6", border: "none", borderRadius: "8px", padding: "8px 24px", cursor: "pointer" }}>Fermer</button>
+            </div>
+          </div>
+        );
+
+        // Calcul timeline : du début du mois min au fin du mois max
+        const allTs = allDates.map((d) => new Date(d).getTime());
+        const rawMin = new Date(Math.min(...allTs));
+        const rawMax = new Date(Math.max(...allTs));
+        const timelineStart = new Date(rawMin.getFullYear(), rawMin.getMonth(), 1);
+        const timelineEnd = new Date(rawMax.getFullYear(), rawMax.getMonth() + 1, 1);
+        const totalMs = timelineEnd.getTime() - timelineStart.getTime();
+
+        // Générer la liste des mois
+        const months = [];
+        const cur = new Date(timelineStart);
+        while (cur < timelineEnd) {
+          months.push({ year: cur.getFullYear(), month: cur.getMonth() });
+          cur.setMonth(cur.getMonth() + 1);
+        }
+
+        // Grouper par trimestre
+        const quarterMap = {};
+        months.forEach((m) => {
+          const q = `Q${Math.floor(m.month / 3) + 1} ${m.year}`;
+          if (!quarterMap[q]) quarterMap[q] = 0;
+          quarterMap[q]++;
+        });
+        const quarters = Object.entries(quarterMap);
+
+        const toPercent = (dateStr) => {
+          if (!dateStr) return null;
+          const t = new Date(dateStr).getTime();
+          return Math.max(0, Math.min(100, ((t - timelineStart.getTime()) / totalMs) * 100));
+        };
+
+        return (
+          <div className="modal-overlay" onClick={() => setShowRoadmapModal(false)} style={{ zIndex: 1300 }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: "white", borderRadius: "14px", width: "95%", maxWidth: "1000px", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+              {/* Header modal */}
+              <div style={{ padding: "16px 24px", borderBottom: "1px solid #E5E7EB", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <i className="fa-solid fa-chart-gantt" style={{ color: "#4A90E2", fontSize: "18px" }}></i>
+                  <div>
+                    <div style={{ fontWeight: "700", fontSize: "16px", color: "#111827" }}>Roadmap — Vue Gantt</div>
+                    <div style={{ fontSize: "12px", color: "#6B7280" }}>{selectedDemandeDetail.nomProjet}</div>
+                  </div>
+                </div>
+                <button onClick={() => setShowRoadmapModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", fontSize: "22px", lineHeight: 1 }}>×</button>
+              </div>
+
+              {/* Body scrollable */}
+              <div style={{ overflowX: "auto", overflowY: "auto", flex: 1 }}>
+                <div style={{ minWidth: "700px", display: "grid", gridTemplateColumns: `160px repeat(${months.length}, 1fr)` }}>
+
+                  {/* Trimestres */}
+                  <div style={{ background: "#F3F4F6", borderRight: "1px solid #D1D5DB", borderBottom: "1px solid #D1D5DB" }} />
+                  {quarters.map(([q, count]) => (
+                    <div key={q} style={{ gridColumn: `span ${count}`, background: "#F3F4F6", padding: "4px 8px", fontSize: "11px", fontWeight: "700", color: "#374151", textAlign: "center", borderRight: "1px solid #D1D5DB", borderBottom: "1px solid #D1D5DB" }}>{q}</div>
+                  ))}
+
+                  {/* Mois */}
+                  <div style={{ background: "#F9FAFB", borderRight: "1px solid #D1D5DB", borderBottom: "2px solid #D1D5DB", padding: "4px 8px", fontSize: "11px", color: "#6B7280", fontWeight: "600" }}>Sprint</div>
+                  {months.map((m, i) => (
+                    <div key={i} style={{ background: "#F9FAFB", padding: "4px 4px", fontSize: "11px", color: "#6B7280", fontWeight: "500", borderRight: "1px solid #E5E7EB", borderBottom: "2px solid #D1D5DB", textAlign: "center", whiteSpace: "nowrap", overflow: "hidden" }}>{MONTH_NAMES[m.month]}</div>
+                  ))}
+
+                  {/* Lignes sprints */}
+                  {sprints.map((sprint, i) => {
+                    const pTIF = toPercent(sprint.datePrevTIF);
+                    const pClient = toPercent(sprint.datePrevClient);
+                    const eTIF = toPercent(sprint.dateEffTIF);
+                    const eClient = toPercent(sprint.dateEffClient);
+                    const hasPlan = pTIF !== null && pClient !== null;
+                    const hasReal = eTIF !== null && eClient !== null;
+
+                    return (
+                      <React.Fragment key={i}>
+                        {/* Bandeau sprint */}
+                        <div style={{ background: "#6B7280", padding: "6px 10px", display: "flex", alignItems: "center", borderBottom: "1px solid #E5E7EB" }}>
+                          <span style={{ fontSize: "12px", fontWeight: "700", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>SPRINT {sprint.num}</span>
+                        </div>
+                        {months.map((_, mi) => (
+                          <div key={mi} style={{ background: "#F3F4F6", height: "28px", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB" }} />
+                        ))}
+
+                        {/* Barre Planifié */}
+                        {hasPlan && (
+                          <>
+                            <div style={{ padding: "4px 10px 4px 20px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center" }}>{sprint.chantier || "Planifié"}</div>
+                            <div style={{ gridColumn: `span ${months.length}`, position: "relative", height: "28px", borderBottom: "1px solid #F3F4F6" }}>
+                              {months.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi + 1) / months.length) * 100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
+                              <div style={{ position: "absolute", left: `${Math.min(pTIF, pClient)}%`, width: `${Math.max(1, Math.abs(pClient - pTIF))}%`, top: "4px", bottom: "4px", background: "#4A90E2", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
+                                <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Planifié</span>
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Barre Réalisé */}
+                        {hasReal && (
+                          <>
+                            <div style={{ padding: "4px 10px 4px 20px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center" }}>Réalisé</div>
+                            <div style={{ gridColumn: `span ${months.length}`, position: "relative", height: "28px", borderBottom: "1px solid #F3F4F6" }}>
+                              {months.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi + 1) / months.length) * 100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
+                              <div style={{ position: "absolute", left: `${Math.min(eTIF, eClient)}%`, width: `${Math.max(1, Math.abs(eClient - eTIF))}%`, top: "4px", bottom: "4px", background: "#10B981", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
+                                <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Réalisé</span>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding: "12px 24px", borderTop: "1px solid #E5E7EB", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                <div style={{ display: "flex", gap: "16px", fontSize: "12px", color: "#6B7280" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <div style={{ width: "16px", height: "8px", background: "#4A90E2", borderRadius: "2px" }} />
+                    <span>Planifié</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <div style={{ width: "16px", height: "8px", background: "#10B981", borderRadius: "2px" }} />
+                    <span>Réalisé</span>
+                  </div>
+                </div>
+                <button onClick={() => setShowRoadmapModal(false)} style={{ background: "#F3F4F6", border: "none", borderRadius: "8px", padding: "8px 28px", fontSize: "14px", fontWeight: "600", color: "#374151", cursor: "pointer" }}>
                   Fermer
                 </button>
               </div>

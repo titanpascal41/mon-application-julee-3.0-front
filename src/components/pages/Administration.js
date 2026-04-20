@@ -1467,6 +1467,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     profils: {
 
       title: "Gestion des Profils",
+      description: "Créez et configurez les profils d'accès et leurs permissions.",
 
       content: (
 
@@ -2503,6 +2504,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     utilisateurs: {
 
       title: "Gestion des Utilisateurs",
+      description: "Gérez les comptes utilisateurs et leurs profils ",
 
       content: (
 
@@ -2988,6 +2990,9 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
       <div className="page-header">
 
         <h1>{subPages[activeSubPage].title}</h1>
+        {subPages[activeSubPage].description && (
+          <p>{subPages[activeSubPage].description}</p>
+        )}
 
       </div>
 

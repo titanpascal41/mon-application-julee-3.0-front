@@ -178,7 +178,7 @@ const Header = ({ user, deconnecter, onNotificationClick }) => {
   return (
     <header className="dashboard-header">
       <div className="header-left">
-        <h2>Tableau de bord</h2>
+        <span className="header-logo">JULEE</span>
       </div>
       <div className="header-right">
 

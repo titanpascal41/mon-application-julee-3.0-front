@@ -299,9 +299,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
   return (
     <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
-      <div className="sidebar-header">
-        {!collapsed && <span className="logo-text">JULEE</span>}
-      </div>
+      <div className="sidebar-header"></div>
 
       <nav className="sidebar-nav">
         {menuItems

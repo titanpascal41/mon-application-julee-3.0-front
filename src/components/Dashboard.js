@@ -265,21 +265,23 @@ const Dashboard = () => {
         </div>
       ) : (
         <>
-          <Sidebar
-            collapsed={sidebarCollapsed}
-            setCollapsed={setSidebarCollapsed}
+          <Header
+            user={user}
+            deconnecter={deconnecter}
+            onNotificationClick={handleNotificationClick}
           />
-          <div
-            className={`main-content ${
-              sidebarCollapsed ? "sidebar-collapsed" : ""
-            }`}
-          >
-            <Header
-              user={user}
-              deconnecter={deconnecter}
-              onNotificationClick={handleNotificationClick}
+          <div className="dashboard-body">
+            <Sidebar
+              collapsed={sidebarCollapsed}
+              setCollapsed={setSidebarCollapsed}
             />
-            <div className="content-wrapper">{renderContent()}</div>
+            <div
+              className={`main-content ${
+                sidebarCollapsed ? "sidebar-collapsed" : ""
+              }`}
+            >
+              <div className="content-wrapper">{renderContent()}</div>
+            </div>
           </div>
         </>
       )}

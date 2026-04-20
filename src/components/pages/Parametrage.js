@@ -1770,7 +1770,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                       value={uoFormData.code}
                       onChange={handleUOInputChange}
                       placeholder="Ex: DEV-WEB, STAFF-DDI..."
-                      style={{ textTransform: "uppercase" }}
                     />
                   </div>
 

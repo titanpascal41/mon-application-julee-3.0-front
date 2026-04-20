@@ -1,8 +1,16 @@
 .dashboard-container {
   display: flex;
+  flex-direction: column;
   width: 100%;
-  min-height: 100vh;
-  background-color: #f0f4f8;
+  height: 100vh;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+.dashboard-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
 .main-content {
@@ -11,7 +19,6 @@
   flex-direction: column;
   margin-left: 300px;
   transition: margin-left 0.3s ease;
-  height: 100vh;
   overflow: hidden;
 }
 
@@ -23,14 +30,13 @@
   flex: 1;
   padding: 24px;
   overflow-y: auto;
-  height: calc(100vh - 80px); /* Hauteur de la vue moins la hauteur du header */
 }
 
 .dashboard-content {
   background: white;
-  border-radius: 12px;
+  border-radius: 0;
   padding: 32px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
   height: calc(100% - 30px);
   min-height: calc(100% - 30px);
 }

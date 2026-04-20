@@ -1,8 +1,9 @@
 .page-container {
   background: white;
-  border-radius: 12px;
+  border-radius: 0;
   padding: 32px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
+  padding: 2px 20px;
 }
 
 /* Styles pour les badges d'accès */
@@ -469,7 +470,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1200;
   animation: fadeIn 0.2s ease;
 }
 

@@ -119,6 +119,16 @@ body {
   max-width: 300px;
 }
 
+.contener label {
+  margin-bottom: 3px;
+  display: block;
+  color: #2c3e50;
+}
+
+.contener input {
+  color:  #2c3e50;
+}
+
 .contener input {
   height: 40px;
   width: 100%;
@@ -132,6 +142,11 @@ body {
   -moz-appearance: none;
   appearance: none;
   font-size: 16px; /* Évite le zoom automatique sur iOS */
+}
+
+.contener input:focus {
+  outline: none;
+  border: 2px solid rgba(74, 144, 226, 0.3);
 }
 
 input:focus::placeholder {
@@ -173,6 +188,7 @@ input:focus::placeholder {
   max-width: 300px;
   height: 39px;
   background-color: #4a90e2;
+  color: white;
   border-radius: 10px;
   display: flex;
   justify-content: center;
