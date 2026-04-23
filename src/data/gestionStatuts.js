@@ -1,10 +1,11 @@
+import { apiFetch } from "../utils/apiFetch";
 // Fichier pour gérer la base de données des statuts
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 const chargerStatuts = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/statuts`);
+    const response = await apiFetch(`/statuts`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des statuts");
     }
@@ -33,7 +34,7 @@ const nomStatutExiste = async (nom, idExclu = null) => {
 // Vérifier si un statut est utilisé dans une demande
 const statutEstUtilise = async (statutId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/demandes`);
+    const response = await apiFetch(`/demandes`);
     if (!response.ok) {
       return false;
     }
@@ -73,7 +74,7 @@ const creerStatut = async ({ nom, description, actif }) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/statuts`, {
+    const response = await apiFetch(`/statuts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -127,7 +128,7 @@ const mettreAJourStatut = async (id, { nom, description, actif }) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/statuts/${id}`, {
+    const response = await apiFetch(`/statuts/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(statutMisAJour),
@@ -158,7 +159,7 @@ const mettreAJourStatut = async (id, { nom, description, actif }) => {
 // Vérifier si un statut peut être supprimé
 const verifierSuppressionStatut = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/statuts/${id}/can-delete`);
+    const response = await apiFetch(`/statuts/${id}/can-delete`);
     if (!response.ok) {
       return { canDelete: false, message: "Erreur lors de la vérification" };
     }
@@ -180,7 +181,7 @@ const supprimerStatut = async (id) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/statuts/${id}`, {
+    const response = await apiFetch(`/statuts/${id}`, {
       method: "DELETE",
     });
 
@@ -221,7 +222,7 @@ const supprimerStatut = async (id) => {
 // Réordonner les statuts
 const reorderStatuts = async (orderedIds) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/statuts/reorder`, {
+    const response = await apiFetch(`/statuts/reorder`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ orderedIds }),

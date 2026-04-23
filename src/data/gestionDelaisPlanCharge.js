@@ -1,5 +1,6 @@
+import { apiFetch } from "../utils/apiFetch";
 // Gestion des délais du plan de charge via l'API
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Fonction pour calculer les heures ouvrées entre deux dates
 const calculerHeuresOuvre = (dateDebut, dateFin) => {
@@ -30,7 +31,7 @@ const calculerHeuresOuvre = (dateDebut, dateFin) => {
 // Charger tous les délais depuis l'API
 export const chargerDelais = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/delais`);
+    const response = await apiFetch(`/delais`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des délais");
     }
@@ -75,7 +76,7 @@ export const creerDelai = async (delaiData) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/delais`, {
+    const response = await apiFetch(`/delais`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nouveauDelai),
@@ -140,7 +141,7 @@ export const mettreAJourDelai = async (id, delaiData) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/delais/${id}`, {
+    const response = await apiFetch(`/delais/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(delaiMisAJour),
@@ -164,7 +165,7 @@ export const mettreAJourDelai = async (id, delaiData) => {
 // Supprimer un délai
 export const supprimerDelai = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/delais/${id}`, {
+    const response = await apiFetch(`/delais/${id}`, {
       method: "DELETE",
     });
 
@@ -192,7 +193,7 @@ export const marquerNotificationVue = async (id) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/delais/${id}`, {
+    const response = await apiFetch(`/delais/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...delai, notificationVue: true }),

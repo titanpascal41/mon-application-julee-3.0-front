@@ -1,10 +1,11 @@
+import { apiFetch } from "../utils/apiFetch";
 // Gestion des collaborateurs
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 const chargerDepuisAPI = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/interlocuteurs`);
+    const response = await apiFetch(`/interlocuteurs`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des collaborateurs");
     }
@@ -34,7 +35,7 @@ export const creerCollaborateur = async (data) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/interlocuteurs`, {
+    const response = await apiFetch(`/interlocuteurs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nouveau),
@@ -82,7 +83,7 @@ export const mettreAJourCollaborateur = async (id, data) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/interlocuteurs/${id}`, {
+    const response = await apiFetch(`/interlocuteurs/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(maj),
@@ -112,7 +113,7 @@ export const mettreAJourCollaborateur = async (id, data) => {
 
 export const supprimerCollaborateur = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/interlocuteurs/${id}`, {
+    const response = await apiFetch(`/interlocuteurs/${id}`, {
       method: "DELETE",
     });
 

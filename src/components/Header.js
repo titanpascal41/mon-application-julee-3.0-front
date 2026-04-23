@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Header.css";
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+import { apiFetch } from "../utils/apiFetch";
 
 const diffJours = (dateStr) => {
   if (!dateStr) return null;
@@ -131,7 +130,7 @@ const Header = ({ user, deconnecter, onNotificationClick }) => {
 
   const chargerNotifications = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/demandes`);
+      const res = await apiFetch(`/demandes`);
       if (!res.ok) return;
       const demandes = await res.json();
       setNotifications(genererNotifications(demandes));

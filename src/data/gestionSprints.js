@@ -1,10 +1,11 @@
+import { apiFetch } from "../utils/apiFetch";
 // Fichier pour gérer les sprints via l'API
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Charger les sprints depuis l'API
 const chargerSprints = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/sprints`);
+    const response = await apiFetch(`/sprints`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des sprints");
     }
@@ -106,7 +107,7 @@ const creerSprint = async (sprintData) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/sprints`, {
+    const response = await apiFetch(`/sprints`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nouveauSprint),
@@ -153,7 +154,7 @@ const mettreAJourSprint = async (id, sprintData) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/sprints/${id}`, {
+    const response = await apiFetch(`/sprints/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(sprintModifie),
@@ -181,7 +182,7 @@ const mettreAJourSprint = async (id, sprintData) => {
 // Supprimer un sprint
 const supprimerSprint = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/sprints/${id}`, {
+    const response = await apiFetch(`/sprints/${id}`, {
       method: "DELETE",
     });
 

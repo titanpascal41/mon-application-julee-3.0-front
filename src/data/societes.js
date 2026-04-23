@@ -1,12 +1,13 @@
+import { apiFetch } from "../utils/apiFetch";
 // Fichier pour gérer la base de données des sociétés
 import { chargerUtilisateurs } from "./baseDeDonnees";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Charger les sociétés actives depuis l'API MySQL
 const chargerSocietes = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/societes`);
+    const response = await apiFetch(`/societes`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des sociétés");
     }
@@ -21,7 +22,7 @@ const chargerSocietes = async () => {
 // Charger toutes les sociétés (actives + archivées)
 const chargerToutesSocietes = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/societes?all=true`);
+    const response = await apiFetch(`/societes?all=true`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des sociétés");
     }
@@ -35,7 +36,7 @@ const chargerToutesSocietes = async () => {
 // Archiver une société (soft delete - retirer de la liste active)
 const archiverSociete = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/societes/${id}`, {
+    const response = await apiFetch(`/societes/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ actif: false }),
@@ -66,7 +67,7 @@ const ajouterSocieteExistante = async (code, departement = "", libelle = "") => 
     if (doublon) {
       if (!doublon.actif) {
         // Réactiver si archivée
-        const response = await fetch(`${API_BASE_URL}/societes/${doublon.id}`, {
+        const response = await apiFetch(`/societes/${doublon.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ actif: true }),
@@ -134,7 +135,7 @@ const creerSocieteSimple = async (nom) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/societes`, {
+    const response = await apiFetch(`/societes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -168,7 +169,7 @@ const creerSociete = async ({ code, nom, departement, source = "creee" }) => {
   const nomTrimmed = nom.trim();
 
   try {
-    const response = await fetch(`${API_BASE_URL}/societes`, {
+    const response = await apiFetch(`/societes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: codeUpper, nom: nomTrimmed, departement: departement || null, source }),
@@ -196,7 +197,7 @@ const mettreAJourSociete = async (id, { code, nom, departement }) => {
   const nomTrimmed = nom.trim();
 
   try {
-    const response = await fetch(`${API_BASE_URL}/societes/${id}`, {
+    const response = await apiFetch(`/societes/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: codeUpper, nom: nomTrimmed, departement: departement || null }),
@@ -231,7 +232,7 @@ const supprimerSociete = async (id) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/societes/${id}`, {
+    const response = await apiFetch(`/societes/${id}`, {
       method: "DELETE",
     });
 
@@ -252,7 +253,7 @@ const supprimerSociete = async (id) => {
 // Activer ou désactiver une société
 const toggleActivationSociete = async (id, actif) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/societes/${id}`, {
+    const response = await apiFetch(`/societes/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ actif }),

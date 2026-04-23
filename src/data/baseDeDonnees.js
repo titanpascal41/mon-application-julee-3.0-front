@@ -1,22 +1,15 @@
 // Fichier pour gérer la base de données des utilisateurs
-// URL de base de l'API backend (adaptable via variable d'environnement)
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+import { apiFetch } from "../utils/apiFetch";
 
-// Creds admin (connexion exclusive)
-const ADMIN_EMAIL = process.env.REACT_APP_ADMIN_EMAIL || "admin@julee.local";
-const ADMIN_PASSWORD =
-  process.env.REACT_APP_ADMIN_PASSWORD || "JuleeAdmin@2024!";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
 
 // Charger les utilisateurs depuis l'API MySQL
 const chargerUtilisateurs = async () => {
   try {
     console.log("Chargement des utilisateurs depuis l'API...");
-    const response = await fetch(`${API_BASE_URL}/users`, {
+    const response = await apiFetch(`/users`, {
       method: "GET",
-      headers: {
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      },
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
     });
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des utilisateurs");
@@ -143,9 +136,8 @@ const creerUtilisateur = async (
     };
     console.log("Données utilisateur envoyées:", userData);
 
-    const response = await fetch(`${API_BASE_URL}/users`, {
+    const response = await apiFetch(`/users`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     });
 
@@ -214,9 +206,8 @@ const mettreAJourUtilisateur = async (
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+    const response = await apiFetch(`/users/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: email,
         nom: nom,
@@ -249,9 +240,7 @@ const mettreAJourUtilisateur = async (
 // Supprimer un utilisateur
 const supprimerUtilisateur = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-      method: "DELETE",
-    });
+    const response = await apiFetch(`/users/${id}`, { method: "DELETE" });
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -270,22 +259,6 @@ const supprimerUtilisateur = async (id) => {
 // Vérifier les identifiants de connexion
 const verifierConnexion = async (email, motDePasse) => {
   try {
-    // Vérifier si c'est le compte admin
-    if (email === ADMIN_EMAIL && motDePasse === ADMIN_PASSWORD) {
-      return {
-        succes: true,
-        message: "Connexion réussie (admin)",
-        utilisateur: {
-          id: 0,
-          prenom: "Admin",
-          nom: "Julee",
-          email: ADMIN_EMAIL,
-          profilId: "admin",
-        },
-      };
-    }
-
-    // Vérifier pour les autres utilisateurs via l'API
     const response = await fetch(`${API_BASE_URL}/users/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -296,11 +269,12 @@ const verifierConnexion = async (email, motDePasse) => {
       return { succes: false, message: "Email ou mot de passe incorrect" };
     }
 
-    const utilisateur = await response.json();
+    const data = await response.json();
     return {
       succes: true,
       message: "Connexion réussie",
-      utilisateur: utilisateur,
+      token: data.token,
+      utilisateur: data.utilisateur,
     };
   } catch (error) {
     console.error("Erreur lors de la vérification de connexion:", error);

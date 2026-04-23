@@ -1,5 +1,5 @@
 // Gestion des permissions
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+import { apiFetch } from "../utils/apiFetch";
 
 // Définition des modules et sous-modules
 export const MODULES_STRUCTURE = {
@@ -30,9 +30,7 @@ export const MODULES_STRUCTURE = {
 // Charger les permissions d'un profil
 export const chargerPermissionsProfil = async (profilId) => {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/permissions/profil/${profilId}`,
-    );
+    const response = await apiFetch(`/permissions/profil/${profilId}`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des permissions");
     }
@@ -57,13 +55,9 @@ export const chargerPermissionsProfil = async (profilId) => {
 // Créer les permissions par défaut pour un profil
 export const creerPermissionsDefaut = async (profilId) => {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/permissions/profil/${profilId}/defaults`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    const response = await apiFetch(`/permissions/profil/${profilId}/defaults`, {
+      method: "POST",
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -96,14 +90,10 @@ export const mettreAJourPermissions = async (profilId, permissions) => {
 
     console.log("Permissions converties pour le backend:", convertedPermissions);
 
-    const response = await fetch(
-      `${API_BASE_URL}/permissions/profil/${profilId}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ permissions: convertedPermissions }),
-      },
-    );
+    const response = await apiFetch(`/permissions/profil/${profilId}`, {
+      method: "PUT",
+      body: JSON.stringify({ permissions: convertedPermissions }),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -119,14 +109,10 @@ export const mettreAJourPermissions = async (profilId, permissions) => {
           console.log("Permissions créées, nouvelle tentative de mise à jour...");
           
           // Retenter la mise à jour
-          const retryResponse = await fetch(
-            `${API_BASE_URL}/permissions/profil/${profilId}`,
-            {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ permissions: convertedPermissions }),
-            },
-          );
+          const retryResponse = await apiFetch(`/permissions/profil/${profilId}`, {
+            method: "PUT",
+            body: JSON.stringify({ permissions: convertedPermissions }),
+          });
           
           if (!retryResponse.ok) {
             const retryErrorText = await retryResponse.text();
@@ -171,13 +157,7 @@ export const mettreAJourPermissions = async (profilId, permissions) => {
 // Charger les permissions d'un utilisateur
 export const chargerPermissionsUtilisateur = async (userId) => {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/permissions/user/${userId}`,
-      {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    const response = await apiFetch(`/permissions/user/${userId}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -212,9 +192,7 @@ export const verifierPermission = async (
       params.append("action", action);
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}/permissions/user/${userId}/check?${params}`,
-    );
+    const response = await apiFetch(`/permissions/user/${userId}/check?${params}`);
     if (!response.ok) {
       throw new Error("Erreur lors de la vérification des permissions");
     }

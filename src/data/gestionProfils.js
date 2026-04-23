@@ -1,14 +1,15 @@
+import { apiFetch } from "../utils/apiFetch";
 // Fichier pour gérer les profils via l'API
 
 import { chargerUtilisateurs } from "./baseDeDonnees";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Charger les profils depuis l'API
 
 const chargerProfils = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/profils`);
+    const response = await apiFetch(`/profils`);
 
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des profils");
@@ -96,7 +97,7 @@ const creerProfil = async (nom, code) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/profils`, {
+    const response = await apiFetch(`/profils`, {
       method: "POST",
 
       headers: { "Content-Type": "application/json" },
@@ -168,7 +169,7 @@ const mettreAJourProfil = async (id, nom, code) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/profils/${id}`, {
+    const response = await apiFetch(`/profils/${id}`, {
       method: "PUT",
 
       headers: { "Content-Type": "application/json" },
@@ -239,7 +240,7 @@ const supprimerProfil = async (id) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/profils/${id}`, {
+    const response = await apiFetch(`/profils/${id}`, {
       method: "DELETE",
     });
 
@@ -298,7 +299,7 @@ const toggleActivationProfil = async (
   utilisateurId = null,
 ) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/profils/${id}/activation`, {
+    const response = await apiFetch(`/profils/${id}/activation`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ actif, motifDesactivation, utilisateurId }),

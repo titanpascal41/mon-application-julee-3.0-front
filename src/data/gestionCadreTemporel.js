@@ -1,10 +1,11 @@
+import { apiFetch } from "../utils/apiFetch";
 // Fichier pour gérer le Cadre Temporel du Projet via l'API
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Charger le cadre temporel depuis l'API
 const chargerCadreTemporel = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/cadre-temporel`);
+    const response = await apiFetch(`/cadre-temporel`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement du cadre temporel");
     }
@@ -51,7 +52,7 @@ const creerOuMettreAJourCadreTemporel = async ({
     
     if (cadreExistant.length > 0) {
       // Mettre à jour le cadre existant
-      const response = await fetch(`${API_BASE_URL}/cadre-temporel/${cadreExistant[0].id}`, {
+      const response = await apiFetch(`/cadre-temporel/${cadreExistant[0].id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cadreData),
@@ -65,7 +66,7 @@ const creerOuMettreAJourCadreTemporel = async ({
       return { succes: true, message: "Cadre temporel mis à jour avec succès", cadre: cadreMisAJour };
     } else {
       // Créer un nouveau cadre
-      const response = await fetch(`${API_BASE_URL}/cadre-temporel`, {
+      const response = await apiFetch(`/cadre-temporel`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cadreData),
@@ -90,7 +91,7 @@ const supprimerCadreTemporel = async () => {
     const cadreExistant = await chargerCadreTemporel();
     
     if (cadreExistant.length > 0) {
-      const response = await fetch(`${API_BASE_URL}/cadre-temporel/${cadreExistant[0].id}`, {
+      const response = await apiFetch(`/cadre-temporel/${cadreExistant[0].id}`, {
         method: "DELETE",
       });
 

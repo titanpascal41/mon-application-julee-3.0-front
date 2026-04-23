@@ -1,5 +1,6 @@
+import { apiFetch } from "../utils/apiFetch";
 // Fichier pour gérer les livraisons via l'API
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Statuts possibles pour la livraison
 export const STATUTS_LIVRAISON = ["Prévue", "En cours", "OK", "KO"];
@@ -7,7 +8,7 @@ export const STATUTS_LIVRAISON = ["Prévue", "En cours", "OK", "KO"];
 // Charger les livraisons depuis l'API
 export const chargerLivraisons = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/livraisons`);
+    const response = await apiFetch(`/livraisons`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des livraisons");
     }
@@ -81,7 +82,7 @@ export const creerLivraison = async (donneesLivraison) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/livraisons`, {
+    const response = await apiFetch(`/livraisons`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nouvelleLivraison),
@@ -160,7 +161,7 @@ export const mettreAJourLivraison = async (id, donneesLivraison) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/livraisons/${id}`, {
+    const response = await apiFetch(`/livraisons/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(livraisonMiseAJour),
@@ -188,7 +189,7 @@ export const mettreAJourLivraison = async (id, donneesLivraison) => {
 // Supprimer une livraison
 export const supprimerLivraison = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/livraisons/${id}`, {
+    const response = await apiFetch(`/livraisons/${id}`, {
       method: "DELETE",
     });
 

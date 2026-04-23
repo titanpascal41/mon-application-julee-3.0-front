@@ -1,5 +1,6 @@
+import { apiFetch } from "../utils/apiFetch";
 // Gestion des coûts du produit via l'API
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Fonction pour calculer tous les coûts automatiquement
 const calculerCouts = (coutData) => {
@@ -40,7 +41,7 @@ const migrerEtRecalculerCouts = (couts) => {
 // Charger tous les coûts depuis l'API
 export const chargerCouts = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/couts`);
+    const response = await apiFetch(`/couts`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des coûts");
     }
@@ -67,7 +68,7 @@ export const creerCout = async (coutData) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/couts`, {
+    const response = await apiFetch(`/couts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nouveauCout),
@@ -110,7 +111,7 @@ export const mettreAJourCout = async (id, coutData) => {
   const coutFinal = { ...coutMisAJour, ...calculs };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/couts/${id}`, {
+    const response = await apiFetch(`/couts/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(coutFinal),
@@ -134,7 +135,7 @@ export const mettreAJourCout = async (id, coutData) => {
 // Supprimer un coût
 export const supprimerCout = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/couts/${id}`, {
+    const response = await apiFetch(`/couts/${id}`, {
       method: "DELETE",
     });
 

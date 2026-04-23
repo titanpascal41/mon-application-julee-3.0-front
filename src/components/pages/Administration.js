@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { PermissionGuard } from "../PermissionGuard";
 
 import {
 
@@ -1774,21 +1775,27 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                                     </span>
                                   </label>
 
-                                  {perm.access && (
-                                    <div style={{ display: "flex", gap: "16px" }}>
-                                      {["créer", "lire", "modifier", "supprimer"].map((action) => (
-                                        <label key={action} style={{ display: "flex", alignItems: "center", gap: "5px", cursor: "pointer" }}>
-                                          <input
-                                            type="checkbox"
-                                            checked={perm[action]}
-                                            onChange={(e) => handlePermissionChange(perm.module, perm.submodule, action, e.target.checked)}
-                                            style={{ width: "14px", height: "14px", accentColor: "#4A90E2" }}
-                                          />
-                                          <span style={{ fontSize: "12px", color: "#6b7280", textTransform: "capitalize" }}>{action}</span>
-                                        </label>
-                                      ))}
-                                    </div>
-                                  )}
+                                  {perm.access && (() => {
+                                    const DESACTIVER_MODULES = ["societes", "uo", "interlocuteurs", "profils", "utilisateurs"];
+                                    const labelSupprimer = DESACTIVER_MODULES.includes(perm.submodule) ? "désactiver" : "supprimer";
+                                    return (
+                                      <div style={{ display: "flex", gap: "16px" }}>
+                                        {["créer", "lire", "modifier", "supprimer"].map((action) => (
+                                          <label key={action} style={{ display: "flex", alignItems: "center", gap: "5px", cursor: "pointer" }}>
+                                            <input
+                                              type="checkbox"
+                                              checked={perm[action]}
+                                              onChange={(e) => handlePermissionChange(perm.module, perm.submodule, action, e.target.checked)}
+                                              style={{ width: "14px", height: "14px", accentColor: "#4A90E2" }}
+                                            />
+                                            <span style={{ fontSize: "12px", color: "#6b7280", textTransform: "capitalize" }}>
+                                              {action === "supprimer" ? labelSupprimer : action}
+                                            </span>
+                                          </label>
+                                        ))}
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               ))}
                             </div>
@@ -2026,56 +2033,62 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
                         <td>
 
-                          <button
-                            className="btn-secondary"
-                            onClick={() => handleEdit(profil)}
-                            disabled={profil.actif === false}
-                            style={{
-                              marginRight: "5px",
-                              opacity: profil.actif === false ? 0.4 : 1,
-                              cursor: profil.actif === false ? "not-allowed" : "pointer",
-                            }}
-                          >
-                            Modifier
-                          </button>
+                          <PermissionGuard module="administration" submodule="profils" action="update">
+                            <button
+                              className="btn-secondary"
+                              onClick={() => handleEdit(profil)}
+                              disabled={profil.actif === false}
+                              style={{
+                                marginRight: "5px",
+                                opacity: profil.actif === false ? 0.4 : 1,
+                                cursor: profil.actif === false ? "not-allowed" : "pointer",
+                              }}
+                            >
+                              Modifier
+                            </button>
+                          </PermissionGuard>
 
-                          <button
-                            className="btn-primary"
-                            onClick={() => handleManagePermissions(profil)}
-                            disabled={profil.actif === false}
-                            style={{
-                              marginRight: "5px",
-                              opacity: profil.actif === false ? 0.4 : 1,
-                              cursor: profil.actif === false ? "not-allowed" : "pointer",
-                            }}
-                          >
-                            Attribuer des permissions
-                          </button>
+                          <PermissionGuard module="administration" submodule="profils" action="update">
+                            <button
+                              className="btn-primary"
+                              onClick={() => handleManagePermissions(profil)}
+                              disabled={profil.actif === false}
+                              style={{
+                                marginRight: "5px",
+                                opacity: profil.actif === false ? 0.4 : 1,
+                                cursor: profil.actif === false ? "not-allowed" : "pointer",
+                              }}
+                            >
+                              Attribuer des permissions
+                            </button>
+                          </PermissionGuard>
 
-                          <button
-                            className="btn-secondary"
-                            onClick={() => handleToggleActivation(profil)}
-                            style={{
-                              width: "100px",
-                              display: "inline-flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              backgroundColor: profil.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                              color: profil.actif !== false ? "#92400E" : "#065F46",
-                              borderColor: profil.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                              transition: "background-color 0.15s, border-color 0.15s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = profil.actif !== false ? "#FDE68A" : "#A7F3D0";
-                              e.currentTarget.style.borderColor = profil.actif !== false ? "#FDE68A" : "#A7F3D0";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = profil.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                              e.currentTarget.style.borderColor = profil.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                            }}
-                          >
-                            {profil.actif !== false ? "Désactiver" : "Activer"}
-                          </button>
+                          <PermissionGuard module="administration" submodule="profils" action="delete">
+                            <button
+                              className="btn-secondary"
+                              onClick={() => handleToggleActivation(profil)}
+                              style={{
+                                width: "100px",
+                                display: "inline-flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                backgroundColor: profil.actif !== false ? "#FEF3C7" : "#D1FAE5",
+                                color: profil.actif !== false ? "#92400E" : "#065F46",
+                                borderColor: profil.actif !== false ? "#FEF3C7" : "#D1FAE5",
+                                transition: "background-color 0.15s, border-color 0.15s",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = profil.actif !== false ? "#FDE68A" : "#A7F3D0";
+                                e.currentTarget.style.borderColor = profil.actif !== false ? "#FDE68A" : "#A7F3D0";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = profil.actif !== false ? "#FEF3C7" : "#D1FAE5";
+                                e.currentTarget.style.borderColor = profil.actif !== false ? "#FEF3C7" : "#D1FAE5";
+                              }}
+                            >
+                              {profil.actif !== false ? "Désactiver" : "Activer"}
+                            </button>
+                          </PermissionGuard>
 
                         </td>
 

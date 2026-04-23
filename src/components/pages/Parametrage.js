@@ -1665,30 +1665,32 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             </button>
                           </PermissionGuard>
 
-                          <button
-                            className="btn-secondary"
-                            onClick={() => handleToggleActivationSociete(societe)}
-                            style={{
-                              width: "100px",
-                              display: "inline-flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              backgroundColor: societe.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                              color: societe.actif !== false ? "#92400E" : "#065F46",
-                              borderColor: societe.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                              transition: "background-color 0.15s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = societe.actif !== false ? "#FDE68A" : "#A7F3D0";
-                              e.currentTarget.style.borderColor = societe.actif !== false ? "#FDE68A" : "#A7F3D0";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = societe.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                              e.currentTarget.style.borderColor = societe.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                            }}
-                          >
-                            {societe.actif !== false ? "Désactiver" : "Activer"}
-                          </button>
+                          <PermissionGuard module="parametrage" submodule="societes" action="delete">
+                            <button
+                              className="btn-secondary"
+                              onClick={() => handleToggleActivationSociete(societe)}
+                              style={{
+                                width: "100px",
+                                display: "inline-flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                backgroundColor: societe.actif !== false ? "#FEF3C7" : "#D1FAE5",
+                                color: societe.actif !== false ? "#92400E" : "#065F46",
+                                borderColor: societe.actif !== false ? "#FEF3C7" : "#D1FAE5",
+                                transition: "background-color 0.15s",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = societe.actif !== false ? "#FDE68A" : "#A7F3D0";
+                                e.currentTarget.style.borderColor = societe.actif !== false ? "#FDE68A" : "#A7F3D0";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = societe.actif !== false ? "#FEF3C7" : "#D1FAE5";
+                                e.currentTarget.style.borderColor = societe.actif !== false ? "#FEF3C7" : "#D1FAE5";
+                              }}
+                            >
+                              {societe.actif !== false ? "Désactiver" : "Activer"}
+                            </button>
+                          </PermissionGuard>
                         </td>
                       )}
                     </tr>
@@ -2032,30 +2034,32 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             </button>
                           </PermissionGuard>
 
-                          <button
-                            className="btn-secondary"
-                            onClick={() => handleToggleActivationUO(uo)}
-                            style={{
-                              width: "100px",
-                              display: "inline-flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              backgroundColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                              color: uo.actif !== false ? "#92400E" : "#065F46",
-                              borderColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                              transition: "background-color 0.15s, border-color 0.15s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = uo.actif !== false ? "#FDE68A" : "#A7F3D0";
-                              e.currentTarget.style.borderColor = uo.actif !== false ? "#FDE68A" : "#A7F3D0";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = uo.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                              e.currentTarget.style.borderColor = uo.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                            }}
-                          >
-                            {uo.actif !== false ? "Désactiver" : "Activer"}
-                          </button>
+                          <PermissionGuard module="parametrage" submodule="uo" action="delete">
+                            <button
+                              className="btn-secondary"
+                              onClick={() => handleToggleActivationUO(uo)}
+                              style={{
+                                width: "100px",
+                                display: "inline-flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                backgroundColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5",
+                                color: uo.actif !== false ? "#92400E" : "#065F46",
+                                borderColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5",
+                                transition: "background-color 0.15s, border-color 0.15s",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = uo.actif !== false ? "#FDE68A" : "#A7F3D0";
+                                e.currentTarget.style.borderColor = uo.actif !== false ? "#FDE68A" : "#A7F3D0";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = uo.actif !== false ? "#FEF3C7" : "#D1FAE5";
+                                e.currentTarget.style.borderColor = uo.actif !== false ? "#FEF3C7" : "#D1FAE5";
+                              }}
+                            >
+                              {uo.actif !== false ? "Désactiver" : "Activer"}
+                            </button>
+                          </PermissionGuard>
                         </td>
                       )}
                     </tr>
@@ -2540,30 +2544,32 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                               </button>
                             </PermissionGuard>
 
-                            <button
-                              className="btn-secondary"
-                              onClick={() => handleToggleActivationInterlocuteur(interlocuteur)}
-                              style={{
-                                width: "100px",
-                                display: "inline-flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                backgroundColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                                color: interlocuteur.actif !== false ? "#92400E" : "#065F46",
-                                borderColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                                transition: "background-color 0.15s, border-color 0.15s",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = interlocuteur.actif !== false ? "#FDE68A" : "#A7F3D0";
-                                e.currentTarget.style.borderColor = interlocuteur.actif !== false ? "#FDE68A" : "#A7F3D0";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                                e.currentTarget.style.borderColor = interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                              }}
-                            >
-                              {interlocuteur.actif !== false ? "Désactiver" : "Activer"}
-                            </button>
+                            <PermissionGuard module="parametrage" submodule="interlocuteurs" action="delete">
+                              <button
+                                className="btn-secondary"
+                                onClick={() => handleToggleActivationInterlocuteur(interlocuteur)}
+                                style={{
+                                  width: "100px",
+                                  display: "inline-flex",
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                  backgroundColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5",
+                                  color: interlocuteur.actif !== false ? "#92400E" : "#065F46",
+                                  borderColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5",
+                                  transition: "background-color 0.15s, border-color 0.15s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = interlocuteur.actif !== false ? "#FDE68A" : "#A7F3D0";
+                                  e.currentTarget.style.borderColor = interlocuteur.actif !== false ? "#FDE68A" : "#A7F3D0";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5";
+                                  e.currentTarget.style.borderColor = interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5";
+                                }}
+                              >
+                                {interlocuteur.actif !== false ? "Désactiver" : "Activer"}
+                              </button>
+                            </PermissionGuard>
                           </td>
                         )}
                       </tr>

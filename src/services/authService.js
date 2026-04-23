@@ -1,5 +1,6 @@
 // Service d'authentification avec localStorage
 import { verifierConnexion } from "../data/baseDeDonnees";
+import { saveToken, removeToken } from "../utils/apiFetch";
 
 // Clé pour le localStorage
 const AUTH_STORAGE_KEY = "julee_auth_state";
@@ -75,6 +76,7 @@ const login = async (email, motDePasse) => {
       authState.utilisateur = resultat.utilisateur;
       authState.isAuthenticated = true;
       authState.isLoading = false;
+      if (resultat.token) saveToken(resultat.token);
       saveAuthToStorage(); // Sauvegarder dans le localStorage
       notifyListeners();
       return { succes: true, utilisateur: resultat.utilisateur };
@@ -95,7 +97,8 @@ const logout = () => {
   authState.utilisateur = null;
   authState.isAuthenticated = false;
   authState.isLoading = false;
-  clearAuthFromStorage(); // Nettoyer le localStorage
+  removeToken();
+  clearAuthFromStorage();
   notifyListeners();
 };
 

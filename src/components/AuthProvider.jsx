@@ -1,5 +1,7 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import permissionService from '../services/permissionService';
+import { setUnauthorizedHandler, saveToken, removeToken } from '../utils/apiFetch';
 
 // Contexte d'authentification
 const AuthContext = createContext();
@@ -16,6 +18,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      permissionService.clear();
+      localStorage.removeItem('user');
+      removeToken();
+      setUser(null);
+      navigate('/login', { replace: true });
+    });
+  }, [navigate]);
 
   // Initialiser l'authentification au montage du composant
   useEffect(() => {
@@ -33,7 +46,7 @@ export const AuthProvider = ({ children }) => {
         // Si les données stockées n'ont pas le profil, recharger depuis l'API
         if (!userData.profil && userData.id) {
           try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/users/${userData.id}/profile`);
+            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/users/${userData.id}/profile`, { headers: { Authorization: `Bearer ${localStorage.getItem('julee_token') || ''}` } });
             if (response.ok) {
               const fullUserData = await response.json();
               localStorage.setItem('user', JSON.stringify(fullUserData));
@@ -80,26 +93,23 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Échec de l\'authentification');
       }
 
-      const userData = await response.json();
-      
-      console.log('Utilisateur reçu depuis l\'API:', userData);
-      console.log('Profil de l\'utilisateur:', userData.profilId, userData.profil);
-      
-      // Stocker l'utilisateur
-      localStorage.setItem('user', JSON.stringify(userData));
-      
+      const data = await response.json();
+      // Backend returns { token, utilisateur }
+      const utilisateur = data.utilisateur || data;
+      const token = data.token;
+
+      if (token) saveToken(token);
+      localStorage.setItem('user', JSON.stringify(utilisateur));
+
       // Initialiser les permissions
       try {
-        console.log('Initialisation des permissions pour l\'utilisateur:', userData.id, 'profil:', userData.profilId);
-        await permissionService.initialize(userData.id, userData);
-        console.log('Permissions initialisées avec succès pour:', userData.email);
+        await permissionService.initialize(utilisateur.id, utilisateur);
       } catch (error) {
         console.warn('Erreur initialisation permissions:', error);
-        // Ne pas bloquer la connexion si les permissions échouent
       }
-      
-      setUser(userData);
-      console.log('Connexion réussie:', userData);
+
+      setUser(utilisateur);
+      console.log('Connexion réussie:', utilisateur);
       
       // Forcer le rechargement des permissions après un court délai
       setTimeout(async () => {
@@ -115,7 +125,7 @@ export const AuthProvider = ({ children }) => {
         }
       }, 300); // Réduire le délai pour que l'Authentification puisse rediriger plus vite
       
-      return userData;
+      return utilisateur;
     } catch (error) {
       console.error('Erreur connexion:', error);
       setError(error);
@@ -126,17 +136,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    // Vider le service de permissions
     permissionService.clear();
-    
-    // Supprimer l'utilisateur du stockage
     localStorage.removeItem('user');
-    
-    // Réinitialiser l'état
+    removeToken();
     setUser(null);
     setError(null);
-    
-    console.log('Déconnexion réussie');
   };
 
   const refreshPermissions = async () => {

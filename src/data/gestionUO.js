@@ -1,13 +1,14 @@
+import { apiFetch } from "../utils/apiFetch";
 // Fichier pour gérer les unités organisationnelles via l'API
 import { chargerUtilisateurs } from "./baseDeDonnees";
 import { chargerSocietes } from "./societes";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Charger les UO depuis l'API
 const chargerUO = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/uo`);
+    const response = await apiFetch(`/uo`);
     if (!response.ok) {
       throw new Error(
         "Erreur lors du chargement des unités organisationnelles",
@@ -65,7 +66,7 @@ const creerUO = async ({ nom, code, chefUO, actif, societeId, projetSoumis, depa
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/uo`, {
+    const response = await apiFetch(`/uo`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nouvelleUO),
@@ -146,7 +147,7 @@ const mettreAJourUO = async (
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/uo/${id}`, {
+    const response = await apiFetch(`/uo/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(uoMiseAJour),
@@ -199,7 +200,7 @@ const supprimerUO = async (id) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/uo/${id}`, {
+    const response = await apiFetch(`/uo/${id}`, {
       method: "DELETE",
     });
 
@@ -234,7 +235,7 @@ const getTypesUO = () => {
 // Activer ou désactiver une UO
 const toggleActivationUO = async (id, actif, utilisateurId = null) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/uo/${id}/activation`, {
+    const response = await apiFetch(`/uo/${id}/activation`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ actif, utilisateurId }),

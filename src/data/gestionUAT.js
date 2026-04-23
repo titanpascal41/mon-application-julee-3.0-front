@@ -1,7 +1,8 @@
+import { apiFetch } from "../utils/apiFetch";
 // Fichier pour gérer les UAT via l'API
 import { chargerRecettes } from './gestionRecettes';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Statuts possibles pour l'UAT
 export const STATUTS_UAT = ["Accepté", "Accepté avec réserve", "Refusé"];
@@ -9,7 +10,7 @@ export const STATUTS_UAT = ["Accepté", "Accepté avec réserve", "Refusé"];
 // Charger les UAT depuis l'API
 export const chargerUAT = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/uat`);
+    const response = await apiFetch(`/uat`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des UAT");
     }
@@ -125,7 +126,7 @@ export const creerUAT = async (donneesUAT) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/uat`, {
+    const response = await apiFetch(`/uat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nouvelleUAT),
@@ -215,7 +216,7 @@ export const mettreAJourUAT = async (id, donneesUAT) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/uat/${id}`, {
+    const response = await apiFetch(`/uat/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(uatMiseAJour),
@@ -243,7 +244,7 @@ export const mettreAJourUAT = async (id, donneesUAT) => {
 // Supprimer une UAT
 export const supprimerUAT = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/uat/${id}`, {
+    const response = await apiFetch(`/uat/${id}`, {
       method: "DELETE",
     });
 

@@ -1,10 +1,11 @@
+import { apiFetch } from "../utils/apiFetch";
 // Fichier pour gérer les interlocuteurs via l'API
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Charger les interlocuteurs depuis l'API
 const chargerInterlocuteurs = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/interlocuteurs`);
+    const response = await apiFetch(`/interlocuteurs`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des interlocuteurs");
     }
@@ -19,7 +20,7 @@ const chargerInterlocuteurs = async () => {
 // Créer un nouvel interlocuteur
 const creerInterlocuteur = async (interlocuteurData) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/interlocuteurs`, {
+    const response = await apiFetch(`/interlocuteurs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(interlocuteurData)
@@ -40,7 +41,7 @@ const creerInterlocuteur = async (interlocuteurData) => {
 // Mettre à jour un interlocuteur
 const mettreAJourInterlocuteur = async (id, data) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/interlocuteurs/${id}`, {
+    const response = await apiFetch(`/interlocuteurs/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -61,7 +62,7 @@ const mettreAJourInterlocuteur = async (id, data) => {
 // Supprimer un interlocuteur
 const supprimerInterlocuteur = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/interlocuteurs/${id}`, {
+    const response = await apiFetch(`/interlocuteurs/${id}`, {
       method: 'DELETE'
     });
     
@@ -111,7 +112,7 @@ const rechercherInterlocuteurs = async (termeRecherche) => {
 // Activer ou désactiver un interlocuteur
 const toggleActivationInterlocuteur = async (id, actif, utilisateurId = null) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/interlocuteurs/${id}/activation`, {
+    const response = await apiFetch(`/interlocuteurs/${id}/activation`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ actif, utilisateurId }),

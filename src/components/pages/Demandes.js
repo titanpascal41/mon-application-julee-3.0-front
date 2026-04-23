@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./PageStyles.css";
+import { apiFetch } from "../../utils/apiFetch";
 import {
   creerDemande,
   chargerDemandes,
@@ -114,6 +115,8 @@ const Demandes = ({ activeSubPage }) => {
 
   // États pour la gestion des demandes
   const [demandes, setDemandes] = useState([]);
+  const [demandesArchivees, setDemandesArchivees] = useState([]);
+  const [vueArchives, setVueArchives] = useState(false);
   const [societes, setSocietes] = useState([]);
   const [collaborateurs, setCollaborateurs] = useState([]);
   const [interlocuteurs, setInterlocuteurs] = useState([]);
@@ -520,43 +523,36 @@ const Demandes = ({ activeSubPage }) => {
         "nouvelleDemandeFormData complet:",
         nouvelleDemandeFormData,
       );
-      // Pour les brouillons, on permet les champs vides
-      if (!formData.typeProjet?.trim() || !formData.nomProjet?.trim()) {
-        console.log("typeProjet:", formData.typeProjet);
-        console.log("nomProjet:", formData.nomProjet);
-        // Pour un brouillon, on utilise des valeurs par défaut
-        formData.typeProjet = formData.typeProjet?.trim() || "Brouillon";
-        formData.nomProjet = formData.nomProjet?.trim() || "Sans nom";
+      if (!formData.nomProjet?.trim()) {
+        setDemandeMessage({
+          type: "error",
+          text: "Le nom du projet est obligatoire pour enregistrer le brouillon.",
+        });
+        scrollToFormTop();
+        return;
+      }
+      if (!formData.typeProjet?.trim()) {
+        formData.typeProjet = "Brouillon";
       }
 
       // Vérifier si on est en train d'éditer une demande existante
       const currentDemandeId = nouvelleDemandeFormData.id;
       let response;
 
-      const API_BASE_URL =
-        process.env.REACT_APP_API_URL || "http://localhost:3001";
-
       if (currentDemandeId) {
-        // Mettre à jour la demande existante
-        response = await fetch(`${API_BASE_URL}/demandes/${currentDemandeId}`, {
+        response = await apiFetch(`/demandes/${currentDemandeId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        // Si la demande n'existe plus en base, on recrée
         if (response.status === 404) {
-          console.warn("Demande introuvable, recréation en POST");
-          response = await fetch(`${API_BASE_URL}/demandes`, {
+          response = await apiFetch(`/demandes`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
         }
       } else {
-        // Créer une nouvelle demande
-        response = await fetch(`${API_BASE_URL}/demandes`, {
+        response = await apiFetch(`/demandes`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
       }
@@ -832,31 +828,22 @@ const Demandes = ({ activeSubPage }) => {
     }
 
     try {
-      const API_BASE_URL =
-        process.env.REACT_APP_API_URL || "http://localhost:3001";
-
-      // Trouver l'ID du statut sélectionné
       const statutChoisi = statutsDisponibles.find((s) => s.nom === newStatusValue);
       if (!statutChoisi) {
         setDemandeMessage({ type: "error", text: "Statut introuvable." });
         return;
       }
 
-      // Mettre à jour le statutId de la demande
       const body = { statutId: statutChoisi.id };
       if (isSuspensionStatus(newStatusValue)) {
         body.motifSuspension = suspensionMotif;
         body.dateSuspension = suspensionDate;
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/demandes/${selectedDemandeIdForStatus}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
+      const response = await apiFetch(`/demandes/${selectedDemandeIdForStatus}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      });
 
       if (response.ok) {
         setDemandeMessage({ type: "success", text: "Statut modifié avec succès !" });
@@ -895,9 +882,7 @@ const Demandes = ({ activeSubPage }) => {
 
     // Charger les statuts pour avoir les informations complètes
     try {
-      const API_BASE_URL =
-        process.env.REACT_APP_API_URL || "http://localhost:3001";
-      const response = await fetch(`${API_BASE_URL}/statuts`);
+      const response = await apiFetch(`/statuts`);
       if (response.ok) {
         const statuts = await response.json();
 
@@ -921,6 +906,19 @@ const Demandes = ({ activeSubPage }) => {
     }
   }, [isAdmin, user?.id]);
 
+  const chargerArchives = useCallback(async () => {
+    try {
+      const path = isAdmin ? `/demandes?archives=true` : `/demandes?archives=true&utilisateurId=${user?.id}`;
+      const response = await apiFetch(path);
+      if (response.ok) {
+        const data = await response.json();
+        setDemandesArchivees(data);
+      }
+    } catch (err) {
+      console.error("Erreur chargement archives:", err);
+    }
+  }, [isAdmin, user?.id]);
+
   const chargerLesSocietes = useCallback(async () => {
     const societesChargees = await chargerSocietes();
     setSocietes(societesChargees);
@@ -938,9 +936,7 @@ const Demandes = ({ activeSubPage }) => {
 
   const chargerLesStatuts = useCallback(async () => {
     try {
-      const API_BASE_URL =
-        process.env.REACT_APP_API_URL || "http://localhost:3001";
-      const response = await fetch(`${API_BASE_URL}/statuts`);
+      const response = await apiFetch(`/statuts`);
       if (response.ok) {
         const statuts = await response.json();
         setStatutsDisponibles(statuts);
@@ -953,6 +949,7 @@ const Demandes = ({ activeSubPage }) => {
   // Charger les données au montage
   useEffect(() => {
     chargerLesDemandes();
+    chargerArchives();
     chargerLesSocietes();
     chargerLesCollaborateurs();
     chargerLesInterlocuteurs();
@@ -960,6 +957,7 @@ const Demandes = ({ activeSubPage }) => {
     setDraftStepInfo(null);
   }, [
     chargerLesDemandes,
+    chargerArchives,
     chargerLesSocietes,
     chargerLesCollaborateurs,
     chargerLesInterlocuteurs,
@@ -1259,13 +1257,10 @@ const Demandes = ({ activeSubPage }) => {
     if (demandeToDelete) {
       const resultat = await supprimerDemande(demandeToDelete.id, user?.id);
       if (resultat.succes) {
-        let message = resultat.message;
-        if (resultat.statutNettoyage) {
-          message +=
-            "\n✅ Le statut associé a été nettoyé s'il n'est plus utilisé.";
-        }
+        let message = "Demande archivée avec succès.";
         setDemandeMessage({ type: "success", text: message });
         chargerLesDemandes();
+        chargerArchives();
         // Recharger aussi les statuts pour mettre à jour la liste
         chargerLesStatuts();
         setTimeout(() => setDemandeMessage({ type: "", text: "" }), 4000);
@@ -2144,7 +2139,7 @@ const Demandes = ({ activeSubPage }) => {
                       }
                       const quarterMap = {};
                       months.forEach((m) => {
-                        const q = `Q${Math.floor(m.month / 3) + 1} ${m.year}`;
+                        const q = `T${Math.floor(m.month / 3) + 1} ${m.year}`;
                         if (!quarterMap[q]) quarterMap[q] = 0;
                         quarterMap[q]++;
                       });
@@ -3337,13 +3332,101 @@ const Demandes = ({ activeSubPage }) => {
               }}
             >
               <span>Liste des demandes</span>
-              <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                {showDemandesList ? "Masquer" : "Afficher"}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setVueArchives(false); if (!showDemandesList) setShowDemandesList(true); }}
+                  style={{
+                    padding: "4px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600",
+                    border: "none", cursor: "pointer",
+                    backgroundColor: !vueArchives ? "#4A90E2" : "#e5e7eb",
+                    color: !vueArchives ? "#fff" : "#6b7280",
+                  }}
+                >
+                  En cours {!vueArchives && `(${demandes.length})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setVueArchives(true); if (!showDemandesList) setShowDemandesList(true); }}
+                  style={{
+                    padding: "4px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600",
+                    border: "none", cursor: "pointer",
+                    backgroundColor: vueArchives ? "#6B7280" : "#e5e7eb",
+                    color: vueArchives ? "#fff" : "#6b7280",
+                  }}
+                >
+                  Archivées {vueArchives && `(${demandesArchivees.length})`}
+                </button>
+                <span style={{ color: "#6b7280", fontSize: "14px", marginLeft: "8px" }}>
+                  {showDemandesList ? "Masquer" : "Afficher"}
+                </span>
+              </div>
             </h2>
           </button>
 
-          {showDemandesList && (
+          {showDemandesList && vueArchives && (
+            <div className="table-container" style={{ marginTop: "24px" }}>
+              {demandesArchivees.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "48px 0", color: "#9ca3af" }}>
+                  <i className="fa-solid fa-box-archive" style={{ fontSize: "36px", marginBottom: "12px", display: "block" }}></i>
+                  Aucune demande archivée.
+                </div>
+              ) : (
+                <table className="data-table" style={{ tableLayout: "auto" }}>
+                  <thead>
+                    <tr>
+                      <th>Date d'enre.</th>
+                      <th>Type de demande</th>
+                      <th>Nom du projet</th>
+                      <th>Société(s)</th>
+                      <th>Statut</th>
+                      <th>Archivée le</th>
+                      <th>Détail</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {demandesArchivees.map((demande) => (
+                      <tr key={demande.id} style={{ opacity: 0.8 }}>
+                        <td style={{ color: "#6b7280", fontSize: "13px" }}>
+                          {demande.dateEnregistrement ? new Date(demande.dateEnregistrement).toLocaleDateString("fr-FR") : "—"}
+                        </td>
+                        <td>
+                          <span style={{ fontSize: "13px", color: "#374151" }}>{demande.typeProjet || "—"}</span>
+                        </td>
+                        <td style={{ fontWeight: "500", color: "#111827" }}>
+                          {demande.nomProjet || "—"}
+                        </td>
+                        <td style={{ fontSize: "13px", color: "#6b7280" }}>
+                          {demande.societesDemandeurs || demande.societeDemandeur || "—"}
+                        </td>
+                        <td>
+                          {demande.statutDemande ? (
+                            <span style={{ padding: "2px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "600", backgroundColor: "#F3F4F6", color: "#374151" }}>
+                              {demande.statutDemande}
+                            </span>
+                          ) : <span style={{ color: "#9ca3af" }}>—</span>}
+                        </td>
+                        <td style={{ fontSize: "13px", color: "#6b7280" }}>
+                          {demande.archivedAt ? new Date(demande.archivedAt).toLocaleDateString("fr-FR") : "—"}
+                        </td>
+                        <td>
+                          <button
+                            className="btn-secondary"
+                            onClick={() => handleShowDetail(demande)}
+                            style={{ padding: "6px 12px", fontSize: "13px" }}
+                          >
+                            Détail
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {showDemandesList && !vueArchives && (
             <div className="table-container" style={{ marginTop: "24px" }}>
               {demandes.length === 0 ? (
                 <p style={{ color: "#6b7280", marginTop: "16px" }}>
@@ -3861,7 +3944,7 @@ const Demandes = ({ activeSubPage }) => {
         // Grouper par trimestre
         const quarterMap = {};
         months.forEach((m) => {
-          const q = `Q${Math.floor(m.month / 3) + 1} ${m.year}`;
+          const q = `T${Math.floor(m.month / 3) + 1} ${m.year}`;
           if (!quarterMap[q]) quarterMap[q] = 0;
           quarterMap[q]++;
         });
@@ -4007,16 +4090,16 @@ const Demandes = ({ activeSubPage }) => {
         </div>
       )}
 
-      {/* Popup de confirmation de suppression de demande */}
+      {/* Popup de confirmation de clôture de demande */}
       {showDemandeDeleteConfirm && demandeToDelete && (
         <div className="modal-overlay" onClick={cancelDeleteDemande}>
           <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="confirm-modal-header">
-              <h3>Confirmer la suppression</h3>
+              <h3>Confirmer la clôture</h3>
             </div>
-            <div className="confirm-modal-body" >
+            <div className="confirm-modal-body">
               <p>
-                Êtes-vous sûr de vouloir supprimer la demande
+                Êtes-vous sûr de vouloir terminer la demande <strong>"{demandeToDelete.nomProjet || `#${demandeToDelete.id}`}"</strong> ?
               </p>
               <p className="confirm-warning">Cette action est irréversible.</p>
             </div>
@@ -4026,7 +4109,7 @@ const Demandes = ({ activeSubPage }) => {
                 className="btn-danger"
                 onClick={confirmDeleteDemande}
               >
-                Supprimer
+                Confirmer
               </button>
               <button
                 type="button"

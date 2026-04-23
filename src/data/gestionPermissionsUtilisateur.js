@@ -1,9 +1,10 @@
-const API_BASE_URL = 'http://localhost:3002';
+import { apiFetch } from "../utils/apiFetch";
+
 
 // Charger les permissions d'un utilisateur spécifique
 export const chargerPermissionsUtilisateurIndividuelles = async (userId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/user-permissions/user/${userId}`);
+    const response = await apiFetch(`/api/user-permissions/user/${userId}`);
     if (!response.ok) {
       throw new Error('Erreur lors du chargement des permissions utilisateur');
     }
@@ -17,7 +18,7 @@ export const chargerPermissionsUtilisateurIndividuelles = async (userId) => {
 // Mettre à jour les permissions d'un utilisateur
 export const mettreAJourPermissionsUtilisateur = async (userId, permissions) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/user-permissions/${userId}`, {
+    const response = await apiFetch(`/api/user-permissions/${userId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -39,7 +40,7 @@ export const mettreAJourPermissionsUtilisateur = async (userId, permissions) => 
 // Réinitialiser les permissions d'un utilisateur aux permissions du profil
 export const reinitialiserPermissionsUtilisateur = async (userId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/user-permissions/${userId}/reset`, {
+    const response = await apiFetch(`/api/user-permissions/${userId}/reset`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -60,7 +61,7 @@ export const reinitialiserPermissionsUtilisateur = async (userId) => {
 // Vérifier si un utilisateur a des permissions personnalisées
 export const verifierPermissionsPersonnalisees = async (userId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/user-permissions/${userId}/has-custom`);
+    const response = await apiFetch(`/api/user-permissions/${userId}/has-custom`);
     if (!response.ok) {
       throw new Error('Erreur lors de la vérification des permissions personnalisées');
     }

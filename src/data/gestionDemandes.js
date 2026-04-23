@@ -1,7 +1,8 @@
+import { apiFetch } from "../utils/apiFetch";
 // Fichier pour gérer les demandes via l'API
 import { chargerSocietes } from "./societes";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Normaliser le type de projet pour la comparaison
 const normalizeTypeProjet = (typeProjet) => {
@@ -23,11 +24,11 @@ const getDemandeRequirements = (typeProjet) => {
 // Charger les demandes depuis l'API (filtrées par utilisateur si spécifié)
 const chargerDemandes = async (utilisateurId = null) => {
   try {
-    const url = utilisateurId
-      ? `${API_BASE_URL}/demandes?utilisateurId=${utilisateurId}`
-      : `${API_BASE_URL}/demandes`;
+    const path = utilisateurId
+      ? `/demandes?utilisateurId=${utilisateurId}`
+      : `/demandes`;
 
-    const response = await fetch(url);
+    const response = await apiFetch(path);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des demandes");
     }
@@ -163,7 +164,7 @@ const creerDemande = async ({
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/demandes`, {
+    const response = await apiFetch(`/demandes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nouvelleDemande),
@@ -307,7 +308,7 @@ const mettreAJourDemande = async (
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/demandes/${id}`, {
+    const response = await apiFetch(`/demandes/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updateData),
@@ -338,10 +339,10 @@ const mettreAJourDemande = async (
 // Supprimer une demande
 const supprimerDemande = async (id, utilisateurId) => {
   try {
-    const url = utilisateurId
-      ? `${API_BASE_URL}/demandes/${id}?utilisateurId=${utilisateurId}`
-      : `${API_BASE_URL}/demandes/${id}`;
-    const response = await fetch(url, {
+    const path = utilisateurId
+      ? `/demandes/${id}?utilisateurId=${utilisateurId}`
+      : `/demandes/${id}`;
+    const response = await apiFetch(path, {
       method: "DELETE",
     });
 

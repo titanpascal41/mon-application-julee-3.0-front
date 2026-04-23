@@ -1,5 +1,6 @@
+import { apiFetch } from "../utils/apiFetch";
 // Fichier pour gérer les recettes via l'API
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Statuts possibles pour la recette
 export const STATUTS_RECETTE = ["En cours", "OK", "KO", "Bloquée"];
@@ -7,7 +8,7 @@ export const STATUTS_RECETTE = ["En cours", "OK", "KO", "Bloquée"];
 // Charger les recettes depuis l'API
 export const chargerRecettes = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/recettes`);
+    const response = await apiFetch(`/recettes`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des recettes");
     }
@@ -67,7 +68,7 @@ export const creerRecette = async (donneesRecette) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/recettes`, {
+    const response = await apiFetch(`/recettes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nouvelleRecette),
@@ -149,7 +150,7 @@ export const mettreAJourRecette = async (id, donneesRecette) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/recettes/${id}`, {
+    const response = await apiFetch(`/recettes/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(recetteMiseAJour),
@@ -177,7 +178,7 @@ export const mettreAJourRecette = async (id, donneesRecette) => {
 // Supprimer une recette
 export const supprimerRecette = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/recettes/${id}`, {
+    const response = await apiFetch(`/recettes/${id}`, {
       method: "DELETE",
     });
 

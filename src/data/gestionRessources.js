@@ -1,10 +1,11 @@
+import { apiFetch } from "../utils/apiFetch";
 // Gestion des ressources DEV et TIV via l'API
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 
 // Charger toutes les ressources depuis l'API
 export const chargerRessources = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/ressources`);
+    const response = await apiFetch(`/ressources`);
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des ressources");
     }
@@ -55,7 +56,7 @@ export const creerRessource = async (ressourceData) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/ressources`, {
+    const response = await apiFetch(`/ressources`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nouvelleRessource),
@@ -117,7 +118,7 @@ export const mettreAJourRessource = async (id, ressourceData) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/ressources/${id}`, {
+    const response = await apiFetch(`/ressources/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(ressourceMiseAJour),
@@ -141,7 +142,7 @@ export const mettreAJourRessource = async (id, ressourceData) => {
 // Supprimer une ressource
 export const supprimerRessource = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/ressources/${id}`, {
+    const response = await apiFetch(`/ressources/${id}`, {
       method: "DELETE",
     });
 

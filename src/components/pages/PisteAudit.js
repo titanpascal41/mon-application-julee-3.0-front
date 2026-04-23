@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import "./PageStyles.css";
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+import { apiFetch } from "../../utils/apiFetch";
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "-";
@@ -24,6 +23,7 @@ const ACTION_STYLE = {
   SUPPRESSION:  { bg: "#FEE2E2", color: "#991B1B", label: "Suppression" },
   DESACTIVATION:{ bg: "#FEF3C7", color: "#92400E", label: "Désactivation" },
   REACTIVATION: { bg: "#D1FAE5", color: "#065F46", label: "Réactivation" },
+  CLOTURE:      { bg: "#EDE9FE", color: "#5B21B6", label: "Clôture" },
 };
 
 const ENTITE_ICON = {
@@ -47,7 +47,7 @@ const PisteAudit = () => {
     const charger = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/audit`);
+        const response = await apiFetch(`/audit`);
         if (!response.ok) throw new Error("Erreur chargement");
         const data = await response.json();
         setLogs(data);
