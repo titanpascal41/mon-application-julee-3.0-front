@@ -53,11 +53,11 @@ const PermissionGuard = ({
   }, [module, submodule, action]);
 
   if (loading) {
-    return fallback || <div style={{ display: 'none' }}></div>;
+    return fallback || null;
   }
 
   if (!hasPermission) {
-    return fallback || <div style={{ display: 'none' }}></div>;
+    return fallback || null;
   }
 
   return typeof children === 'function' ? children() : children;

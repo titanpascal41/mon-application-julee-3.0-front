@@ -41,9 +41,9 @@ import { PermissionGuard, usePermissions } from "../PermissionGuard";
 const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const { hasPermission } = usePermissions();
   const aActionsStatuts = hasPermission("parametrage", "statuts", "update") || hasPermission("parametrage", "statuts", "delete");
-  const aActionsSocietes = hasPermission("parametrage", "societes", "update") || hasPermission("parametrage", "societes", "delete") || hasPermission("parametrage", "societes", "create");
-  const aActionsUO = hasPermission("parametrage", "uo", "update") || hasPermission("parametrage", "uo", "delete") || hasPermission("parametrage", "uo", "create");
-  const aActionsInterlocuteurs = hasPermission("parametrage", "interlocuteurs", "update") || hasPermission("parametrage", "interlocuteurs", "delete") || hasPermission("parametrage", "interlocuteurs", "create");
+  const aActionsSocietes = hasPermission("parametrage", "societes", "update") || hasPermission("parametrage", "societes", "delete");
+  const aActionsUO = hasPermission("parametrage", "uo", "update") || hasPermission("parametrage", "uo", "delete");
+  const aActionsInterlocuteurs = hasPermission("parametrage", "interlocuteurs", "update") || hasPermission("parametrage", "interlocuteurs", "delete");
 
   const [activeSubPage, setActiveSubPage] = useState("societes");
 
@@ -557,6 +557,27 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   };
 
   // Fonctions pour la gestion des UO
+
+  const handleUODeptChange = (dept) => {
+    setUOFormData((prev) => {
+      const matchingSociete = toutesSocietes.find(
+        (s) => s.code === uoSelectedCode && s.actif && (s.departement || "") === dept
+      );
+      const fallbackSociete = toutesSocietes.find(
+        (s) => s.code === uoSelectedCode && s.actif
+      );
+      return {
+        ...prev,
+        departement: dept,
+        societeId: matchingSociete
+          ? String(matchingSociete.id)
+          : fallbackSociete
+          ? String(fallbackSociete.id)
+          : prev.societeId,
+      };
+    });
+    if (uoMessage.text) setUOMessage({ type: "", text: "" });
+  };
 
   const handleUOInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -1820,41 +1841,64 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                     </select>
                   </div>
 
-                  {/* Département : affiché si le code a plusieurs entrées en BD */}
-                  {uoSelectedCode && toutesSocietes.filter((s) => s.code === uoSelectedCode && s.actif).length > 1 ? (
+                  {/* Département : toujours visible quand une société est sélectionnée */}
+                  {uoSelectedCode && (
                     <div className="form-group">
-                      <label htmlFor="uoSocieteId">
-                        Département <span className="required">*</span>
+                      <label htmlFor="uoDepartement">
+                        Département
+                        {(DEPARTEMENTS_PAR_CODE[uoSelectedCode] ||
+                          toutesSocietes.filter((s) => s.code === uoSelectedCode && s.actif).length > 1) && (
+                          <span className="required"> *</span>
+                        )}
                       </label>
-                      <select
-                        id="uoSocieteId"
-                        value={uoFormData.departement}
-                        onChange={(e) => {
-                          const dept = e.target.value;
-                          const societe = toutesSocietes.find(
-                            (s) =>
-                              s.code === uoSelectedCode &&
-                              s.actif &&
-                              (s.departement || "") === dept,
-                          );
-                          setUOFormData((prev) => ({
-                            ...prev,
-                            departement: dept,
-                            societeId: societe ? String(societe.id) : "",
-                          }));
-                        }}
-                      >
-                        <option value="">-- Choisir un département --</option>
-                        {toutesSocietes
-                          .filter((s) => s.code === uoSelectedCode && s.actif)
-                          .map((s) => (
-                            <option key={s.id} value={s.departement || ""}>
-                              {s.departement || "(sans département)"}
-                            </option>
+                      {DEPARTEMENTS_PAR_CODE[uoSelectedCode] ? (
+                        <select
+                          id="uoDepartement"
+                          value={uoFormData.departement}
+                          onChange={(e) => handleUODeptChange(e.target.value)}
+                        >
+                          <option value="">-- Choisir un département --</option>
+                          {DEPARTEMENTS_PAR_CODE[uoSelectedCode].map((d) => (
+                            <option key={d} value={d}>{d}</option>
                           ))}
-                      </select>
+                        </select>
+                      ) : toutesSocietes.filter((s) => s.code === uoSelectedCode && s.actif).length > 1 ? (
+                        <select
+                          id="uoDepartement"
+                          value={uoFormData.departement}
+                          onChange={(e) => {
+                            const dept = e.target.value;
+                            const societe = toutesSocietes.find(
+                              (s) => s.code === uoSelectedCode && s.actif && (s.departement || "") === dept
+                            );
+                            setUOFormData((prev) => ({
+                              ...prev,
+                              departement: dept,
+                              societeId: societe ? String(societe.id) : "",
+                            }));
+                          }}
+                        >
+                          <option value="">-- Choisir un département --</option>
+                          {toutesSocietes
+                            .filter((s) => s.code === uoSelectedCode && s.actif)
+                            .map((s) => (
+                              <option key={s.id} value={s.departement || ""}>
+                                {s.departement || "(sans département)"}
+                              </option>
+                            ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          id="uoDepartement"
+                          name="departement"
+                          value={uoFormData.departement}
+                          onChange={handleUOInputChange}
+                          placeholder="Ex: Département Informatique"
+                        />
+                      )}
                     </div>
-                  ) : null}
+                  )}
 
                   <div className="form-group">
                     <label htmlFor="uoNom">

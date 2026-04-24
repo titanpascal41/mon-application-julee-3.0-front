@@ -4,13 +4,191 @@ import { apiFetch } from "../../utils/apiFetch";
 import {
   creerDemande,
   chargerDemandes,
-  supprimerDemande,
 } from "../../data/gestionDemandes";
 import { chargerSocietes } from "../../data/societes";
 import { chargerCollaborateurs } from "../../data/gestionCollaborateurs";
 import { chargerInterlocuteurs } from "../../data/gestionInterlocuteurs";
 import { useAuth } from "../AuthProvider";
 import { PermissionGuard, usePermissions } from "../PermissionGuard";
+
+// ─── Composant Gantt réutilisable ────────────────────────────────────────────
+const MONTH_NAMES = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
+
+const genColonnes = (mode, start, end) => {
+  const cols = [];
+  const cur = new Date(start);
+  if (mode === "mois") {
+    while (cur < end) {
+      cols.push({ label: MONTH_NAMES[cur.getMonth()], ts: cur.getTime() });
+      cur.setMonth(cur.getMonth() + 1);
+    }
+  } else if (mode === "semaine") {
+    const jour = cur.getDay();
+    cur.setDate(cur.getDate() - (jour === 0 ? 6 : jour - 1));
+    let n = 1;
+    while (cur < end) {
+      cols.push({ label: `S${n++}`, sub: `${cur.getDate()}/${cur.getMonth()+1}`, ts: cur.getTime() });
+      cur.setDate(cur.getDate() + 7);
+    }
+  } else {
+    while (cur < end) {
+      cols.push({ label: `${cur.getDate()}`, ts: cur.getTime() });
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
+  return cols;
+};
+
+const genGroupes = (mode, cols) => {
+  const map = {};
+  const ordre = [];
+  cols.forEach((c) => {
+    const d = new Date(c.ts);
+    let key;
+    if (mode === "mois") key = `T${Math.floor(d.getMonth()/3)+1} ${d.getFullYear()}`;
+    else if (mode === "semaine") key = `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+    else {
+      const lun = new Date(d); const j = lun.getDay(); lun.setDate(lun.getDate() - (j===0?6:j-1));
+      key = `Sem. ${lun.getDate()}/${lun.getMonth()+1}`;
+    }
+    if (!map[key]) { map[key] = 0; ordre.push(key); }
+    map[key]++;
+  });
+  return ordre.map(k => ({ label: k, count: map[k] }));
+};
+
+const GanttChart = ({ sprints, compact = false }) => {
+  const [mode, setMode] = React.useState("mois");
+
+  const allDates = sprints.flatMap(s =>
+    [s.datePrevTIF, s.dateEffTIF, s.datePrevClient, s.dateEffClient].filter(Boolean)
+  );
+  if (allDates.length < 2) return (
+    <div style={{ padding: "20px", background: "#f9fafb", borderRadius: "8px", color: "#9ca3af", textAlign: "center", border: "1px dashed #d1d5db" }}>
+      Renseignez des dates dans le tableau pour afficher la vue Gantt
+    </div>
+  );
+
+  const allTs = allDates.map(d => new Date(d).getTime());
+  const rawMin = new Date(Math.min(...allTs));
+  const rawMax = new Date(Math.max(...allTs));
+
+  let timelineStart, timelineEnd;
+  if (mode === "mois") {
+    timelineStart = new Date(rawMin.getFullYear(), rawMin.getMonth(), 1);
+    timelineEnd   = new Date(rawMax.getFullYear(), rawMax.getMonth() + 1, 1);
+  } else if (mode === "semaine") {
+    timelineStart = new Date(rawMin); const j = timelineStart.getDay(); timelineStart.setDate(timelineStart.getDate() - (j===0?6:j-1));
+    timelineEnd   = new Date(rawMax); timelineEnd.setDate(timelineEnd.getDate() + (7 - (timelineEnd.getDay()||7)));
+  } else {
+    timelineStart = new Date(rawMin.getFullYear(), rawMin.getMonth(), rawMin.getDate());
+    timelineEnd   = new Date(rawMax.getFullYear(), rawMax.getMonth(), rawMax.getDate() + 1);
+    const nbJours = (timelineEnd - timelineStart) / 86400000;
+    if (nbJours > 90) {
+      return (
+        <div style={{ padding: "20px", background: "#fff7ed", borderRadius: "8px", color: "#92400e", textAlign: "center", border: "1px solid #fed7aa" }}>
+          <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: "8px" }}></i>
+          Plage trop large pour la vue Jour ({Math.round(nbJours)} jours). Utilisez la vue Semaine ou Mois.
+        </div>
+      );
+    }
+  }
+
+  const totalMs = timelineEnd - timelineStart;
+  const cols    = genColonnes(mode, timelineStart, timelineEnd);
+  const groupes = genGroupes(mode, cols);
+  const toP = d => d ? Math.max(0, Math.min(100, ((new Date(d)-timelineStart)/totalMs)*100)) : null;
+
+  const labelW = compact ? 130 : 160;
+  const colMinW = mode === "jour" ? 28 : mode === "semaine" ? 52 : 70;
+
+  return (
+    <div>
+      {/* Toggle vue */}
+      <div style={{ display: "flex", gap: "6px", marginBottom: "12px", justifyContent: "flex-end" }}>
+        {["jour","semaine","mois"].map(v => (
+          <button key={v} onClick={() => setMode(v)} style={{
+            padding: "4px 14px", borderRadius: "6px", border: "1px solid",
+            borderColor: mode === v ? "#4A90E2" : "#D1D5DB",
+            background: mode === v ? "#4A90E2" : "white",
+            color: mode === v ? "white" : "#374151",
+            fontWeight: mode === v ? "600" : "400",
+            fontSize: "12px", cursor: "pointer", textTransform: "capitalize",
+          }}>{v === "jour" ? "Jour" : v === "semaine" ? "Semaine" : "Mois"}</button>
+        ))}
+      </div>
+
+      <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflowX: "auto" }}>
+        <div style={{ minWidth: `${labelW + cols.length * colMinW}px`, display: "grid", gridTemplateColumns: `${labelW}px repeat(${cols.length}, minmax(${colMinW}px, 1fr))` }}>
+
+          {/* Groupes (trimestres / mois / semaines) */}
+          <div style={{ background: "#F3F4F6", borderRight: "1px solid #D1D5DB", borderBottom: "1px solid #D1D5DB" }} />
+          {groupes.map((g, i) => (
+            <div key={i} style={{ gridColumn: `span ${g.count}`, background: "#F3F4F6", padding: "4px 6px", fontSize: "11px", fontWeight: "700", color: "#374151", textAlign: "center", borderRight: "1px solid #D1D5DB", borderBottom: "1px solid #D1D5DB", whiteSpace: "nowrap", overflow: "hidden" }}>{g.label}</div>
+          ))}
+
+          {/* En-têtes colonnes */}
+          <div style={{ background: "#F9FAFB", borderRight: "1px solid #D1D5DB", borderBottom: "2px solid #D1D5DB", padding: "4px 8px", fontSize: "11px", color: "#6B7280", fontWeight: "600" }}>Sprint</div>
+          {cols.map((c, i) => (
+            <div key={i} style={{ background: "#F9FAFB", padding: "2px 2px", fontSize: "10px", color: "#6B7280", fontWeight: "500", borderRight: "1px solid #E5E7EB", borderBottom: "2px solid #D1D5DB", textAlign: "center", overflow: "hidden" }}>
+              <div>{c.label}</div>
+              {c.sub && <div style={{ fontSize: "9px", color: "#9ca3af" }}>{c.sub}</div>}
+            </div>
+          ))}
+
+          {/* Lignes sprints */}
+          {sprints.map((sprint, i) => {
+            const pTIF = toP(sprint.datePrevTIF), pCli = toP(sprint.datePrevClient);
+            const eTIF = toP(sprint.dateEffTIF),  eCli = toP(sprint.dateEffClient);
+            const hasPlan = pTIF !== null && pCli !== null;
+            const hasReal = eTIF !== null && eCli !== null;
+            return (
+              <React.Fragment key={i}>
+                {/* Bandeau sprint */}
+                <div style={{ background: "#6B7280", padding: "5px 10px", display: "flex", alignItems: "center", borderBottom: "1px solid #E5E7EB" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>SPRINT {sprint.num}</span>
+                </div>
+                {cols.map((_, mi) => <div key={mi} style={{ background: "#F3F4F6", height: "24px", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB" }} />)}
+
+                {hasPlan && (
+                  <>
+                    <div style={{ padding: "3px 10px 3px 18px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", overflow: "hidden" }}>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sprint.chantier || "Planifié"}</span>
+                    </div>
+                    <div style={{ gridColumn: `span ${cols.length}`, position: "relative", height: "26px", borderBottom: "1px solid #F3F4F6" }}>
+                      {cols.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi+1)/cols.length)*100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
+                      <div style={{ position: "absolute", left: `${Math.min(pTIF,pCli)}%`, width: `${Math.max(1,Math.abs(pCli-pTIF))}%`, top: "3px", bottom: "3px", background: "#4A90E2", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
+                        <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Planifié</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+                {hasReal && (
+                  <>
+                    <div style={{ padding: "3px 10px 3px 18px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center" }}>Réalisé</div>
+                    <div style={{ gridColumn: `span ${cols.length}`, position: "relative", height: "26px", borderBottom: "1px solid #F3F4F6" }}>
+                      {cols.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi+1)/cols.length)*100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
+                      <div style={{ position: "absolute", left: `${Math.min(eTIF,eCli)}%`, width: `${Math.max(1,Math.abs(eCli-eTIF))}%`, top: "3px", bottom: "3px", background: "#10B981", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
+                        <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Réalisé</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </React.Fragment>
+            );
+          })}
+
+          {/* Légende */}
+          <div style={{ gridColumn: "1 / -1", display: "flex", gap: "16px", padding: "8px 12px", fontSize: "12px", color: "#6B7280", borderTop: "1px solid #E5E7EB" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ width: "14px", height: "8px", background: "#4A90E2", borderRadius: "2px" }} /><span>Planifié</span></div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ width: "14px", height: "8px", background: "#10B981", borderRadius: "2px" }} /><span>Réalisé</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Utilitaire pour formater les dates pour les input type="date"
 const formatDateForInput = (dateString) => {
@@ -102,6 +280,9 @@ const Demandes = ({ activeSubPage }) => {
 
   // Vérifier la permission de créer des demandes
   const peutCreerDemande = hasPermission("demandes", "gestion", "create");
+  const peutModifierDemande = hasPermission("demandes", "gestion", "update");
+  const peutSupprimerDemande = hasPermission("demandes", "gestion", "delete");
+  const peutVoirActions = peutModifierDemande || peutSupprimerDemande;
 
   // États pour la sélection de type de demande
   const [selectedDemandeType, setSelectedDemandeType] = useState(null);
@@ -115,8 +296,7 @@ const Demandes = ({ activeSubPage }) => {
 
   // États pour la gestion des demandes
   const [demandes, setDemandes] = useState([]);
-  const [demandesArchivees, setDemandesArchivees] = useState([]);
-  const [vueArchives, setVueArchives] = useState(false);
+  const [vueLivrees, setVueLivrees] = useState(false);
   const [societes, setSocietes] = useState([]);
   const [collaborateurs, setCollaborateurs] = useState([]);
   const [interlocuteurs, setInterlocuteurs] = useState([]);
@@ -221,6 +401,14 @@ const Demandes = ({ activeSubPage }) => {
     }
   };
 
+  const nomProjetEstDuplique = (nom, currentId) => {
+    if (!nom?.trim()) return false;
+    const nomNorm = nom.trim().toLowerCase();
+    return demandes.some(
+      (d) => d.nomProjet?.trim().toLowerCase() === nomNorm && d.id !== currentId
+    );
+  };
+
   const handleNouvelleDemandeNext = () => {
     if (nouvelleDemandeStep < 6) {
       // Validation étape 1 : nom du projet obligatoire
@@ -231,6 +419,33 @@ const Demandes = ({ activeSubPage }) => {
         });
         scrollToFormTop();
         return;
+      }
+      // Validation étape 1 : nom du projet unique
+      if (nouvelleDemandeStep === 1 && nomProjetEstDuplique(nouvelleDemandeFormData.nomProjet, nouvelleDemandeFormData.id)) {
+        setDemandeMessage({
+          type: "error",
+          text: `Un projet nommé "${nouvelleDemandeFormData.nomProjet.trim()}" existe déjà. Veuillez choisir un autre nom.`,
+        });
+        scrollToFormTop();
+        return;
+      }
+      // Validation étape 3 : chantier obligatoire pour chaque sprint
+      if (nouvelleDemandeStep === 3) {
+        const nb = parseInt(nouvelleDemandeFormData.nombreSprint) || 0;
+        if (nb > 0) {
+          const sprints = nouvelleDemandeFormData.sprintsData || [];
+          const manquants = Array.from({ length: nb }, (_, i) => i + 1).filter(
+            (i) => !sprints[i - 1]?.chantier?.trim()
+          );
+          if (manquants.length > 0) {
+            setDemandeMessage({
+              type: "error",
+              text: `Le chantier est obligatoire pour chaque sprint. Sprint${manquants.length > 1 ? "s" : ""} sans chantier : ${manquants.map((n) => `Sprint ${n}`).join(", ")}.`,
+            });
+            scrollToFormTop();
+            return;
+          }
+        }
       }
       if (nouvelleDemandeStep === 1) scrollToFormTop();
       setNouvelleDemandeStep(nouvelleDemandeStep + 1);
@@ -294,25 +509,83 @@ const Demandes = ({ activeSubPage }) => {
     setTimeout(() => setDemandeMessage({ type: "", text: "" }), 3000);
   };
 
-  // Nouvelle fonction pour le bouton "Terminer" à l'étape 7
+  // Bouton "Terminer" à l'étape 6 : sauvegarde finale (isDraft: false)
   const handleTerminerDemande = async () => {
-    // Sauvegarder comme demande finale (pas brouillon)
-    // Pour l'instant, on sauvegarde comme brouillon mais on pourrait changer isDraft: false
-    await sauvegarderNouvelleDemandeBrouillon();
+    const statutLiv = nouvelleDemandeFormData.statutLivraisonClient;
+    const dateLiv = nouvelleDemandeFormData.dateEffectiveLivraisonClient;
+    if (!dateLiv?.trim() || statutLiv !== "livré au client") {
+      setDemandeMessage({
+        type: "error",
+        text: "La demande ne peut pas être terminée : la livraison au client n'a pas été effectuée. Veuillez renseigner la date de livraison effective et s'assurer que le statut est « Livré au client ».",
+      });
+      scrollToFormTop();
+      return;
+    }
+    try {
+      setDemandeMessage({ type: "info", text: "Finalisation en cours..." });
+      const currentDemandeId = nouvelleDemandeFormData.id;
+      const payload = {
+        typeProjet: nouvelleDemandeFormData.typeProjet || "Brouillon",
+        nomProjet: nouvelleDemandeFormData.nomProjet || "",
+        demandeur: nouvelleDemandeFormData.demandeur || null,
+        descriptionProjet: nouvelleDemandeFormData.descriptionProjet || null,
+        dateEnregistrement: nouvelleDemandeFormData.dateEnregistrement || null,
+        interlocuteurClient: nouvelleDemandeFormData.interlocuteurClient || null,
+        societesDemandeurs: nouvelleDemandeFormData.societesDemandeursNames?.join(", ") || null,
+        dateReception: nouvelleDemandeFormData.dateReception || null,
+        descriptionPerimetre: nouvelleDemandeFormData.descriptionPerimetre || null,
+        statutDemande: nouvelleDemandeFormData.statutDemande || null,
+        lienIngridCDC: nouvelleDemandeFormData.lienIngridCDC || null,
+        dateTransmissionBacklog: nouvelleDemandeFormData.dateTransmissionBacklog || null,
+        dateConfirmationValidation: nouvelleDemandeFormData.dateConfirmationValidation || null,
+        dateDemandePlanificationDev: nouvelleDemandeFormData.dateDemandePlanificationDev || null,
+        dateDemandePlanificationTif: nouvelleDemandeFormData.dateDemandePlanificationTif || null,
+        dateRetourEquipesDev: nouvelleDemandeFormData.dateRetourEquipesDev || null,
+        dateRetourEquipesTif: nouvelleDemandeFormData.dateRetourEquipesTif || null,
+        dateCommunicationPlanningClient: nouvelleDemandeFormData.dateCommunicationPlanningClient || null,
+        nombreSprint: nouvelleDemandeFormData.nombreSprint || null,
+        sprintsData: nouvelleDemandeFormData.sprintsData?.length > 0 ? nouvelleDemandeFormData.sprintsData : null,
+        roadmap: nouvelleDemandeFormData.roadmap || null,
+        dateEffectiveLivraisonTIF: nouvelleDemandeFormData.dateEffectiveLivraisonTIF || null,
+        motifsRetardTIF: nouvelleDemandeFormData.motifsRetardTIF || null,
+        dateEffectiveLivraisonClient: nouvelleDemandeFormData.dateEffectiveLivraisonClient || null,
+        motifsRetardClient: nouvelleDemandeFormData.motifsRetardClient || null,
+        statutCodage: nouvelleDemandeFormData.statutCodage || null,
+        statutTIF: nouvelleDemandeFormData.statutTIF || null,
+        statutLivraison: nouvelleDemandeFormData.statutLivraisonClient || null,
+        lienIngridKickoff: nouvelleDemandeFormData.lienIngridKickoff || null,
+        lienIngridPointsControleTIF: nouvelleDemandeFormData.lienIngridPointsControleTIF || null,
+        lienIngridSignoff: nouvelleDemandeFormData.lienIngridSignoff || null,
+        societeDemandeur: nouvelleDemandeFormData.societeDemandeur || null,
+        interlocuteur: nouvelleDemandeFormData.interlocuteur || null,
+        isDraft: false,
+        draftStep: 6,
+        draftStepLabel: "Livraison",
+        utilisateurId: user?.id || 1,
+      };
 
-    setDemandeMessage({
-      type: "success",
-      text: "Demande terminée avec succès !",
-    });
-    chargerLesDemandes();
-    setTimeout(() => {
+      if (currentDemandeId) {
+        const resp = await apiFetch(`/demandes/${currentDemandeId}`, { method: "PUT", body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error("Erreur sauvegarde");
+      } else {
+        const resp = await apiFetch(`/demandes`, { method: "POST", body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error("Erreur création");
+      }
+
+      await chargerLesDemandes();
+      setVueLivrees(true);
+      setShowDemandesList(true);
       localStorage.removeItem(FORM_STORAGE_KEY);
       setShowNouvelleDemandeForm(false);
       setShowSelectionCards(true);
       setNouvelleDemandeStep(1);
       setNouvelleDemandeFormData(getNouvelleDemandeInitialState());
       setDraftStepInfo(null);
-    }, 1000);
+      setDemandeMessage({ type: "success", text: "Demande terminée avec succès !" });
+      setTimeout(() => setDemandeMessage({ type: "", text: "" }), 4000);
+    } catch (error) {
+      setDemandeMessage({ type: "error", text: `Impossible de terminer la demande. ${error?.message || ""}` });
+    }
   };
 
   const handleNouvelleDemandeInputChange = (e) => {
@@ -362,9 +635,12 @@ const Demandes = ({ activeSubPage }) => {
   ];
 
   const [demandeMessage, setDemandeMessage] = useState({ type: "", text: "" });
-  const [showDemandeDeleteConfirm, setShowDemandeDeleteConfirm] =
-    useState(false);
+  const [showDemandeDeleteConfirm, setShowDemandeDeleteConfirm] = useState(false);
   const [demandeToDelete, setDemandeToDelete] = useState(null);
+  const [showSupprimerTermineeConfirm, setShowSupprimerTermineeConfirm] = useState(false);
+  const [demandeToSupprimer, setDemandeToSupprimer] = useState(null);
+  const [showLivraisonErreurModal, setShowLivraisonErreurModal] = useState(false);
+  const [livraisonErreurNom, setLivraisonErreurNom] = useState("");
   const [, setDraftStepInfo] = useState(null);
   const [showDeleteDraftModal, setShowDeleteDraftModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -530,6 +806,32 @@ const Demandes = ({ activeSubPage }) => {
         });
         scrollToFormTop();
         return;
+      }
+      if (nomProjetEstDuplique(formData.nomProjet, formData.id)) {
+        setDemandeMessage({
+          type: "error",
+          text: `Un projet nommé "${formData.nomProjet.trim()}" existe déjà. Veuillez choisir un autre nom.`,
+        });
+        scrollToFormTop();
+        return;
+      }
+      // Validation : chantier obligatoire pour chaque sprint (étape 3)
+      if (nouvelleDemandeStep === 3) {
+        const nb = parseInt(formData.nombreSprint) || 0;
+        if (nb > 0) {
+          const sprints = formData.sprintsData || [];
+          const manquants = Array.from({ length: nb }, (_, i) => i + 1).filter(
+            (i) => !sprints[i - 1]?.chantier?.trim()
+          );
+          if (manquants.length > 0) {
+            setDemandeMessage({
+              type: "error",
+              text: `Le chantier est obligatoire pour chaque sprint. Sprint${manquants.length > 1 ? "s" : ""} sans chantier : ${manquants.map((n) => `Sprint ${n}`).join(", ")}.`,
+            });
+            scrollToFormTop();
+            return;
+          }
+        }
       }
       if (!formData.typeProjet?.trim()) {
         formData.typeProjet = "Brouillon";
@@ -828,13 +1130,11 @@ const Demandes = ({ activeSubPage }) => {
     }
 
     try {
-      const statutChoisi = statutsDisponibles.find((s) => s.nom === newStatusValue);
-      if (!statutChoisi) {
-        setDemandeMessage({ type: "error", text: "Statut introuvable." });
-        return;
-      }
+      const body = { statutDemande: newStatusValue };
+      // Si le statut existe déjà en base, on envoie aussi son ID pour éviter un doublon
+      const statutExistant = statutsDisponibles.find((s) => s.nom === newStatusValue);
+      if (statutExistant) body.statutId = statutExistant.id;
 
-      const body = { statutId: statutChoisi.id };
       if (isSuspensionStatus(newStatusValue)) {
         body.motifSuspension = suspensionMotif;
         body.dateSuspension = suspensionDate;
@@ -906,19 +1206,6 @@ const Demandes = ({ activeSubPage }) => {
     }
   }, [isAdmin, user?.id]);
 
-  const chargerArchives = useCallback(async () => {
-    try {
-      const path = isAdmin ? `/demandes?archives=true` : `/demandes?archives=true&utilisateurId=${user?.id}`;
-      const response = await apiFetch(path);
-      if (response.ok) {
-        const data = await response.json();
-        setDemandesArchivees(data);
-      }
-    } catch (err) {
-      console.error("Erreur chargement archives:", err);
-    }
-  }, [isAdmin, user?.id]);
-
   const chargerLesSocietes = useCallback(async () => {
     const societesChargees = await chargerSocietes();
     setSocietes(societesChargees);
@@ -949,7 +1236,6 @@ const Demandes = ({ activeSubPage }) => {
   // Charger les données au montage
   useEffect(() => {
     chargerLesDemandes();
-    chargerArchives();
     chargerLesSocietes();
     chargerLesCollaborateurs();
     chargerLesInterlocuteurs();
@@ -957,7 +1243,6 @@ const Demandes = ({ activeSubPage }) => {
     setDraftStepInfo(null);
   }, [
     chargerLesDemandes,
-    chargerArchives,
     chargerLesSocietes,
     chargerLesCollaborateurs,
     chargerLesInterlocuteurs,
@@ -1249,24 +1534,35 @@ const Demandes = ({ activeSubPage }) => {
   };
 
   const handleDeleteDemande = (demande) => {
+    const statut = demande.statutLivraison || demande.statutLivraisonClient;
+    if (statut !== "livré au client") {
+      setLivraisonErreurNom(demande.nomProjet || `#${demande.id}`);
+      setShowLivraisonErreurModal(true);
+      return;
+    }
     setDemandeToDelete(demande);
     setShowDemandeDeleteConfirm(true);
   };
 
   const confirmDeleteDemande = async () => {
     if (demandeToDelete) {
-      const resultat = await supprimerDemande(demandeToDelete.id, user?.id);
-      if (resultat.succes) {
-        let message = "Demande archivée avec succès.";
-        setDemandeMessage({ type: "success", text: message });
-        chargerLesDemandes();
-        chargerArchives();
-        // Recharger aussi les statuts pour mettre à jour la liste
-        chargerLesStatuts();
-        setTimeout(() => setDemandeMessage({ type: "", text: "" }), 4000);
-      } else {
-        setDemandeMessage({ type: "error", text: resultat.message });
-        setTimeout(() => setDemandeMessage({ type: "", text: "" }), 5000);
+      try {
+        const resp = await apiFetch(`/demandes/${demandeToDelete.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ isDraft: false, utilisateurId: user?.id || 1 }),
+        });
+        if (resp.ok) {
+          setDemandeMessage({ type: "success", text: "Demande marquée comme terminée." });
+          await chargerLesDemandes();
+          setVueLivrees(true);
+          setShowDemandesList(true);
+          setTimeout(() => setDemandeMessage({ type: "", text: "" }), 4000);
+        } else {
+          setDemandeMessage({ type: "error", text: "Impossible de terminer la demande." });
+          setTimeout(() => setDemandeMessage({ type: "", text: "" }), 5000);
+        }
+      } catch {
+        setDemandeMessage({ type: "error", text: "Erreur de connexion au serveur." });
       }
     }
     setShowDemandeDeleteConfirm(false);
@@ -1276,6 +1572,30 @@ const Demandes = ({ activeSubPage }) => {
   const cancelDeleteDemande = () => {
     setShowDemandeDeleteConfirm(false);
     setDemandeToDelete(null);
+  };
+
+  const handleSupprimerDemandeTerminee = (demande) => {
+    setDemandeToSupprimer(demande);
+    setShowSupprimerTermineeConfirm(true);
+  };
+
+  const confirmSupprimerDemandeTerminee = async () => {
+    if (!demandeToSupprimer) return;
+    try {
+      const resp = await apiFetch(`/demandes/${demandeToSupprimer.id}`, { method: "DELETE" });
+      if (resp.ok) {
+        setDemandeMessage({ type: "success", text: `Demande "${demandeToSupprimer.nomProjet || `#${demandeToSupprimer.id}`}" supprimée définitivement.` });
+        await chargerLesDemandes();
+        setTimeout(() => setDemandeMessage({ type: "", text: "" }), 4000);
+      } else {
+        setDemandeMessage({ type: "error", text: "Impossible de supprimer la demande." });
+        setTimeout(() => setDemandeMessage({ type: "", text: "" }), 5000);
+      }
+    } catch {
+      setDemandeMessage({ type: "error", text: "Erreur de connexion au serveur." });
+    }
+    setShowSupprimerTermineeConfirm(false);
+    setDemandeToSupprimer(null);
   };
 
   // Fonction helper pour normaliser le type de projet pour la comparaison
@@ -1736,6 +2056,15 @@ const Demandes = ({ activeSubPage }) => {
                           name="nomProjet"
                           value={nouvelleDemandeFormData.nomProjet}
                           onChange={handleNouvelleDemandeInputChange}
+                          onBlur={() => {
+                            if (nomProjetEstDuplique(nouvelleDemandeFormData.nomProjet, nouvelleDemandeFormData.id)) {
+                              setDemandeMessage({
+                                type: "error",
+                                text: `Un projet nommé "${nouvelleDemandeFormData.nomProjet.trim()}" existe déjà. Veuillez choisir un autre nom.`,
+                              });
+                              scrollToFormTop();
+                            }
+                          }}
                           placeholder="Nom du projet"
                           required
                         />
@@ -1996,7 +2325,7 @@ const Demandes = ({ activeSubPage }) => {
                             <thead>
                               <tr style={{ backgroundColor: "#f3f4f6" }}>
                                 <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap" }}>Sprint</th>
-                                <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600" }}>Chantiers</th>
+                                <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600" }}>Chantiers <span style={{ color: "#EF4444" }}>*</span></th>
                                 <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap" }}>Date Prév. TIF</th>
                                 <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap" }}>Date Liv. Effect. TIF</th>
                                 <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap" }}>Date Livraison Prév.</th>
@@ -2015,15 +2344,16 @@ const Demandes = ({ activeSubPage }) => {
                                     <td style={{ padding: "8px", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap", color: "#374151" }}>
                                       Sprint {i + 1}
                                     </td>
-                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
+                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: sprintData.chantier?.trim() ? "transparent" : "#FEF2F2" }}>
                                       <input
                                         type="text"
                                         value={sprintData.chantier || ""}
                                         onChange={(e) => handleSprintDataChange(i, "chantier", e.target.value)}
-                                        placeholder="Nom du chantier..."
+                                        placeholder="Chantier obligatoire..."
                                         style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
                                       />
                                     </td>
+
                                     <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                       <input
                                         type="date"
@@ -2109,111 +2439,14 @@ const Demandes = ({ activeSubPage }) => {
 
                     {/* Roadmap — Vue Gantt */}
                     {parseInt(nouvelleDemandeFormData.nombreSprint) > 0 && (() => {
-                      const MONTH_NAMES = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
                       const sprints = Array.from({ length: parseInt(nouvelleDemandeFormData.nombreSprint) }, (_, i) => ({
                         num: i + 1,
                         ...((nouvelleDemandeFormData.sprintsData || [])[i] || {}),
                       }));
-                      const allDates = sprints.flatMap((s) =>
-                        [s.datePrevTIF, s.dateEffTIF, s.datePrevClient, s.dateEffClient].filter(Boolean)
-                      );
-                      if (allDates.length < 2) return (
-                        <div style={{ marginTop: "32px" }}>
-                          <h4 style={{ fontSize: "16px", fontWeight: "600", color: "#1a1a1a", marginBottom: "12px" }}>Roadmap — Vue Gantt</h4>
-                          <div style={{ padding: "20px", background: "#f9fafb", borderRadius: "8px", color: "#9ca3af", textAlign: "center", border: "1px dashed #d1d5db" }}>
-                            Renseignez des dates dans le tableau ci-dessus pour afficher la vue Gantt
-                          </div>
-                        </div>
-                      );
-                      const allTs = allDates.map((d) => new Date(d).getTime());
-                      const rawMin = new Date(Math.min(...allTs));
-                      const rawMax = new Date(Math.max(...allTs));
-                      const timelineStart = new Date(rawMin.getFullYear(), rawMin.getMonth(), 1);
-                      const timelineEnd = new Date(rawMax.getFullYear(), rawMax.getMonth() + 1, 1);
-                      const totalMs = timelineEnd.getTime() - timelineStart.getTime();
-                      const months = [];
-                      const cur = new Date(timelineStart);
-                      while (cur < timelineEnd) {
-                        months.push({ year: cur.getFullYear(), month: cur.getMonth() });
-                        cur.setMonth(cur.getMonth() + 1);
-                      }
-                      const quarterMap = {};
-                      months.forEach((m) => {
-                        const q = `T${Math.floor(m.month / 3) + 1} ${m.year}`;
-                        if (!quarterMap[q]) quarterMap[q] = 0;
-                        quarterMap[q]++;
-                      });
-                      const quarters = Object.entries(quarterMap);
-                      const toPercent = (dateStr) => {
-                        if (!dateStr) return null;
-                        return Math.max(0, Math.min(100, ((new Date(dateStr).getTime() - timelineStart.getTime()) / totalMs) * 100));
-                      };
                       return (
                         <div style={{ marginTop: "32px" }}>
                           <h4 style={{ fontSize: "16px", fontWeight: "600", color: "#1a1a1a", marginBottom: "12px" }}>Roadmap — Vue Gantt</h4>
-                          <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflow: "auto" }}>
-                            <div style={{ minWidth: "600px", display: "grid", gridTemplateColumns: `140px repeat(${months.length}, 1fr)` }}>
-                              {/* Trimestres */}
-                              <div style={{ background: "#F3F4F6", borderRight: "1px solid #D1D5DB", borderBottom: "1px solid #D1D5DB" }} />
-                              {quarters.map(([q, count]) => (
-                                <div key={q} style={{ gridColumn: `span ${count}`, background: "#F3F4F6", padding: "4px 8px", fontSize: "11px", fontWeight: "700", color: "#374151", textAlign: "center", borderRight: "1px solid #D1D5DB", borderBottom: "1px solid #D1D5DB" }}>{q}</div>
-                              ))}
-                              {/* Mois */}
-                              <div style={{ background: "#F9FAFB", borderRight: "1px solid #D1D5DB", borderBottom: "2px solid #D1D5DB", padding: "4px 8px", fontSize: "11px", color: "#6B7280", fontWeight: "600" }}>Sprint</div>
-                              {months.map((m, i) => (
-                                <div key={i} style={{ background: "#F9FAFB", padding: "4px 2px", fontSize: "11px", color: "#6B7280", fontWeight: "500", borderRight: "1px solid #E5E7EB", borderBottom: "2px solid #D1D5DB", textAlign: "center", whiteSpace: "nowrap", overflow: "hidden" }}>{MONTH_NAMES[m.month]}</div>
-                              ))}
-                              {/* Sprints */}
-                              {sprints.map((sprint, i) => {
-                                const pTIF = toPercent(sprint.datePrevTIF);
-                                const pClient = toPercent(sprint.datePrevClient);
-                                const eTIF = toPercent(sprint.dateEffTIF);
-                                const eClient = toPercent(sprint.dateEffClient);
-                                const hasPlan = pTIF !== null && pClient !== null;
-                                const hasReal = eTIF !== null && eClient !== null;
-                                return (
-                                  <React.Fragment key={i}>
-                                    {/* Bandeau sprint */}
-                                    <div style={{ background: "#6B7280", padding: "5px 10px", display: "flex", alignItems: "center", borderBottom: "1px solid #E5E7EB" }}>
-                                      <span style={{ fontSize: "11px", fontWeight: "700", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>SPRINT {sprint.num}</span>
-                                    </div>
-                                    {months.map((_, mi) => (
-                                      <div key={mi} style={{ background: "#F3F4F6", height: "24px", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB" }} />
-                                    ))}
-                                    {/* Barre Planifié */}
-                                    {hasPlan && (
-                                      <>
-                                        <div style={{ padding: "3px 10px 3px 18px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center" }}>{sprint.chantier || "Planifié"}</div>
-                                        <div style={{ gridColumn: `span ${months.length}`, position: "relative", height: "26px", borderBottom: "1px solid #F3F4F6" }}>
-                                          {months.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi + 1) / months.length) * 100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
-                                          <div style={{ position: "absolute", left: `${Math.min(pTIF, pClient)}%`, width: `${Math.max(1, Math.abs(pClient - pTIF))}%`, top: "3px", bottom: "3px", background: "#4A90E2", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
-                                            <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Planifié</span>
-                                          </div>
-                                        </div>
-                                      </>
-                                    )}
-                                    {/* Barre Réalisé */}
-                                    {hasReal && (
-                                      <>
-                                        <div style={{ padding: "3px 10px 3px 18px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center" }}>Réalisé</div>
-                                        <div style={{ gridColumn: `span ${months.length}`, position: "relative", height: "26px", borderBottom: "1px solid #F3F4F6" }}>
-                                          {months.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi + 1) / months.length) * 100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
-                                          <div style={{ position: "absolute", left: `${Math.min(eTIF, eClient)}%`, width: `${Math.max(1, Math.abs(eClient - eTIF))}%`, top: "3px", bottom: "3px", background: "#10B981", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
-                                            <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Réalisé</span>
-                                          </div>
-                                        </div>
-                                      </>
-                                    )}
-                                  </React.Fragment>
-                                );
-                              })}
-                              {/* Légende */}
-                              <div style={{ gridColumn: "1 / -1", display: "flex", gap: "16px", padding: "8px 12px", fontSize: "12px", color: "#6B7280", borderTop: "1px solid #E5E7EB" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ width: "14px", height: "8px", background: "#4A90E2", borderRadius: "2px" }} /><span>Planifié</span></div>
-                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ width: "14px", height: "8px", background: "#10B981", borderRadius: "2px" }} /><span>Réalisé</span></div>
-                              </div>
-                            </div>
-                          </div>
+                          <GanttChart sprints={sprints} compact={true} />
                         </div>
                       );
                     })()}
@@ -2508,6 +2741,7 @@ const Demandes = ({ activeSubPage }) => {
                     alignItems: "center",
                   }}
                 >
+                  {nouvelleDemandeStep < 6 && (
                   <button
                     type="button"
                     className="btn-secondary"
@@ -2515,6 +2749,7 @@ const Demandes = ({ activeSubPage }) => {
                   >
                     Enregistrer le brouillon
                   </button>
+                  )}
                   {nouvelleDemandeStep < 6 ? (
                     <button
                       type="button"
@@ -3302,6 +3537,20 @@ const Demandes = ({ activeSubPage }) => {
         )}
 
         {/* Liste unifiée des demandes */}
+        {!showNouvelleDemandeForm && demandeMessage.text && (
+          <div style={{
+            margin: "0 0 16px 0",
+            padding: "12px 16px",
+            borderRadius: "6px",
+            backgroundColor: demandeMessage.type === "error" ? "#fee2e2" : demandeMessage.type === "success" ? "#d1fae5" : "#dbeafe",
+            border: `1px solid ${demandeMessage.type === "error" ? "#fecaca" : demandeMessage.type === "success" ? "#a7f3d0" : "#93c5fd"}`,
+            color: demandeMessage.type === "error" ? "#dc2626" : demandeMessage.type === "success" ? "#065f46" : "#1e40af",
+            fontSize: "14px",
+            fontWeight: "500",
+          }}>
+            {demandeMessage.text}
+          </div>
+        )}
         <div
           className="section-rubrique"
           style={{ marginBottom: showDemandesList ? "32px" : "8px" }}
@@ -3335,27 +3584,27 @@ const Demandes = ({ activeSubPage }) => {
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setVueArchives(false); if (!showDemandesList) setShowDemandesList(true); }}
+                  onClick={(e) => { e.stopPropagation(); setVueLivrees(false); if (!showDemandesList) setShowDemandesList(true); }}
                   style={{
                     padding: "4px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600",
                     border: "none", cursor: "pointer",
-                    backgroundColor: !vueArchives ? "#4A90E2" : "#e5e7eb",
-                    color: !vueArchives ? "#fff" : "#6b7280",
+                    backgroundColor: !vueLivrees ? "#4A90E2" : "#e5e7eb",
+                    color: !vueLivrees ? "#fff" : "#6b7280",
                   }}
                 >
-                  En cours {!vueArchives && `(${demandes.length})`}
+                  En cours ({demandes.filter(d => d.isDraft !== false).length})
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setVueArchives(true); if (!showDemandesList) setShowDemandesList(true); }}
+                  onClick={(e) => { e.stopPropagation(); setVueLivrees(true); if (!showDemandesList) setShowDemandesList(true); }}
                   style={{
                     padding: "4px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600",
                     border: "none", cursor: "pointer",
-                    backgroundColor: vueArchives ? "#6B7280" : "#e5e7eb",
-                    color: vueArchives ? "#fff" : "#6b7280",
+                    backgroundColor: vueLivrees ? "#10B981" : "#e5e7eb",
+                    color: vueLivrees ? "#fff" : "#6b7280",
                   }}
                 >
-                  Archivées {vueArchives && `(${demandesArchivees.length})`}
+                  Terminées ({demandes.filter(d => d.isDraft === false).length})
                 </button>
                 <span style={{ color: "#6b7280", fontSize: "14px", marginLeft: "8px" }}>
                   {showDemandesList ? "Masquer" : "Afficher"}
@@ -3364,73 +3613,11 @@ const Demandes = ({ activeSubPage }) => {
             </h2>
           </button>
 
-          {showDemandesList && vueArchives && (
+          {showDemandesList && !vueLivrees && (
             <div className="table-container" style={{ marginTop: "24px" }}>
-              {demandesArchivees.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "48px 0", color: "#9ca3af" }}>
-                  <i className="fa-solid fa-box-archive" style={{ fontSize: "36px", marginBottom: "12px", display: "block" }}></i>
-                  Aucune demande archivée.
-                </div>
-              ) : (
-                <table className="data-table" style={{ tableLayout: "auto" }}>
-                  <thead>
-                    <tr>
-                      <th>Date d'enre.</th>
-                      <th>Type de demande</th>
-                      <th>Nom du projet</th>
-                      <th>Société(s)</th>
-                      <th>Statut</th>
-                      <th>Archivée le</th>
-                      <th>Détail</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {demandesArchivees.map((demande) => (
-                      <tr key={demande.id} style={{ opacity: 0.8 }}>
-                        <td style={{ color: "#6b7280", fontSize: "13px" }}>
-                          {demande.dateEnregistrement ? new Date(demande.dateEnregistrement).toLocaleDateString("fr-FR") : "—"}
-                        </td>
-                        <td>
-                          <span style={{ fontSize: "13px", color: "#374151" }}>{demande.typeProjet || "—"}</span>
-                        </td>
-                        <td style={{ fontWeight: "500", color: "#111827" }}>
-                          {demande.nomProjet || "—"}
-                        </td>
-                        <td style={{ fontSize: "13px", color: "#6b7280" }}>
-                          {demande.societesDemandeurs || demande.societeDemandeur || "—"}
-                        </td>
-                        <td>
-                          {demande.statutDemande ? (
-                            <span style={{ padding: "2px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "600", backgroundColor: "#F3F4F6", color: "#374151" }}>
-                              {demande.statutDemande}
-                            </span>
-                          ) : <span style={{ color: "#9ca3af" }}>—</span>}
-                        </td>
-                        <td style={{ fontSize: "13px", color: "#6b7280" }}>
-                          {demande.archivedAt ? new Date(demande.archivedAt).toLocaleDateString("fr-FR") : "—"}
-                        </td>
-                        <td>
-                          <button
-                            className="btn-secondary"
-                            onClick={() => handleShowDetail(demande)}
-                            style={{ padding: "6px 12px", fontSize: "13px" }}
-                          >
-                            Détail
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-
-          {showDemandesList && !vueArchives && (
-            <div className="table-container" style={{ marginTop: "24px" }}>
-              {demandes.length === 0 ? (
+              {demandes.filter(d => d.isDraft !== false).length === 0 ? (
                 <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                  Aucune demande créée pour le moment.
+                  Aucune demande en cours pour le moment.
                 </p>
               ) : (
                 <table className="data-table" style={{ tableLayout: "auto" }}>
@@ -3450,11 +3637,11 @@ const Demandes = ({ activeSubPage }) => {
                         <th style={{ whiteSpace: "nowrap" }}>Créé par</th>
                       )}
                       <th style={{ whiteSpace: "nowrap" }}>Détail</th>
-                      <th style={{ whiteSpace: "nowrap" }}>Actions</th>
+                      {peutVoirActions && <th style={{ whiteSpace: "nowrap" }}>Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
-                    {(demandes || []).map((demande) => (
+                    {demandes.filter(d => d.isDraft !== false).map((demande) => (
                       <tr key={demande.id}>
                         <td style={{ whiteSpace: "nowrap" }}>
                           {demande.dateEnregistrement
@@ -3481,14 +3668,8 @@ const Demandes = ({ activeSubPage }) => {
                           </span>
                         </td>
                         <td>
-                          {demande.statutDemande ? (
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                              }}
-                            >
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            {demande.statutDemande ? (
                               <span
                                 style={{
                                   display: "inline-block",
@@ -3502,6 +3683,10 @@ const Demandes = ({ activeSubPage }) => {
                               >
                                 {demande.statutDemande}
                               </span>
+                            ) : (
+                              <span style={{ color: "#9ca3af", fontSize: "13px" }}>—</span>
+                            )}
+                            {peutModifierDemande && (
                               <button
                                 className="btn-secondary"
                                 onClick={() =>
@@ -3521,15 +3706,14 @@ const Demandes = ({ activeSubPage }) => {
                                   backgroundColor: "white",
                                   color: "#374151",
                                   cursor: "pointer",
+                                  whiteSpace: "nowrap",
                                 }}
-                                title="Modifier ce statut"
+                                title="Modifier le statut"
                               >
-                                Modifier
+                                Modifier statut
                               </button>
-                            </div>
-                          ) : (
-                            "-"
-                          )}
+                            )}
+                          </div>
                         </td>
                         <td style={{ whiteSpace: "nowrap" }}>
                           {demande.societesDemandeurs ||
@@ -3590,44 +3774,122 @@ const Demandes = ({ activeSubPage }) => {
                             Détail
                           </button>
                         </td>
-                        <td style={{ whiteSpace: "nowrap" }}>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "5px",
-                              alignItems: "center",
-                            }}
-                          >
-                            <button
-                              className="btn-secondary"
-                              onClick={() => handlePoursuivreDemande(demande)}
-                              style={{
-                                padding: "6px 10px",
-                                fontSize: "13px",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              Modifier
-                            </button>
-                            <PermissionGuard
-                              module="demandes"
-                              submodule="gestion"
-                              action="delete"
-                            >
-                              <button
-                                className="btn-danger"
-                                onClick={() => handleDeleteDemande(demande)}
-                                style={{
-                                  padding: "6px 10px",
-                                  fontSize: "13px",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                Terminer
-                              </button>
-                            </PermissionGuard>
-                          </div>
+                        {peutVoirActions && (
+                          <td style={{ whiteSpace: "nowrap" }}>
+                            <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                              {peutModifierDemande && (
+                                <button
+                                  className="btn-secondary"
+                                  onClick={() => handlePoursuivreDemande(demande)}
+                                  style={{ padding: "6px 10px", fontSize: "13px", whiteSpace: "nowrap" }}
+                                >
+                                  Modifier
+                                </button>
+                              )}
+                              {peutSupprimerDemande && (
+                                <button
+                                  className="btn-danger"
+                                  onClick={() => handleDeleteDemande(demande)}
+                                  style={{ padding: "6px 10px", fontSize: "13px", whiteSpace: "nowrap" }}
+                                >
+                                  Terminer
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* Table des demandes terminées */}
+          {showDemandesList && vueLivrees && (
+            <div className="table-container" style={{ marginTop: "24px" }}>
+              {demandes.filter(d => d.isDraft === false).length === 0 ? (
+                <div style={{ textAlign: "center", padding: "48px 0", color: "#9ca3af" }}>
+                  <i className="fa-solid fa-circle-check" style={{ fontSize: "36px", marginBottom: "12px", display: "block", color: "#10B981" }}></i>
+                  Aucune demande terminée pour le moment.
+                </div>
+              ) : (
+                <table className="data-table" style={{ tableLayout: "auto" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ whiteSpace: "nowrap" }}>Date d'enre.</th>
+                      <th style={{ whiteSpace: "nowrap" }}>Type de demande</th>
+                      <th style={{ whiteSpace: "nowrap" }}>Nom projet</th>
+                      <th style={{ whiteSpace: "nowrap" }}>Société(s)</th>
+                      <th style={{ whiteSpace: "nowrap" }}>Interlocuteur</th>
+                      <th style={{ whiteSpace: "nowrap" }}>Statut</th>
+                      <th style={{ whiteSpace: "nowrap" }}>Date liv. client</th>
+                      {isAdmin && <th style={{ whiteSpace: "nowrap" }}>Créé par</th>}
+                      <th style={{ whiteSpace: "nowrap" }}>Détail</th>
+                      {peutSupprimerDemande && <th style={{ whiteSpace: "nowrap" }}>Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {demandes.filter(d => d.isDraft === false).map((demande) => (
+                      <tr key={demande.id}>
+                        <td style={{ whiteSpace: "nowrap", color: "#6b7280", fontSize: "13px" }}>
+                          {demande.dateEnregistrement ? demande.dateEnregistrement.split("T")[0] : "—"}
                         </td>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          <span style={{
+                            display: "inline-block", padding: "4px 10px", borderRadius: "999px",
+                            fontWeight: 600, fontSize: "12px", ...getTypeDemandeStyle(demande.typeProjet)
+                          }}>
+                            {getTypeDemandeLabel(demande.typeProjet)}
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: "500", color: "#111827" }}>
+                          {demande.nomProjet || "—"}
+                        </td>
+                        <td style={{ fontSize: "13px", color: "#6b7280" }}>
+                          {demande.societesDemandeurs || demande.societeDemandeur || "—"}
+                        </td>
+                        <td style={{ fontSize: "13px", color: "#6b7280" }}>
+                          {demande.interlocuteurClient || demande.interlocuteur || "—"}
+                        </td>
+                        <td>
+                          {demande.statutDemande ? (
+                            <span style={{ padding: "2px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "600", backgroundColor: "#F3F4F6", color: "#374151" }}>
+                              {demande.statutDemande}
+                            </span>
+                          ) : <span style={{ color: "#9ca3af" }}>—</span>}
+                        </td>
+                        <td style={{ whiteSpace: "nowrap", fontSize: "13px", color: "#10B981", fontWeight: "500" }}>
+                          {demande.dateEffectiveLivraisonClient
+                            ? new Date(demande.dateEffectiveLivraisonClient).toLocaleDateString("fr-FR")
+                            : "—"}
+                        </td>
+                        {isAdmin && (
+                          <td style={{ fontSize: "13px", color: "#6b7280" }}>
+                            {demande.nomCreateur || "—"}
+                          </td>
+                        )}
+                        <td>
+                          <button
+                            className="btn-secondary"
+                            onClick={() => handleShowDetail(demande)}
+                            style={{ padding: "6px 12px", fontSize: "13px" }}
+                          >
+                            Détail
+                          </button>
+                        </td>
+                        {peutSupprimerDemande && (
+                          <td>
+                            <button
+                              className="btn-danger"
+                              onClick={() => handleSupprimerDemandeTerminee(demande)}
+                              style={{ padding: "6px 10px", fontSize: "13px" }}
+                            >
+                              Supprimer
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -3906,158 +4168,38 @@ const Demandes = ({ activeSubPage }) => {
       })()}
 
       {/* Modal Roadmap / Gantt */}
-      {showRoadmapModal && selectedDemandeDetail && (() => {
-        const MONTH_NAMES = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
-        const sprints = (selectedDemandeDetail.sprintsData || []).map((s, i) => ({ num: i + 1, ...s }));
-        const allDates = sprints.flatMap((s) =>
-          [s.datePrevTIF, s.dateEffTIF, s.datePrevClient, s.dateEffClient].filter(Boolean)
-        );
-        const hasData = allDates.length >= 2;
+      {showRoadmapModal && selectedDemandeDetail && (
+        <div className="modal-overlay" onClick={() => setShowRoadmapModal(false)} style={{ zIndex: 1300 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "white", borderRadius: "14px", width: "95%", maxWidth: "1100px", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-        if (!hasData) return (
-          <div className="modal-overlay" onClick={() => setShowRoadmapModal(false)} style={{ zIndex: 1300 }}>
-            <div onClick={(e) => e.stopPropagation()} style={{ background: "white", borderRadius: "14px", padding: "40px", textAlign: "center", color: "#9CA3AF" }}>
-              <i className="fa-solid fa-calendar-xmark" style={{ fontSize: "36px", marginBottom: "12px", display: "block" }}></i>
-              Aucune date renseignée dans les sprints.
-              <br /><br />
-              <button onClick={() => setShowRoadmapModal(false)} style={{ background: "#F3F4F6", border: "none", borderRadius: "8px", padding: "8px 24px", cursor: "pointer" }}>Fermer</button>
+            {/* Header */}
+            <div style={{ padding: "16px 24px", borderBottom: "1px solid #E5E7EB", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <i className="fa-solid fa-chart-gantt" style={{ color: "#4A90E2", fontSize: "18px" }}></i>
+                <div>
+                  <div style={{ fontWeight: "700", fontSize: "16px", color: "#111827" }}>Roadmap — Vue Gantt</div>
+                  <div style={{ fontSize: "12px", color: "#6B7280" }}>{selectedDemandeDetail.nomProjet}</div>
+                </div>
+              </div>
+              <button onClick={() => setShowRoadmapModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", fontSize: "22px", lineHeight: 1 }}>×</button>
+            </div>
+
+            {/* Body */}
+            <div style={{ overflowY: "auto", flex: 1, padding: "20px 24px" }}>
+              <GanttChart
+                sprints={(selectedDemandeDetail.sprintsData || []).map((s, i) => ({ num: i + 1, ...s }))}
+              />
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: "12px 24px", borderTop: "1px solid #E5E7EB", display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
+              <button onClick={() => setShowRoadmapModal(false)} style={{ background: "#F3F4F6", border: "none", borderRadius: "8px", padding: "8px 28px", fontSize: "14px", fontWeight: "600", color: "#374151", cursor: "pointer" }}>
+                Fermer
+              </button>
             </div>
           </div>
-        );
-
-        // Calcul timeline : du début du mois min au fin du mois max
-        const allTs = allDates.map((d) => new Date(d).getTime());
-        const rawMin = new Date(Math.min(...allTs));
-        const rawMax = new Date(Math.max(...allTs));
-        const timelineStart = new Date(rawMin.getFullYear(), rawMin.getMonth(), 1);
-        const timelineEnd = new Date(rawMax.getFullYear(), rawMax.getMonth() + 1, 1);
-        const totalMs = timelineEnd.getTime() - timelineStart.getTime();
-
-        // Générer la liste des mois
-        const months = [];
-        const cur = new Date(timelineStart);
-        while (cur < timelineEnd) {
-          months.push({ year: cur.getFullYear(), month: cur.getMonth() });
-          cur.setMonth(cur.getMonth() + 1);
-        }
-
-        // Grouper par trimestre
-        const quarterMap = {};
-        months.forEach((m) => {
-          const q = `T${Math.floor(m.month / 3) + 1} ${m.year}`;
-          if (!quarterMap[q]) quarterMap[q] = 0;
-          quarterMap[q]++;
-        });
-        const quarters = Object.entries(quarterMap);
-
-        const toPercent = (dateStr) => {
-          if (!dateStr) return null;
-          const t = new Date(dateStr).getTime();
-          return Math.max(0, Math.min(100, ((t - timelineStart.getTime()) / totalMs) * 100));
-        };
-
-        return (
-          <div className="modal-overlay" onClick={() => setShowRoadmapModal(false)} style={{ zIndex: 1300 }}>
-            <div onClick={(e) => e.stopPropagation()} style={{ background: "white", borderRadius: "14px", width: "95%", maxWidth: "1000px", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
-              {/* Header modal */}
-              <div style={{ padding: "16px 24px", borderBottom: "1px solid #E5E7EB", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <i className="fa-solid fa-chart-gantt" style={{ color: "#4A90E2", fontSize: "18px" }}></i>
-                  <div>
-                    <div style={{ fontWeight: "700", fontSize: "16px", color: "#111827" }}>Roadmap — Vue Gantt</div>
-                    <div style={{ fontSize: "12px", color: "#6B7280" }}>{selectedDemandeDetail.nomProjet}</div>
-                  </div>
-                </div>
-                <button onClick={() => setShowRoadmapModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", fontSize: "22px", lineHeight: 1 }}>×</button>
-              </div>
-
-              {/* Body scrollable */}
-              <div style={{ overflowX: "auto", overflowY: "auto", flex: 1 }}>
-                <div style={{ minWidth: "700px", display: "grid", gridTemplateColumns: `160px repeat(${months.length}, 1fr)` }}>
-
-                  {/* Trimestres */}
-                  <div style={{ background: "#F3F4F6", borderRight: "1px solid #D1D5DB", borderBottom: "1px solid #D1D5DB" }} />
-                  {quarters.map(([q, count]) => (
-                    <div key={q} style={{ gridColumn: `span ${count}`, background: "#F3F4F6", padding: "4px 8px", fontSize: "11px", fontWeight: "700", color: "#374151", textAlign: "center", borderRight: "1px solid #D1D5DB", borderBottom: "1px solid #D1D5DB" }}>{q}</div>
-                  ))}
-
-                  {/* Mois */}
-                  <div style={{ background: "#F9FAFB", borderRight: "1px solid #D1D5DB", borderBottom: "2px solid #D1D5DB", padding: "4px 8px", fontSize: "11px", color: "#6B7280", fontWeight: "600" }}>Sprint</div>
-                  {months.map((m, i) => (
-                    <div key={i} style={{ background: "#F9FAFB", padding: "4px 4px", fontSize: "11px", color: "#6B7280", fontWeight: "500", borderRight: "1px solid #E5E7EB", borderBottom: "2px solid #D1D5DB", textAlign: "center", whiteSpace: "nowrap", overflow: "hidden" }}>{MONTH_NAMES[m.month]}</div>
-                  ))}
-
-                  {/* Lignes sprints */}
-                  {sprints.map((sprint, i) => {
-                    const pTIF = toPercent(sprint.datePrevTIF);
-                    const pClient = toPercent(sprint.datePrevClient);
-                    const eTIF = toPercent(sprint.dateEffTIF);
-                    const eClient = toPercent(sprint.dateEffClient);
-                    const hasPlan = pTIF !== null && pClient !== null;
-                    const hasReal = eTIF !== null && eClient !== null;
-
-                    return (
-                      <React.Fragment key={i}>
-                        {/* Bandeau sprint */}
-                        <div style={{ background: "#6B7280", padding: "6px 10px", display: "flex", alignItems: "center", borderBottom: "1px solid #E5E7EB" }}>
-                          <span style={{ fontSize: "12px", fontWeight: "700", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>SPRINT {sprint.num}</span>
-                        </div>
-                        {months.map((_, mi) => (
-                          <div key={mi} style={{ background: "#F3F4F6", height: "28px", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB" }} />
-                        ))}
-
-                        {/* Barre Planifié */}
-                        {hasPlan && (
-                          <>
-                            <div style={{ padding: "4px 10px 4px 20px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center" }}>{sprint.chantier || "Planifié"}</div>
-                            <div style={{ gridColumn: `span ${months.length}`, position: "relative", height: "28px", borderBottom: "1px solid #F3F4F6" }}>
-                              {months.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi + 1) / months.length) * 100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
-                              <div style={{ position: "absolute", left: `${Math.min(pTIF, pClient)}%`, width: `${Math.max(1, Math.abs(pClient - pTIF))}%`, top: "4px", bottom: "4px", background: "#4A90E2", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
-                                <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Planifié</span>
-                              </div>
-                            </div>
-                          </>
-                        )}
-
-                        {/* Barre Réalisé */}
-                        {hasReal && (
-                          <>
-                            <div style={{ padding: "4px 10px 4px 20px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center" }}>Réalisé</div>
-                            <div style={{ gridColumn: `span ${months.length}`, position: "relative", height: "28px", borderBottom: "1px solid #F3F4F6" }}>
-                              {months.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi + 1) / months.length) * 100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
-                              <div style={{ position: "absolute", left: `${Math.min(eTIF, eClient)}%`, width: `${Math.max(1, Math.abs(eClient - eTIF))}%`, top: "4px", bottom: "4px", background: "#10B981", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
-                                <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Réalisé</span>
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div style={{ padding: "12px 24px", borderTop: "1px solid #E5E7EB", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-                <div style={{ display: "flex", gap: "16px", fontSize: "12px", color: "#6B7280" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <div style={{ width: "16px", height: "8px", background: "#4A90E2", borderRadius: "2px" }} />
-                    <span>Planifié</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <div style={{ width: "16px", height: "8px", background: "#10B981", borderRadius: "2px" }} />
-                    <span>Réalisé</span>
-                  </div>
-                </div>
-                <button onClick={() => setShowRoadmapModal(false)} style={{ background: "#F3F4F6", border: "none", borderRadius: "8px", padding: "8px 28px", fontSize: "14px", fontWeight: "600", color: "#374151", cursor: "pointer" }}>
-                  Fermer
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* Popup de confirmation de suppression de brouillon */}
       {showDeleteDraftModal && (
@@ -4084,6 +4226,51 @@ const Demandes = ({ activeSubPage }) => {
                 onClick={cancelDeleteDraft}
               >
                 Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal suppression définitive demande terminée */}
+      {showSupprimerTermineeConfirm && demandeToSupprimer && (
+        <div className="modal-overlay" onClick={() => { setShowSupprimerTermineeConfirm(false); setDemandeToSupprimer(null); }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "460px", padding: "32px" }}>
+            <h3 style={{ margin: "0 0 12px", color: "#DC2626", fontSize: "18px" }}>Supprimer définitivement</h3>
+            <p style={{ color: "#374151", marginBottom: "8px", lineHeight: "1.6" }}>
+              Êtes-vous sûr de vouloir supprimer définitivement la demande <strong>"{demandeToSupprimer.nomProjet || `#${demandeToSupprimer.id}`}"</strong> ?
+            </p>
+            <p style={{ color: "#DC2626", fontSize: "13px", marginBottom: "24px" }}>Cette action est irréversible.</p>
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button className="btn-secondary" onClick={() => { setShowSupprimerTermineeConfirm(false); setDemandeToSupprimer(null); }}>Annuler</button>
+              <button className="btn-danger" onClick={confirmSupprimerDemandeTerminee}>Supprimer définitivement</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup erreur livraison non effectuée */}
+      {showLivraisonErreurModal && (
+        <div className="modal-overlay" onClick={() => setShowLivraisonErreurModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "460px", padding: "32px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+              <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <i className="fa-solid fa-triangle-exclamation" style={{ color: "#dc2626", fontSize: "18px" }}></i>
+              </div>
+              <h3 style={{ margin: 0, color: "#dc2626", fontSize: "18px" }}>Livraison non effectuée</h3>
+            </div>
+            <p style={{ color: "#374151", marginBottom: "8px", lineHeight: "1.6" }}>
+              La demande <strong>"{livraisonErreurNom}"</strong> ne peut pas être terminée.
+            </p>
+            <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "24px", lineHeight: "1.6" }}>
+              Le statut de livraison n'est pas encore <strong>« Livré au client »</strong>. Veuillez ouvrir la demande, aller à l'étape 6 et renseigner la date de livraison effective au client.
+            </p>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                className="btn-primary"
+                onClick={() => setShowLivraisonErreurModal(false)}
+              >
+                Compris
               </button>
             </div>
           </div>
@@ -4122,6 +4309,7 @@ const Demandes = ({ activeSubPage }) => {
           </div>
         </div>
       )}
+
 
       {/* Popup de modification de statut */}
       {showStatusEditModal && (

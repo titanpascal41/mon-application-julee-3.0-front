@@ -5,37 +5,6 @@ import { chargerDemandes } from "../../data/gestionDemandes";
 import { useAuth } from "../AuthProvider";
 import { useNavigate } from "react-router-dom";
 
-const TYPE_COLORS = {
-  Evolution: "#3B82F6",
-  Correction: "#EF4444",
-  Prospecte: "#8B5CF6",
-  Maintenance: "#F97316",
-};
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return "-";
-  try {
-    return new Date(dateStr).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch {
-    return "-";
-  }
-};
-
-const getStatutColor = (nomStatut) => {
-  if (!nomStatut) return { bg: "#F3F4F6", color: "#6B7280" };
-  const n = nomStatut.toLowerCase();
-  if (n.includes("livr")) return { bg: "#D1FAE5", color: "#065F46" };
-  if (n.includes("cours") || n.includes("actif")) return { bg: "#DBEAFE", color: "#1E40AF" };
-  if (n.includes("suspen")) return { bg: "#FEF3C7", color: "#92400E" };
-  if (n.includes("annul")) return { bg: "#FEE2E2", color: "#991B1B" };
-  if (n.includes("termin")) return { bg: "#D1FAE5", color: "#065F46" };
-  if (n.includes("attente") || n.includes("nouveau")) return { bg: "#FEF3C7", color: "#92400E" };
-  return { bg: "#EDE9FE", color: "#4C1D95" };
-};
 
 const TableauDeBord = () => {
   const { user } = useAuth();
@@ -61,25 +30,10 @@ const TableauDeBord = () => {
   }, [chargerDonnees]);
 
   // --- Calculs KPI ---
-  const demandesActives = demandes; // toutes les demandes (pas de distinction brouillon)
-  const demandesLivrees = demandesActives.filter(
-    (d) =>
-      d.statutLivraisonClient === "livré au client" ||
-      (d.statut?.nom || "").toLowerCase().includes("livr")
-  );
-  const demandesEnCours = demandesActives.filter((d) => {
-    const s = (d.statut?.nom || "").toLowerCase();
-    return (
-      d.statutLivraisonClient !== "livré au client" &&
-      !s.includes("livr") &&
-      !s.includes("annul") &&
-      !s.includes("suspen") &&
-      !s.includes("non démarr") &&
-      !s.startsWith("nd")
-    );
-  });
+  const demandesEnCours = demandes.filter(d => d.isDraft !== false);
+  const demandesTerminees = demandes.filter(d => d.isDraft === false);
 
-  const totalSprints = demandesActives.reduce((acc, d) => {
+  const totalSprints = demandesEnCours.reduce((acc, d) => {
     if (d.sprintsData) {
       try {
         const sprints = typeof d.sprintsData === "string"
@@ -93,13 +47,8 @@ const TableauDeBord = () => {
     return acc;
   }, 0);
 
-  // --- Demandes récentes (5 dernières, brouillons inclus) ---
-  const demandesRecentes = [...demandes]
-    .sort((a, b) => new Date(b.dateCreation || b.dateEnregistrement || 0) - new Date(a.dateCreation || a.dateEnregistrement || 0))
-    .slice(0, 5);
-
-  // --- Sprints en cours ---
-  const sprintsEnCours = demandesActives
+  // --- Sprints en cours (uniquement sur les demandes en cours) ---
+  const sprintsEnCours = demandesEnCours
     .filter((d) => d.sprintsData)
     .map((d) => {
       let sprints = [];
@@ -142,8 +91,8 @@ const TableauDeBord = () => {
         <div className="tdb-kpi-card tdb-kpi-blue">
           <div className="tdb-kpi-icon"><i className="fa-solid fa-clipboard-list"></i></div>
           <div className="tdb-kpi-content">
-            <div className="tdb-kpi-value">{demandesActives.length}</div>
-            <div className="tdb-kpi-label">Demandes actives</div>
+            <div className="tdb-kpi-value">{demandes.length}</div>
+            <div className="tdb-kpi-label">Total demandes</div>
           </div>
         </div>
         <div className="tdb-kpi-card tdb-kpi-orange">
@@ -156,8 +105,8 @@ const TableauDeBord = () => {
         <div className="tdb-kpi-card tdb-kpi-green">
           <div className="tdb-kpi-icon"><i className="fa-solid fa-circle-check"></i></div>
           <div className="tdb-kpi-content">
-            <div className="tdb-kpi-value">{demandesLivrees.length}</div>
-            <div className="tdb-kpi-label">Livrées</div>
+            <div className="tdb-kpi-value">{demandesTerminees.length}</div>
+            <div className="tdb-kpi-label">Terminées</div>
           </div>
         </div>
         <div className="tdb-kpi-card tdb-kpi-cyan">
@@ -169,130 +118,44 @@ const TableauDeBord = () => {
         </div>
       </div>
 
-      {/* Ligne : Demandes récentes + Sprints en cours */}
-      <div className="tdb-row-3">
-        {/* Demandes récentes */}
-        <div className="tdb-card tdb-recentes">
-          <div className="tdb-card-header">
-            <i className="fa-solid fa-clock-rotate-left" style={{ color: "#3B82F6" }}></i>
-            <h3>Demandes récentes</h3>
-            <button
-              className="tdb-link-btn"
-              onClick={() => navigate("/demandes-gestion")}
-            >
-              Voir tout
-            </button>
-          </div>
-          {demandesRecentes.length === 0 ? (
-            <p className="tdb-empty">Aucune demande enregistrée</p>
-          ) : (
-            <table className="tdb-table">
-              <thead>
-                <tr>
-                  <th>Projet</th>
-                  <th>Type</th>
-                  <th>Statut</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {demandesRecentes.map((d) => {
-                  const colors = getStatutColor(d.statut?.nom);
-                  return (
-                    <tr key={d.id}>
-                      <td className="tdb-nom-projet">
-                        
-                        {d.isDraft && (
-                          <span
-                            className="tdb-badge-sm"
-                            style={{ background: "#FEF3C7", color: "#92400E", marginLeft: "6px", fontSize: "10px" }}
-                          >
-                            Brouillon
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {d.typeProjet ? (
-                          <span
-                            className="tdb-badge-sm"
-                            style={{
-                              background: `${TYPE_COLORS[d.typeProjet] || "#9CA3AF"}20`,
-                              color: TYPE_COLORS[d.typeProjet] || "#6B7280",
-                            }}
-                          >
-                            {d.typeProjet}
-                          </span>
-                        ) : (
-                          <span style={{ color: "#9CA3AF" }}>-</span>
-                        )}
-                      </td>
-                      <td>
-                        {d.isDraft ? (
-                          <span
-                            className="tdb-badge-sm"
-                            style={{ background: "#FEF3C7", color: "#92400E" }}
-                          >
-                            {d.draftStepLabel || "Brouillon"}
-                          </span>
-                        ) : d.statut ? (
-                          <span
-                            className="tdb-badge-sm"
-                            style={{ background: colors.bg, color: colors.color }}
-                          >
-                            {d.statut.nom}
-                          </span>
-                        ) : (
-                          <span style={{ color: "#9CA3AF" }}>-</span>
-                        )}
-                      </td>
-                      <td className="tdb-date">{formatDate(d.dateEnregistrement || d.dateCreation)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+      {/* Sprints en cours */}
+      <div className="tdb-card tdb-sprints" style={{ marginBottom: "24px" }}>
+        <div className="tdb-card-header">
+          <i className="fa-solid fa-gauge-high" style={{ color: "#F97316" }}></i>
+          <h3>Sprints en cours</h3>
         </div>
-
-        {/* Sprints en cours */}
-        <div className="tdb-card tdb-sprints">
-          <div className="tdb-card-header">
-            <i className="fa-solid fa-gauge-high" style={{ color: "#F97316" }}></i>
-            <h3>Sprints en cours</h3>
-          </div>
-          {sprintsEnCours.length === 0 ? (
-            <p className="tdb-empty">Aucun sprint actif en ce moment</p>
-          ) : (
-            <div className="tdb-sprints-list">
-              {sprintsEnCours.map(({ demande, sprint, totalSprints: total }) => {
-                const avancement = parseInt(sprint.avancement) || 0;
-                return (
-                  <div key={demande.id} className="tdb-sprint-item">
-                    <div className="tdb-sprint-header">
-                      <span className="tdb-sprint-projet">{demande.nomProjet || `Demande #${demande.id}`}</span>
-                      <span className="tdb-sprint-pct">{avancement}%</span>
-                    </div>
-                    <div className="tdb-sprint-meta">
-                      {sprint.chantier && (
-                        <span className="tdb-sprint-chantier">
-                          <i className="fa-solid fa-hammer" style={{ fontSize: "11px", marginRight: "4px" }}></i>
-                          {sprint.chantier}
-                        </span>
-                      )}
-                      <span className="tdb-sprint-total">{total} sprint{total > 1 ? "s" : ""}</span>
-                    </div>
-                    <div className="tdb-progress-track">
-                      <div
-                        className="tdb-progress-fill"
-                        style={{ width: `${avancement}%` }}
-                      ></div>
-                    </div>
+        {sprintsEnCours.length === 0 ? (
+          <p className="tdb-empty">Aucun sprint actif en ce moment</p>
+        ) : (
+          <div className="tdb-sprints-list">
+            {sprintsEnCours.map(({ demande, sprint, totalSprints: total }) => {
+              const avancement = parseInt(sprint.avancement) || 0;
+              return (
+                <div key={demande.id} className="tdb-sprint-item">
+                  <div className="tdb-sprint-header">
+                    <span className="tdb-sprint-projet">{demande.nomProjet || `Demande #${demande.id}`}</span>
+                    <span className="tdb-sprint-pct">{avancement}%</span>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                  <div className="tdb-sprint-meta">
+                    {sprint.chantier && (
+                      <span className="tdb-sprint-chantier">
+                        <i className="fa-solid fa-hammer" style={{ fontSize: "11px", marginRight: "4px" }}></i>
+                        {sprint.chantier}
+                      </span>
+                    )}
+                    <span className="tdb-sprint-total">{total} sprint{total > 1 ? "s" : ""}</span>
+                  </div>
+                  <div className="tdb-progress-track">
+                    <div
+                      className="tdb-progress-fill"
+                      style={{ width: `${avancement}%` }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Bouton accès rapide */}

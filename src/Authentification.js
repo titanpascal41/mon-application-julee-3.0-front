@@ -56,7 +56,7 @@ const Authentification = () => {
       );
     } catch (error) {
       console.error("Erreur de connexion:", error);
-      changerMessageConnexion("Erreur de connexion. Veuillez réessayer.");
+      changerMessageConnexion(error.message || "Erreur de connexion. Veuillez réessayer.");
     }
   };
 

@@ -47,6 +47,14 @@ export const AuthProvider = ({ children }) => {
         if (!userData.profil && userData.id) {
           try {
             const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/users/${userData.id}/profile`, { headers: { Authorization: `Bearer ${localStorage.getItem('julee_token') || ''}` } });
+            if (response.status === 403) {
+              // Profil désactivé — forcer la déconnexion
+              permissionService.clear();
+              localStorage.removeItem('user');
+              removeToken();
+              setLoading(false);
+              return;
+            }
             if (response.ok) {
               const fullUserData = await response.json();
               localStorage.setItem('user', JSON.stringify(fullUserData));
@@ -90,7 +98,8 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Échec de l\'authentification');
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Échec de l\'authentification');
       }
 
       const data = await response.json();
