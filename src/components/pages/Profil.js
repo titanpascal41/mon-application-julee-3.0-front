@@ -167,7 +167,7 @@ const Profil = () => {
                   height: "100%",
                   borderRadius: "50%",
                   objectFit: "cover",
-                  border: "4px solid #4A90E2",
+                  border: "none",
                 }}
               />
             ) : (
@@ -182,7 +182,7 @@ const Profil = () => {
                 color: "white",
                 fontSize: "42px",
                 fontWeight: 600,
-                border: "4px solid #4A90E2",
+                border: "none",
               }}>
                 {initiales}
               </div>

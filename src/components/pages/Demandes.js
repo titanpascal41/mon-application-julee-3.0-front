@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import "./PageStyles.css";
 import { apiFetch } from "../../utils/apiFetch";
 import {
@@ -107,7 +108,7 @@ const GanttChart = ({ sprints, compact = false }) => {
       {/* Toggle vue */}
       <div style={{ display: "flex", gap: "6px", marginBottom: "12px", justifyContent: "flex-end" }}>
         {["jour","semaine","mois"].map(v => (
-          <button key={v} onClick={() => setMode(v)} style={{
+          <button key={v} type="button" onClick={() => setMode(v)} style={{
             padding: "4px 14px", borderRadius: "6px", border: "1px solid",
             borderColor: mode === v ? "#4A90E2" : "#D1D5DB",
             background: mode === v ? "#4A90E2" : "white",
@@ -271,9 +272,13 @@ const formatDateForDisplay = (dateString) => {
   }); // DD/MM/YYYY
 };
 
-const Demandes = ({ activeSubPage }) => {
+const Demandes = () => {
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
+  const location = useLocation();
+  const openDemandeIdRef = useRef(location.state?.openDemandeId || null);
+  const openDemandeStepRef = useRef(location.state?.openDemandeStep || null);
+  const [flashRetards, setFlashRetards] = useState(!!location.state?.highlightRetards);
 
   // Vérifier si l'utilisateur est administrateur
   const isAdmin = user?.profil?.nom === "Administrateur";
@@ -678,6 +683,7 @@ const Demandes = ({ activeSubPage }) => {
       );
 
       const formData = {
+        id: nouvelleDemandeFormData.id || null,
         // Étape 1: Enregistrement
         typeProjet: nouvelleDemandeFormData.typeProjet || "",
         nomProjet: nouvelleDemandeFormData.nomProjet || "",
@@ -925,7 +931,7 @@ const Demandes = ({ activeSubPage }) => {
         evolutionFormData.dateEnregistrement ||
         new Date().toISOString().split("T")[0],
       dateReception: evolutionFormData.dateReception || "",
-      societeDemandeur: evolutionFormData.societeDemandeur || "",
+      societeDemandeur: evolutionFormData.societesDemandeurs || "",
       interlocuteur: evolutionFormData.interlocuteur || "",
       typeProjet: "Evolution",
       nomProjet: evolutionFormData.nomProjet || "",
@@ -1011,7 +1017,7 @@ const Demandes = ({ activeSubPage }) => {
         prospecteFormData.dateEnregistrement ||
         new Date().toISOString().split("T")[0],
       dateReception: prospecteFormData.dateReception || "",
-      societeDemandeur: prospecteFormData.societeDemandeur || "",
+      societesDemandeurs: prospecteFormData.societesDemandeurs || [],
       interlocuteur: prospecteFormData.interlocuteur || "",
       typeProjet: "Prospecte",
       nomProjet: prospecteFormData.nomProjet || "",
@@ -1248,6 +1254,32 @@ const Demandes = ({ activeSubPage }) => {
     chargerLesInterlocuteurs,
     chargerLesStatuts,
   ]);
+
+  // Réinitialiser flashRetards après l'animation
+  useEffect(() => {
+    if (!flashRetards) return;
+    const t = setTimeout(() => setFlashRetards(false), 3500);
+    return () => clearTimeout(t);
+  }, [flashRetards]);
+
+  // Ouvrir automatiquement une demande à l'étape en cours si on vient du dashboard
+  useEffect(() => {
+    const id = openDemandeIdRef.current;
+    if (!id || demandes.length === 0) return;
+    const demande = demandes.find(d => d.id === id);
+    if (demande) {
+      openDemandeIdRef.current = null;
+      const forceStep = openDemandeStepRef.current;
+      openDemandeStepRef.current = null;
+      if (forceStep) {
+        const stepLabels = { 1: "Enregistrement", 2: "Clarification", 3: "Planification", 4: "Réalisation", 5: "Documents", 6: "Livraison" };
+        handlePoursuivreDemande({ ...demande, draftStep: forceStep, draftStepLabel: stepLabels[forceStep] });
+      } else {
+        handlePoursuivreDemande(demande);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demandes]);
 
   // Sauvegarder l'état du formulaire en cours dans localStorage
   useEffect(() => {
@@ -1608,6 +1640,7 @@ const Demandes = ({ activeSubPage }) => {
     const t = normalizeTypeProjet(typeProjet);
     if (t === "prospecte") return "Demande prospecte";
     if (t === "evolution") return "Demande d'évolution";
+    if (t === "brouillon" || t === "") return "Brouillon";
     return "Nouvelle demande";
   };
 
@@ -1625,13 +1658,10 @@ const Demandes = ({ activeSubPage }) => {
 
   const getTypeDemandeStyle = (typeProjet) => {
     const t = normalizeTypeProjet(typeProjet);
-    if (t === "prospecte") {
-      return { backgroundColor: "#ff6b35", color: "#ffffff" };
-    }
-    if (t === "evolution") {
-      return { backgroundColor: "#10b981", color: "#ffffff" };
-    }
-    return { backgroundColor: "#4a90e2", color: "#ffffff" };
+    if (t === "prospecte")              return { backgroundColor: "#FF6B35", color: "#ffffff" };
+    if (t === "evolution")              return { backgroundColor: "#10B981", color: "#ffffff" };
+    if (t === "brouillon" || t === "")  return { backgroundColor: "#9CA3AF", color: "#ffffff" };
+    return { backgroundColor: "#4A90E2", color: "#ffffff" };
   };
 
   // Gérer la sélection d'une carte
@@ -2266,38 +2296,40 @@ const Demandes = ({ activeSubPage }) => {
                           onChange={handleNouvelleDemandeInputChange}
                         />
                       </div>
-                      <div className="form-group">
-                        <label>Date du retour des équipes DEV</label>
-                        <input
-                          type="date"
-                          name="dateRetourEquipesDev"
-                          value={nouvelleDemandeFormData.dateRetourEquipesDev}
-                          onChange={handleNouvelleDemandeInputChange}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Date du retour des équipes TIF</label>
-                        <input
-                          type="date"
-                          name="dateRetourEquipesTif"
-                          value={nouvelleDemandeFormData.dateRetourEquipesTif}
-                          onChange={handleNouvelleDemandeInputChange}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>
-                          Date de communication du planning au client
-                        </label>
-                        <input
-                          type="date"
-                          name="dateCommunicationPlanningClient"
-                          value={
-                            nouvelleDemandeFormData.dateCommunicationPlanningClient
-                          }
-                          onChange={handleNouvelleDemandeInputChange}
-                          required
-                        />
-                      </div>
+                      {(() => {
+                        const today = new Date(); today.setHours(0,0,0,0);
+                        const retard = (d) => d && new Date(d) < today;
+                        const flashClass = flashRetards ? "flash-retard" : "";
+                        return (
+                          <>
+                            <div className="form-group">
+                              <label>Date du retour des équipes DEV</label>
+                              <input type="date" name="dateRetourEquipesDev"
+                                value={nouvelleDemandeFormData.dateRetourEquipesDev}
+                                onChange={handleNouvelleDemandeInputChange}
+                                className={retard(nouvelleDemandeFormData.dateRetourEquipesDev) ? flashClass : ""}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Date du retour des équipes TIF</label>
+                              <input type="date" name="dateRetourEquipesTif"
+                                value={nouvelleDemandeFormData.dateRetourEquipesTif}
+                                onChange={handleNouvelleDemandeInputChange}
+                                className={retard(nouvelleDemandeFormData.dateRetourEquipesTif) ? flashClass : ""}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Date de communication du planning au client</label>
+                              <input type="date" name="dateCommunicationPlanningClient"
+                                value={nouvelleDemandeFormData.dateCommunicationPlanningClient}
+                                onChange={handleNouvelleDemandeInputChange}
+                                required
+                                className={retard(nouvelleDemandeFormData.dateCommunicationPlanningClient) ? flashClass : ""}
+                              />
+                            </div>
+                          </>
+                        );
+                      })()}
                       <div className="form-group">
                         <label>
                           Nombre de sprint pour le périmètre
@@ -2339,6 +2371,9 @@ const Demandes = ({ activeSubPage }) => {
                                 const sprintData = (nouvelleDemandeFormData.sprintsData || [])[i] || {};
                                 const retardTIF = sprintData.datePrevTIF && sprintData.dateEffTIF && sprintData.dateEffTIF > sprintData.datePrevTIF;
                                 const retardClient = sprintData.datePrevClient && sprintData.dateEffClient && sprintData.dateEffClient > sprintData.datePrevClient;
+                                const today = new Date(); today.setHours(0,0,0,0);
+                                const tifDepasse = sprintData.datePrevTIF && !sprintData.dateEffTIF && new Date(sprintData.datePrevTIF) < today;
+                                const clientDepasse = sprintData.datePrevClient && !sprintData.dateEffClient && new Date(sprintData.datePrevClient) < today;
                                 return (
                                   <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#fff" : "#fafafa" }}>
                                     <td style={{ padding: "8px", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap", color: "#374151" }}>
@@ -2354,7 +2389,7 @@ const Demandes = ({ activeSubPage }) => {
                                       />
                                     </td>
 
-                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
+                                    <td className={tifDepasse && flashRetards ? "flash-retard" : ""} style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                       <input
                                         type="date"
                                         value={sprintData.datePrevTIF || ""}
@@ -2381,7 +2416,7 @@ const Demandes = ({ activeSubPage }) => {
                                         </div>
                                       )}
                                     </td>
-                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
+                                    <td className={clientDepasse && flashRetards ? "flash-retard" : ""} style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                       <input
                                         type="date"
                                         value={sprintData.datePrevClient || ""}

@@ -110,7 +110,7 @@ class PermissionService {
     if (!this.currentUser) return false;
     // Admin reconnu par le nom du profil "admin" OU par profilId: 1
     const profilNom = this.currentUser.profil?.nom?.toLowerCase();
-    if (profilNom === "admin") return true;
+    if (profilNom === "admin" || profilNom === "administrateur") return true;
     return this.currentUser.profilId === 1 || this.currentUser.profilId === "1";
   }
 

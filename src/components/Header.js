@@ -16,13 +16,13 @@ const genererNotifications = (demandes) => {
   demandesActives.forEach((d) => {
     const nom = d.nomProjet || `Demande #${d.id}`;
 
-    // 1. Livraison client globale imminente (≤ 7 jours)
-    if (d.dateCommunicationPlanningClient) {
+    // 1. Livraison client globale imminente (≤ 3 jours) — retards dans le dashboard
+    if (d.dateCommunicationPlanningClient && d.statutLivraisonClient !== "livré au client") {
       const j = diffJours(d.dateCommunicationPlanningClient);
-      if (j !== null && j >= 0 && j <= 7) {
+      if (j !== null && j >= 0 && j <= 3) {
         notifs.push({
           id: `livraison-${d.id}`,
-          type: j <= 2 ? "urgent" : "warning",
+          type: j === 0 ? "urgent" : "warning",
           title: j === 0 ? "Livraison client aujourd'hui !" : `Livraison client dans ${j} jour${j > 1 ? "s" : ""}`,
           details: nom,
           lien: "demandes-gestion",
@@ -30,35 +30,13 @@ const genererNotifications = (demandes) => {
       }
     }
 
-    // 2. Livraison client globale en retard
-    if (d.dateCommunicationPlanningClient && d.statutLivraisonClient !== "livré au client") {
-      const j = diffJours(d.dateCommunicationPlanningClient);
-      if (j !== null && j < 0) {
-        notifs.push({
-          id: `retard-${d.id}`,
-          type: "urgent",
-          title: `Livraison client en retard de ${Math.abs(j)} jour${Math.abs(j) > 1 ? "s" : ""}`,
-          details: nom,
-          lien: "demandes-gestion",
-        });
-      }
-    }
-
-    // 3. Retour équipe Dev — date dépassée ou imminente (≤ 3j)
+    // 2. Retour équipe Dev imminente (≤ 3j) — retards dans le dashboard
     if (d.dateRetourEquipesDev && !d.dateEffectiveLivraisonTIF) {
       const j = diffJours(d.dateRetourEquipesDev);
-      if (j !== null && j < 0) {
-        notifs.push({
-          id: `dev-retard-${d.id}`,
-          type: "warning",
-          title: `Retour équipe Dev dépassé de ${Math.abs(j)} jour${Math.abs(j) > 1 ? "s" : ""}`,
-          details: nom,
-          lien: "demandes-gestion",
-        });
-      } else if (j !== null && j >= 0 && j <= 3) {
+      if (j !== null && j >= 0 && j <= 3) {
         notifs.push({
           id: `dev-proche-${d.id}`,
-          type: "info",
+          type: j === 0 ? "urgent" : "info",
           title: j === 0 ? "Retour équipe Dev aujourd'hui !" : `Retour équipe Dev dans ${j} jour${j > 1 ? "s" : ""}`,
           details: nom,
           lien: "demandes-gestion",
@@ -66,21 +44,13 @@ const genererNotifications = (demandes) => {
       }
     }
 
-    // 4. Retour équipe TIF — date dépassée ou imminente (≤ 3j)
+    // 3. Retour équipe TIF imminente (≤ 3j) — retards dans le dashboard
     if (d.dateRetourEquipesTif && !d.dateEffectiveLivraisonTIF) {
       const j = diffJours(d.dateRetourEquipesTif);
-      if (j !== null && j < 0) {
-        notifs.push({
-          id: `tif-retard-global-${d.id}`,
-          type: "warning",
-          title: `Retour équipe TIF dépassé de ${Math.abs(j)} jour${Math.abs(j) > 1 ? "s" : ""}`,
-          details: nom,
-          lien: "demandes-gestion",
-        });
-      } else if (j !== null && j >= 0 && j <= 3) {
+      if (j !== null && j >= 0 && j <= 3) {
         notifs.push({
           id: `tif-proche-global-${d.id}`,
-          type: "info",
+          type: j === 0 ? "urgent" : "info",
           title: j === 0 ? "Retour équipe TIF aujourd'hui !" : `Retour équipe TIF dans ${j} jour${j > 1 ? "s" : ""}`,
           details: nom,
           lien: "demandes-gestion",
@@ -110,21 +80,13 @@ const genererNotifications = (demandes) => {
               });
             }
 
-            // Date TIF sprint dépassée ou imminente (≤ 3j)
+            // Date TIF sprint imminente (≤ 3j) — retards dans le dashboard
             if (s.datePrevTIF && !s.dateEffTIF) {
               const j = diffJours(s.datePrevTIF);
-              if (j !== null && j < 0) {
-                notifs.push({
-                  id: `tif-retard-${d.id}-${i}`,
-                  type: "urgent",
-                  title: `Sprint ${num} — Date TIF dépassée de ${Math.abs(j)}j`,
-                  details: nom,
-                  lien: "demandes-gestion",
-                });
-              } else if (j !== null && j >= 0 && j <= 3) {
+              if (j !== null && j >= 0 && j <= 3) {
                 notifs.push({
                   id: `tif-proche-${d.id}-${i}`,
-                  type: "warning",
+                  type: j === 0 ? "urgent" : "warning",
                   title: j === 0 ? `Sprint ${num} — Date TIF aujourd'hui !` : `Sprint ${num} — Date TIF dans ${j} jour${j > 1 ? "s" : ""}`,
                   details: nom,
                   lien: "demandes-gestion",
@@ -132,21 +94,13 @@ const genererNotifications = (demandes) => {
               }
             }
 
-            // Date livraison client sprint dépassée ou imminente (≤ 5j)
+            // Date livraison client sprint imminente (≤ 3j) — retards dans le dashboard
             if (s.datePrevClient && !s.dateEffClient) {
               const j = diffJours(s.datePrevClient);
-              if (j !== null && j < 0) {
-                notifs.push({
-                  id: `client-retard-${d.id}-${i}`,
-                  type: "urgent",
-                  title: `Sprint ${num} — Livraison client dépassée de ${Math.abs(j)}j`,
-                  details: nom,
-                  lien: "demandes-gestion",
-                });
-              } else if (j !== null && j >= 0 && j <= 5) {
+              if (j !== null && j >= 0 && j <= 3) {
                 notifs.push({
                   id: `client-proche-${d.id}-${i}`,
-                  type: "warning",
+                  type: j === 0 ? "urgent" : "warning",
                   title: j === 0 ? `Sprint ${num} — Livraison client aujourd'hui !` : `Sprint ${num} — Livraison client dans ${j} jour${j > 1 ? "s" : ""}`,
                   details: nom,
                   lien: "demandes-gestion",
@@ -202,7 +156,7 @@ const genererNotifications = (demandes) => {
   return notifs.sort((a, b) => ordre[a.type] - ordre[b.type]);
 };
 
-const Header = ({ user, deconnecter, onNotificationClick }) => {
+const Header = ({ user, deconnecter }) => {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -347,11 +301,11 @@ const Header = ({ user, deconnecter, onNotificationClick }) => {
                   src={user.avatar}
                   alt="profil"
                   style={{
-                    width: "36px",
-                    height: "36px",
+                    width: "40px",
+                    height: "40px",
                     borderRadius: "50%",
                     objectFit: "cover",
-                    border: "2px solid #4A90E2",
+                    border: "none",
                     display: "block",
                   }}
                 />
