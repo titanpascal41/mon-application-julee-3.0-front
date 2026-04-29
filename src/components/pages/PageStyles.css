@@ -1,3 +1,9 @@
+.form-select:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: #D1D5DB;
+}
+
 @keyframes flashRetard {
   0%   { background-color: #FEF2F2; border-color: #F87171; box-shadow: 0 0 0 3px rgba(248,113,113,0.4); }
   60%  { background-color: #FEF2F2; border-color: #F87171; box-shadow: 0 0 0 3px rgba(248,113,113,0.4); }

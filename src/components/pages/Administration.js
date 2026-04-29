@@ -85,6 +85,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [profilToToggle, setProfilToToggle] = useState(null);
   const [motifDesactivation, setMotifDesactivation] = useState("");
+  const [motifTooltipProfilId, setMotifTooltipProfilId] = useState(null);
 
   // État pour popup info profil avec utilisateurs
   const [showProfilOccupeModal, setShowProfilOccupeModal] = useState(false);
@@ -479,9 +480,9 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                 existingPerm.module,
 
               submoduleLabel:
-                MODULES_STRUCTURE[existingPerm.module]?.submodules[
-                  existingPerm.submodule
-                ] || existingPerm.submodule,
+                existingPerm.submodule
+                  ? (MODULES_STRUCTURE[existingPerm.module]?.submodules[existingPerm.submodule] || existingPerm.submodule)
+                  : "Accès",
             };
           } else {
             // Utiliser les permissions par défaut
@@ -691,10 +692,9 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
               moduleLabel: USER_MODULES_STRUCTURE[existingPerm.module]?.label || existingPerm.module,
 
               submoduleLabel:
-
-                USER_MODULES_STRUCTURE[existingPerm.module]?.submodules[existingPerm.submodule] ||
-
-                existingPerm.submodule,
+                existingPerm.submodule
+                  ? (USER_MODULES_STRUCTURE[existingPerm.module]?.submodules[existingPerm.submodule] || existingPerm.submodule)
+                  : "Accès",
 
             };
 
@@ -907,8 +907,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
     setUserFormData((prev) => ({
       ...prev,
-
-      [name]: value,
+      [name]: name === "email" ? value.toLowerCase() : value,
     }));
 
     if (userMessage.text) {
@@ -1447,13 +1446,13 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                                         color: "#374151",
                                       }}
                                     >
-                                      {MODULES_STRUCTURE[module]?.submodules[
-                                        perm.submodule
-                                      ] || perm.submodule}
+                                      {perm.submodule
+                                        ? (MODULES_STRUCTURE[module]?.submodules[perm.submodule] || perm.submodule)
+                                        : "Accès"}
                                     </span>
                                   </label>
 
-                                  {perm.access &&
+                                  {perm.access && perm.submodule !== null &&
                                     (() => {
                                       const DESACTIVER_MODULES = [
                                         "societes",
@@ -1624,7 +1623,9 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                           )}
                         </td>
 
-                        <td>{profil.nom}</td>
+                        <td>
+                          <span>{profil.nom}</span>
+                        </td>
 
                         <td>
                           <button
@@ -1656,15 +1657,11 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                               e.target.style.backgroundColor = "#bfdbfe";
 
                               e.target.style.transform = "scale(1.05)";
-
-                              e.target.style.textDecoration = "underline";
                             }}
                             onMouseOut={(e) => {
                               e.target.style.backgroundColor = "#dbeafe";
 
                               e.target.style.transform = "scale(1)";
-
-                              e.target.style.textDecoration = "none";
                             }}
                           >
                             {
@@ -1799,6 +1796,13 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                                     ? "Désactiver"
                                     : "Activer"}
                                 </button>
+                                {profil.actif === false && profil.motifDesactivation && (
+                                  <i
+                                    className="fa-solid fa-circle-info"
+                                    onClick={() => setMotifTooltipProfilId(profil)}
+                                    style={{ color: "#F59E0B", fontSize: "16px", cursor: "pointer", marginLeft: "15px" }}
+                                  />
+                                )}
                               </>
                             )}
                           </td>
@@ -1809,6 +1813,38 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
               </table>
             )}
           </div>
+
+          {motifTooltipProfilId && (
+            <div className="modal-overlay" onClick={() => setMotifTooltipProfilId(null)}>
+              <div
+                className="modal-content"
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: "420px", width: "90%" }}
+              >
+                <div className="modal-header">
+                  <h3 style={{ margin: 0 }}>
+                    <i className="fa-solid fa-circle-info" style={{ color: "#F59E0B", marginRight: "8px" }} />
+                    Motif de désactivation
+                  </h3>
+                </div>
+                <div style={{ padding: "24px 32px" }}>
+                  <div style={{ marginBottom: "16px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "600", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>Profil</div>
+                    <div style={{ fontSize: "14px", fontWeight: "600", color: "#111827" }}>{motifTooltipProfilId.nom}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "11px", fontWeight: "600", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>Motif</div>
+                    <div style={{ fontSize: "14px", color: "#374151", lineHeight: "1.6", backgroundColor: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: "8px", padding: "12px 14px" }}>
+                      {motifTooltipProfilId.motifDesactivation}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", padding: "16px 32px 24px", borderTop: "1px solid #E5E7EB" }}>
+                  <button className="btn-secondary" onClick={() => setMotifTooltipProfilId(null)}>Fermer</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {showDeleteConfirm && (
             <div className="modal-overlay" onClick={cancelDelete}>
@@ -2393,17 +2429,53 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                       value={userFormData.profilId}
                       onChange={handleUserInputChange}
                       required
+                      disabled={profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false}
+                      style={{
+                        opacity: profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false ? 0.5 : 1,
+                        cursor: profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false ? "not-allowed" : "pointer",
+                        backgroundColor: profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false ? "#F3F4F6" : "",
+                      }}
                     >
-                      {profils.map((profil) => (
-                        <option key={profil.id} value={profil.id}>
-                          {profil.nom}
+                      {[...profils].sort((a, b) => (a.actif === false ? 1 : 0) - (b.actif === false ? 1 : 0)).map((profil) => (
+                        <option
+                          key={profil.id}
+                          value={profil.id}
+                          disabled={profil.actif === false}
+                          style={{ color: profil.actif === false ? "#9CA3AF" : "inherit" }}
+                        >
+                          {profil.nom}{profil.actif === false ? " (désactivé)" : ""}
                         </option>
                       ))}
                     </select>
+                    {(() => {
+                      const profilSelectionne = profils.find(p => String(p.id) === String(userFormData.profilId));
+                      return profilSelectionne?.actif === false ? (
+                        <div style={{
+                          marginTop: "8px",
+                          padding: "10px 14px",
+                          backgroundColor: "#FEF3C7",
+                          border: "1px solid #FDE68A",
+                          borderRadius: "8px",
+                          fontSize: "13px",
+                          color: "#92400E",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}>
+                          <i className="fa-solid fa-triangle-exclamation" />
+                          Cet utilisateur appartient à un profil désactivé. Pour modifier son profil, réactivez d'abord le profil concerné.
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
 
                   <div className="modal-actions">
-                    <button type="submit" className="btn-primary">
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                      disabled={profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false}
+                      style={{ opacity: profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false ? 0.4 : 1, cursor: profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false ? "not-allowed" : "pointer" }}
+                    >
                       {editingUser ? "Mettre à jour" : "Créer"}
                     </button>
 

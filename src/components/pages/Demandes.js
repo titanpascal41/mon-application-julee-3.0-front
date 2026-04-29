@@ -416,43 +416,93 @@ const Demandes = () => {
 
   const handleNouvelleDemandeNext = () => {
     if (nouvelleDemandeStep < 6) {
-      // Validation étape 1 : nom du projet obligatoire
-      if (nouvelleDemandeStep === 1 && !nouvelleDemandeFormData.nomProjet?.trim()) {
-        setDemandeMessage({
-          type: "error",
-          text: "Le nom du projet est obligatoire pour passer à l'étape suivante.",
-        });
+
+      // ── ÉTAPE 1 ──────────────────────────────────────────────────────────
+      if (nouvelleDemandeStep === 1) {
+        if (!nouvelleDemandeFormData.nomProjet?.trim()) {
+          setDemandeMessage({ type: "error", text: "Le nom du projet est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (nomProjetEstDuplique(nouvelleDemandeFormData.nomProjet, nouvelleDemandeFormData.id)) {
+          setDemandeMessage({ type: "error", text: `Un projet nommé "${nouvelleDemandeFormData.nomProjet.trim()}" existe déjà. Veuillez choisir un autre nom.` });
+          scrollToFormTop(); return;
+        }
+        if (!nouvelleDemandeFormData.societesDemandeurs) {
+          setDemandeMessage({ type: "error", text: "La société demandeuse est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!nouvelleDemandeFormData.interlocuteurClient) {
+          setDemandeMessage({ type: "error", text: "L'interlocuteur client est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!nouvelleDemandeFormData.typeProjet) {
+          setDemandeMessage({ type: "error", text: "Le type de projet est obligatoire." });
+          scrollToFormTop(); return;
+        }
         scrollToFormTop();
-        return;
       }
-      // Validation étape 1 : nom du projet unique
-      if (nouvelleDemandeStep === 1 && nomProjetEstDuplique(nouvelleDemandeFormData.nomProjet, nouvelleDemandeFormData.id)) {
-        setDemandeMessage({
-          type: "error",
-          text: `Un projet nommé "${nouvelleDemandeFormData.nomProjet.trim()}" existe déjà. Veuillez choisir un autre nom.`,
-        });
-        scrollToFormTop();
-        return;
-      }
-      // Validation étape 3 : chantier obligatoire pour chaque sprint
-      if (nouvelleDemandeStep === 3) {
-        const nb = parseInt(nouvelleDemandeFormData.nombreSprint) || 0;
-        if (nb > 0) {
-          const sprints = nouvelleDemandeFormData.sprintsData || [];
-          const manquants = Array.from({ length: nb }, (_, i) => i + 1).filter(
-            (i) => !sprints[i - 1]?.chantier?.trim()
-          );
-          if (manquants.length > 0) {
-            setDemandeMessage({
-              type: "error",
-              text: `Le chantier est obligatoire pour chaque sprint. Sprint${manquants.length > 1 ? "s" : ""} sans chantier : ${manquants.map((n) => `Sprint ${n}`).join(", ")}.`,
-            });
-            scrollToFormTop();
-            return;
-          }
+
+      // ── ÉTAPE 2 ──────────────────────────────────────────────────────────
+      if (nouvelleDemandeStep === 2) {
+        if (!nouvelleDemandeFormData.dateTransmissionBacklog) {
+          setDemandeMessage({ type: "error", text: "La date de transmission du backlog est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!nouvelleDemandeFormData.dateConfirmationValidation) {
+          setDemandeMessage({ type: "error", text: "La date de confirmation/validation est obligatoire." });
+          scrollToFormTop(); return;
         }
       }
-      if (nouvelleDemandeStep === 1) scrollToFormTop();
+
+      // ── ÉTAPE 3 ──────────────────────────────────────────────────────────
+      if (nouvelleDemandeStep === 3) {
+        if (!nouvelleDemandeFormData.dateCommunicationPlanningClient) {
+          setDemandeMessage({ type: "error", text: "La date de communication du planning client est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        const nb = parseInt(nouvelleDemandeFormData.nombreSprint) || 0;
+        if (nb < 1) {
+          setDemandeMessage({ type: "error", text: "Le nombre de sprints doit être d'au moins 1." });
+          scrollToFormTop(); return;
+        }
+        const sprints = nouvelleDemandeFormData.sprintsData || [];
+        const manquants = Array.from({ length: nb }, (_, i) => i + 1).filter(
+          (i) => !sprints[i - 1]?.chantier?.trim()
+        );
+        if (manquants.length > 0) {
+          setDemandeMessage({ type: "error", text: `Le chantier est obligatoire pour chaque sprint. Sprint${manquants.length > 1 ? "s" : ""} sans chantier : ${manquants.map((n) => `Sprint ${n}`).join(", ")}.` });
+          scrollToFormTop(); return;
+        }
+      }
+
+      // ── ÉTAPE 4 ──────────────────────────────────────────────────────────
+      if (nouvelleDemandeStep === 4) {
+        if (!nouvelleDemandeFormData.statutCodage) {
+          setDemandeMessage({ type: "error", text: "Le statut du codage est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!nouvelleDemandeFormData.statutTIF) {
+          setDemandeMessage({ type: "error", text: "Le statut TIF est obligatoire." });
+          scrollToFormTop(); return;
+        }
+      }
+
+      // ── ÉTAPE 5 ──────────────────────────────────────────────────────────
+      if (nouvelleDemandeStep === 5) {
+        if (!nouvelleDemandeFormData.lienIngridKickoff?.trim()) {
+          setDemandeMessage({ type: "error", text: "Le lien du document Kickoff est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!nouvelleDemandeFormData.lienIngridPointsControleTIF?.trim()) {
+          setDemandeMessage({ type: "error", text: "Le lien des points de contrôle TIF est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!nouvelleDemandeFormData.lienIngridSignoff?.trim()) {
+          setDemandeMessage({ type: "error", text: "Le lien du document Signoff est obligatoire." });
+          scrollToFormTop(); return;
+        }
+      }
+
       setNouvelleDemandeStep(nouvelleDemandeStep + 1);
       setDemandeMessage({ type: "", text: "" });
     }
@@ -1994,7 +2044,7 @@ const Demandes = () => {
                       </div>
                       <div className="form-group">
                         <label>
-                          Société demandeur
+                          Société demandeur <span className="required">*</span>
                         </label>
                         <select
                           name="societesDemandeurs"
@@ -2043,7 +2093,7 @@ const Demandes = () => {
                       </div>
                       <div className="form-group">
                         <label>
-                          L'interlocuteur
+                          L'interlocuteur <span className="required">*</span>
                         </label>
                         <select
                           name="interlocuteurClient"
@@ -2061,7 +2111,7 @@ const Demandes = () => {
                       </div>
                       <div className="form-group">
                         <label>
-                          Type de projet
+                          Type de projet <span className="required">*</span>
                         </label>
                         <select
                           name="typeProjet"
@@ -2079,7 +2129,7 @@ const Demandes = () => {
                         style={{ gridColumn: "1 / -1" }}
                       >
                         <label>
-                          Nom du projet / Applicatif
+                          Nom du projet / Applicatif <span className="required">*</span>
                         </label>
                         <input
                           type="text"
@@ -2319,7 +2369,7 @@ const Demandes = () => {
                               />
                             </div>
                             <div className="form-group">
-                              <label>Date de communication du planning au client</label>
+                              <label>Date de communication du planning au client <span className="required">*</span></label>
                               <input type="date" name="dateCommunicationPlanningClient"
                                 value={nouvelleDemandeFormData.dateCommunicationPlanningClient}
                                 onChange={handleNouvelleDemandeInputChange}
@@ -2332,7 +2382,7 @@ const Demandes = () => {
                       })()}
                       <div className="form-group">
                         <label>
-                          Nombre de sprint pour le périmètre
+                          Nombre de sprint pour le périmètre <span className="required">*</span>
                         </label>
                         <input
                           type="number"
@@ -2498,7 +2548,7 @@ const Demandes = () => {
                     {/* Statuts Codage + TIF */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", maxWidth: "600px" }}>
                       <div className="form-group">
-                        <label>Statut Codage</label>
+                        <label>Statut Codage <span className="required">*</span></label>
                         <select
                           name="statutCodage"
                           value={nouvelleDemandeFormData.statutCodage}
@@ -2510,7 +2560,7 @@ const Demandes = () => {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Statut TIF</label>
+                        <label>Statut TIF <span className="required">*</span></label>
                         <select
                           name="statutTIF"
                           value={nouvelleDemandeFormData.statutTIF}
@@ -2651,7 +2701,7 @@ const Demandes = () => {
                     >
                       <div className="form-group">
                         <label>
-                          Présentation de kickoff - Lien INGRID
+                          Présentation de kickoff - Lien INGRID <span className="required">*</span>
                         </label>
                         <input
                           type="url"
@@ -2664,7 +2714,7 @@ const Demandes = () => {
                       </div>
                       <div className="form-group">
                         <label>
-                          Rédaction des points de contrôles (TIF) - Lien INGRID
+                          Rédaction des points de contrôles (TIF) - Lien INGRID <span className="required">*</span>
                         </label>
                         <input
                           type="url"
@@ -2679,7 +2729,7 @@ const Demandes = () => {
                       </div>
                       <div className="form-group">
                         <label>
-                          Rédaction du signoff document - Lien INGRID
+                          Rédaction du signoff document - Lien INGRID <span className="required">*</span>
                         </label>
                         <input
                           type="url"
@@ -3214,7 +3264,7 @@ const Demandes = () => {
                       </div>
                       <div className="form-group">
                         <label>
-                          Société demandeur
+                          Société demandeur <span className="required">*</span>
                         </label>
                         <select
                           name="societesDemandeurs"
@@ -4403,7 +4453,6 @@ const Demandes = () => {
                   <option value="ND - non démarré">ND - non démarré</option>
                   <option value="enregistré">enregistré</option>
                   {statutsDisponibles
-                    .filter((statut) => !statut.estAutomatique)
                     .map((statut) => (
                       <option key={statut.id} value={statut.nom}>
                         {statut.nom}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./PageStyles.css";
 import { apiFetch } from "../../utils/apiFetch";
+import { usePermissions } from "../PermissionGuard";
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "-";
@@ -37,11 +38,14 @@ const ENTITE_ICON = {
 };
 
 const PisteAudit = () => {
+  const { hasPermission } = usePermissions();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState(null);
   const [filtreEntite, setFiltreEntite] = useState("");
   const [filtreAction, setFiltreAction] = useState("");
+  const [pageAudit, setPageAudit] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     const charger = async () => {
@@ -68,6 +72,30 @@ const PisteAudit = () => {
     return true;
   });
 
+  const totalPages = Math.max(1, Math.ceil(logsFiltres.length / ITEMS_PER_PAGE));
+  useEffect(() => {
+    if (pageAudit > totalPages) setPageAudit(totalPages);
+  }, [logsFiltres.length, pageAudit, totalPages]);
+  const logsPage = logsFiltres.slice((pageAudit - 1) * ITEMS_PER_PAGE, pageAudit * ITEMS_PER_PAGE);
+
+  const handleFiltreEntite = (val) => { setFiltreEntite(val); setPageAudit(1); };
+  const handleFiltreAction = (val) => { setFiltreAction(val); setPageAudit(1); };
+  const handleResetFiltres = () => { setFiltreEntite(""); setFiltreAction(""); setPageAudit(1); };
+
+  if (!hasPermission("audit", null)) {
+    return (
+      <div className="page-container">
+        <div className="page-header">
+          <h1>Piste d'Audit</h1>
+        </div>
+        <div style={{ padding: "40px", textAlign: "center", color: "#9CA3AF" }}>
+          <i className="fa-solid fa-lock" style={{ fontSize: "36px", marginBottom: "12px", display: "block" }}></i>
+          Vous n'avez pas la permission d'accéder à la piste d'audit.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -81,7 +109,7 @@ const PisteAudit = () => {
       <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
         <select
           value={filtreEntite}
-          onChange={(e) => setFiltreEntite(e.target.value)}
+          onChange={(e) => handleFiltreEntite(e.target.value)}
           style={{
             padding: "8px 12px", borderRadius: "8px", border: "1px solid #D1D5DB",
             fontSize: "14px", color: "#374151", backgroundColor: "#fff", cursor: "pointer",
@@ -95,7 +123,7 @@ const PisteAudit = () => {
 
         <select
           value={filtreAction}
-          onChange={(e) => setFiltreAction(e.target.value)}
+          onChange={(e) => handleFiltreAction(e.target.value)}
           style={{
             padding: "8px 12px", borderRadius: "8px", border: "1px solid #D1D5DB",
             fontSize: "14px", color: "#374151", backgroundColor: "#fff", cursor: "pointer",
@@ -109,7 +137,7 @@ const PisteAudit = () => {
 
         {(filtreEntite || filtreAction) && (
           <button
-            onClick={() => { setFiltreEntite(""); setFiltreAction(""); }}
+            onClick={handleResetFiltres}
             style={{
               padding: "8px 14px", borderRadius: "8px", border: "1px solid #D1D5DB",
               fontSize: "13px", color: "#6B7280", backgroundColor: "#F9FAFB", cursor: "pointer",
@@ -119,15 +147,12 @@ const PisteAudit = () => {
           </button>
         )}
 
-        <span style={{ marginLeft: "auto", fontSize: "13px", color: "#9CA3AF", alignSelf: "center" }}>
-          {logsFiltres.length} entrée{logsFiltres.length !== 1 ? "s" : ""}
-        </span>
       </div>
 
       <div className="page-content">
         {loading ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#6B7280" }}>
-            Chargement...
+            <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }}></i>
           </div>
         ) : logsFiltres.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#9CA3AF", fontSize: "15px" }}>
@@ -147,7 +172,7 @@ const PisteAudit = () => {
                 </tr>
               </thead>
               <tbody>
-                {logsFiltres.map((log) => {
+                {logsPage.map((log) => {
                   const actionStyle = ACTION_STYLE[log.action] || { bg: "#F3F4F6", color: "#374151", label: log.action };
                   const icon = ENTITE_ICON[log.entite] || "fa-solid fa-circle-dot";
                   return (
@@ -194,6 +219,26 @@ const PisteAudit = () => {
                 })}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", marginTop: "16px" }}>
+                {[
+                  { label: "«", action: () => setPageAudit(1), disabled: pageAudit === 1 },
+                  { label: "‹", action: () => setPageAudit(p => p - 1), disabled: pageAudit === 1 },
+                  { label: "›", action: () => setPageAudit(p => p + 1), disabled: pageAudit === totalPages },
+                  { label: "»", action: () => setPageAudit(totalPages), disabled: pageAudit === totalPages },
+                ].map((btn, i) => (
+                  <button key={i} onClick={btn.action} disabled={btn.disabled} style={{
+                    padding: "5px 10px", borderRadius: "6px", border: "1px solid #D1D5DB",
+                    backgroundColor: btn.disabled ? "#F3F4F6" : "#fff",
+                    color: btn.disabled ? "#9CA3AF" : "#374151",
+                    cursor: btn.disabled ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: "500",
+                  }}>{btn.label}</button>
+                ))}
+                <span style={{ fontSize: "13px", color: "#6B7280", padding: "0 8px" }}>
+                  Page {pageAudit} / {totalPages}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>

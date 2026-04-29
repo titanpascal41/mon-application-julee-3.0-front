@@ -167,6 +167,25 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const dragStatutIndex = useRef(null);
   const dragOverStatutIndex = useRef(null);
 
+  const [loading, setLoading] = useState(false);
+
+  // Pagination
+  const ITEMS_PER_PAGE = 10;
+  const [pageSocietes, setPageSocietes] = useState(1);
+  const [pageUO, setPageUO] = useState(1);
+  const [pageStatuts, setPageStatuts] = useState(1);
+  const [pageInterlocuteurs, setPageInterlocuteurs] = useState(1);
+
+  // Filtres & recherche
+  const [rechercheSocietes, setRechercheSocietes] = useState("");
+  const [filtreStatutSocietes, setFiltreStatutSocietes] = useState("tous");
+  const [rechercheUO, setRechercheUO] = useState("");
+  const [filtreStatutUO, setFiltreStatutUO] = useState("tous");
+  const [rechercheStatuts, setRechercheStatuts] = useState("");
+  const [filtreStatutStatuts, setFiltreStatutStatuts] = useState("tous");
+  const [rechercheInterlocuteurs, setRechercheInterlocuteurs] = useState("");
+  const [filtreStatutInterlocuteurs, setFiltreStatutInterlocuteurs] = useState("tous");
+
   // États pour la gestion des interlocuteurs
 
   const [interlocuteurs, setInterlocuteurs] = useState([]);
@@ -216,6 +235,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   }, [activeSubPageProp]);
 
   const chargerLesSocietes = useCallback(async () => {
+    setLoading(true);
     const toutesChargees = await chargerToutesSocietes();
     const triees = [...toutesChargees].sort((a, b) => {
       if (a.actif === b.actif) return 0;
@@ -223,24 +243,28 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     });
     setSocietes(triees);
     setToutesSocietes(triees);
+    setLoading(false);
   }, []);
 
   const chargerLesUO = useCallback(async () => {
+    setLoading(true);
     const uoChargees = await chargerUO();
-
     setUOList(uoChargees);
+    setLoading(false);
   }, []);
 
   const chargerLesStatuts = useCallback(async () => {
+    setLoading(true);
     const statutsCharges = await chargerStatuts();
-
     setStatuts(statutsCharges);
+    setLoading(false);
   }, []);
 
   const chargerLesInterlocuteurs = useCallback(async () => {
+    setLoading(true);
     const interlocuteursCharges = await chargerInterlocuteurs();
-
     setInterlocuteurs(interlocuteursCharges);
+    setLoading(false);
   }, []);
 
   // Charger les données au montage et quand on change de sous-page
@@ -269,6 +293,53 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
     chargerLesInterlocuteurs,
   ]);
+
+  // Tableaux filtrés (recherche + statut actif/inactif)
+  // eslint-disable-next-line no-misleading-character-class
+  const normaliser = (str) =>
+    (str || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+  const applyFiltre = (items, recherche, filtreStatut, fields) => {
+    const q = normaliser(recherche);
+    return items.filter(item => {
+      const matchStatut = filtreStatut === "tous"
+        || (filtreStatut === "actif" ? item.actif !== false : item.actif === false);
+      const matchRecherche = !q || fields.some(f => normaliser(item[f]).includes(q));
+      return matchStatut && matchRecherche;
+    });
+  };
+
+  const societesFiltrees       = applyFiltre(societes,       rechercheSocietes,       filtreStatutSocietes,       ["code","nom","departement"]);
+  const uoFiltrees             = applyFiltre(uoList,         rechercheUO,             filtreStatutUO,             ["code","nom","chefUO","departement"]);
+  const statutsFiltrees        = applyFiltre(statuts,        rechercheStatuts,        filtreStatutStatuts,        ["nom","description"]);
+  const interlocuteursFiltrees = applyFiltre(interlocuteurs, rechercheInterlocuteurs, filtreStatutInterlocuteurs, ["nom","email","telephone","structureUO"]);
+
+  // Recule d'une page si la page courante devient vide après suppression ou filtrage
+  useEffect(() => {
+    const max = Math.max(1, Math.ceil(societesFiltrees.length / ITEMS_PER_PAGE));
+    if (pageSocietes > max) setPageSocietes(max);
+  }, [societesFiltrees.length, pageSocietes, ITEMS_PER_PAGE]);
+
+  useEffect(() => {
+    const max = Math.max(1, Math.ceil(uoFiltrees.length / ITEMS_PER_PAGE));
+    if (pageUO > max) setPageUO(max);
+  }, [uoFiltrees.length, pageUO, ITEMS_PER_PAGE]);
+
+  useEffect(() => {
+    const max = Math.max(1, Math.ceil(statutsFiltrees.length / ITEMS_PER_PAGE));
+    if (pageStatuts > max) setPageStatuts(max);
+  }, [statutsFiltrees.length, pageStatuts, ITEMS_PER_PAGE]);
+
+  useEffect(() => {
+    const max = Math.max(1, Math.ceil(interlocuteursFiltrees.length / ITEMS_PER_PAGE));
+    if (pageInterlocuteurs > max) setPageInterlocuteurs(max);
+  }, [interlocuteursFiltrees.length, pageInterlocuteurs, ITEMS_PER_PAGE]);
+
+  // Remettre à la page 1 quand filtre ou recherche change
+  useEffect(() => { setPageSocietes(1); }, [rechercheSocietes, filtreStatutSocietes]);
+  useEffect(() => { setPageUO(1); }, [rechercheUO, filtreStatutUO]);
+  useEffect(() => { setPageStatuts(1); }, [rechercheStatuts, filtreStatutStatuts]);
+  useEffect(() => { setPageInterlocuteurs(1); }, [rechercheInterlocuteurs, filtreStatutInterlocuteurs]);
 
   // Fonctions pour la gestion des sociétés
 
@@ -842,20 +913,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   };
 
   const handleDeleteStatut = (statut) => {
-    // Vérifier si le statut est créé automatiquement
-    if (statut.estAutomatique) {
-      setStatutMessage({
-        type: "error",
-        text: "❌ Les statuts créés automatiquement depuis les demandes ne peuvent pas être supprimés directement. Ils seront automatiquement supprimés lorsque la demande associée est supprimée.",
-        details:
-          "Pour supprimer ce statut, veuillez d'abord supprimer la demande qui l'a créé.",
-      });
-      setTimeout(
-        () => setStatutMessage({ type: "", text: "", details: "" }),
-        8000,
-      );
-      return;
-    }
     setStatutToDelete(statut);
     setShowStatutDeleteConfirm(true);
   };
@@ -1197,6 +1254,25 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setEditingInterlocuteur(null);
 
     setInterlocuteurMessage({ type: "", text: "" });
+  };
+
+  const renderPagination = (total, page, setPage) => {
+    const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+    if (totalPages <= 1) return null;
+    const btnStyle = (disabled) => ({
+      padding: "5px 10px", borderRadius: "6px", border: "1px solid #D1D5DB",
+      backgroundColor: disabled ? "#F3F4F6" : "#fff", color: disabled ? "#9CA3AF" : "#374151",
+      cursor: disabled ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: "500",
+    });
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", marginTop: "16px" }}>
+        <button style={btnStyle(page === 1)} disabled={page === 1} onClick={() => setPage(1)}>«</button>
+        <button style={btnStyle(page === 1)} disabled={page === 1} onClick={() => setPage(p => p - 1)}>‹</button>
+        <span style={{ fontSize: "13px", color: "#6B7280", padding: "0 8px" }}>Page {page} / {totalPages}</span>
+        <button style={btnStyle(page === totalPages)} disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>›</button>
+        <button style={btnStyle(page === totalPages)} disabled={page === totalPages} onClick={() => setPage(totalPages)}>»</button>
+      </div>
+    );
   };
 
   const subPages = {
@@ -1630,11 +1706,36 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
           )}
 
           <div className="table-container" style={{ marginTop: "24px" }}>
-            <h3>Liste des sociétés</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
+              <h3 style={{ margin: 0 }}>Liste des sociétés</h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ position: "relative" }}>
+                  <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
+                  <input type="text" placeholder="Rechercher..." value={rechercheSocietes} onChange={e => setRechercheSocietes(e.target.value)}
+                    style={{ padding: "7px 10px 7px 30px", borderRadius: "8px", border: "1px solid #D1D5DB", fontSize: "13px", width: "180px", outline: "none" }} />
+                </div>
+                <select value={filtreStatutSocietes} onChange={e => setFiltreStatutSocietes(e.target.value)}
+                  className="form-select form-select-sm" style={{ width: "130px" }}>
+                  <option value="tous">Tous</option>
+                  <option value="actif">Actifs</option>
+                  <option value="inactif">Désactivés</option>
+                </select>
+              </div>
+            </div>
 
-            {societes.length === 0 ? (
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }} />
+              </div>
+            ) : societesFiltrees.length === 0 ? (
               <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                Aucune société créée pour le moment.
+                {societes.length === 0
+                  ? "Aucune société créée pour le moment."
+                  : filtreStatutSocietes === "actif"
+                  ? "Aucune société active."
+                  : filtreStatutSocietes === "inactif"
+                  ? "Aucune société désactivée."
+                  : "Aucun résultat pour cette recherche."}
               </p>
             ) : (
               <table className="data-table">
@@ -1648,7 +1749,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 </thead>
 
                 <tbody>
-                  {societes.map((societe) => (
+                  {societesFiltrees.slice((pageSocietes - 1) * ITEMS_PER_PAGE, pageSocietes * ITEMS_PER_PAGE).map((societe) => (
                     <tr key={societe.id} style={{ opacity: societe.actif === false ? 0.6 : 1, backgroundColor: societe.actif === false ? "#F3F4F6" : "inherit" }}>
                       <td>
                         <span
@@ -1719,6 +1820,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 </tbody>
               </table>
             )}
+            {renderPagination(societesFiltrees.length, pageSocietes, setPageSocietes)}
           </div>
         </div>
       ),
@@ -1987,11 +2089,36 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
           )}
 
           <div className="table-container" style={{ marginTop: "24px" }}>
-            <h3>Liste des unités organisationnelles</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
+              <h3 style={{ margin: 0 }}>Liste des unités organisationnelles</h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ position: "relative" }}>
+                  <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
+                  <input type="text" placeholder="Rechercher..." value={rechercheUO} onChange={e => setRechercheUO(e.target.value)}
+                    style={{ padding: "7px 10px 7px 30px", borderRadius: "8px", border: "1px solid #D1D5DB", fontSize: "13px", width: "180px", outline: "none" }} />
+                </div>
+                <select value={filtreStatutUO} onChange={e => setFiltreStatutUO(e.target.value)}
+                  className="form-select form-select-sm" style={{ width: "130px" }}>
+                  <option value="tous">Tous</option>
+                  <option value="actif">Actifs</option>
+                  <option value="inactif">Désactivés</option>
+                </select>
+              </div>
+            </div>
 
-            {uoList.length === 0 ? (
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }} />
+              </div>
+            ) : uoFiltrees.length === 0 ? (
               <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                Aucune unité organisationnelle créée pour le moment.
+                {uoList.length === 0
+                  ? "Aucune unité organisationnelle créée pour le moment."
+                  : filtreStatutUO === "actif"
+                  ? "Aucune unité organisationnelle active."
+                  : filtreStatutUO === "inactif"
+                  ? "Aucune unité organisationnelle désactivée."
+                  : "Aucun résultat pour cette recherche."}
               </p>
             ) : (
               <table className="data-table">
@@ -2007,7 +2134,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 </thead>
 
                 <tbody>
-                  {uoList.map((uo) => (
+                  {uoFiltrees.slice((pageUO - 1) * ITEMS_PER_PAGE, pageUO * ITEMS_PER_PAGE).map((uo) => (
                     <tr key={uo.id} style={uo.actif === false ? { opacity: 0.6, backgroundColor: "#F3F4F6" } : {}}>
                       <td>
                         {uo.code ? (
@@ -2111,6 +2238,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 </tbody>
               </table>
             )}
+            {renderPagination(uoFiltrees.length, pageUO, setPageUO)}
           </div>
         </div>
       ),
@@ -2254,11 +2382,36 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
           )}
 
           <div className="table-container" style={{ marginTop: "24px" }}>
-            <h3>Liste des statuts</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
+              <h3 style={{ margin: 0 }}>Liste des statuts</h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ position: "relative" }}>
+                  <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
+                  <input type="text" placeholder="Rechercher..." value={rechercheStatuts} onChange={e => setRechercheStatuts(e.target.value)}
+                    style={{ padding: "7px 10px 7px 30px", borderRadius: "8px", border: "1px solid #D1D5DB", fontSize: "13px", width: "180px", outline: "none" }} />
+                </div>
+                <select value={filtreStatutStatuts} onChange={e => setFiltreStatutStatuts(e.target.value)}
+                  className="form-select form-select-sm" style={{ width: "130px" }}>
+                  <option value="tous">Tous</option>
+                  <option value="actif">Actifs</option>
+                  <option value="inactif">Désactivés</option>
+                </select>
+              </div>
+            </div>
 
-            {statuts.length === 0 ? (
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }} />
+              </div>
+            ) : statutsFiltrees.length === 0 ? (
               <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                Aucun statut créé pour le moment.
+                {statuts.length === 0
+                  ? "Aucun statut créé pour le moment."
+                  : filtreStatutStatuts === "actif"
+                  ? "Aucun statut actif."
+                  : filtreStatutStatuts === "inactif"
+                  ? "Aucun statut désactivé."
+                  : "Aucun résultat pour cette recherche."}
               </p>
             ) : (
               <table className="data-table">
@@ -2275,7 +2428,9 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 </thead>
 
                 <tbody>
-                  {statuts.map((statut, index) => (
+                  {statutsFiltrees.slice((pageStatuts - 1) * ITEMS_PER_PAGE, pageStatuts * ITEMS_PER_PAGE).map((statut, sliceIdx) => {
+                    const index = (pageStatuts - 1) * ITEMS_PER_PAGE + sliceIdx;
+                    return (
                     <tr
                       key={statut.id}
                       draggable
@@ -2333,20 +2488,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             action="delete"
                           >
                             <button
-                              className={`btn-danger ${statut.estAutomatique ? "disabled" : ""}`}
+                              className="btn-danger"
                               onClick={() => handleDeleteStatut(statut)}
-                              disabled={statut.estAutomatique}
-                              title={
-                                statut.estAutomatique
-                                  ? "Les statuts créés automatiquement ne peuvent pas être supprimés"
-                                  : "Supprimer ce statut"
-                              }
-                              style={{
-                                opacity: statut.estAutomatique ? 0.5 : 1,
-                                cursor: statut.estAutomatique
-                                  ? "not-allowed"
-                                  : "pointer",
-                              }}
                             >
                               Supprimer
                             </button>
@@ -2354,10 +2497,11 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         </td>
                       )}
                     </tr>
-                  ))}
+                  ); })}
                 </tbody>
               </table>
             )}
+            {renderPagination(statutsFiltrees.length, pageStatuts, setPageStatuts)}
           </div>
         </div>
       ),
@@ -2522,11 +2666,36 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
             )}
 
             <div className="table-container" style={{ marginTop: "24px" }}>
-              <h3>Liste des interlocuteurs</h3>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0 }}>Liste des interlocuteurs</h3>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ position: "relative" }}>
+                    <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
+                    <input type="text" placeholder="Rechercher..." value={rechercheInterlocuteurs} onChange={e => setRechercheInterlocuteurs(e.target.value)}
+                      style={{ padding: "7px 10px 7px 30px", borderRadius: "8px", border: "1px solid #D1D5DB", fontSize: "13px", width: "180px", outline: "none" }} />
+                  </div>
+                  <select value={filtreStatutInterlocuteurs} onChange={e => setFiltreStatutInterlocuteurs(e.target.value)}
+                    className="form-select form-select-sm" style={{ width: "130px" }}>
+                    <option value="tous">Tous</option>
+                    <option value="actif">Actifs</option>
+                    <option value="inactif">Désactivés</option>
+                  </select>
+                </div>
+              </div>
 
-              {interlocuteurs.length === 0 ? (
+              {loading ? (
+                <div style={{ textAlign: "center", padding: "40px 0" }}>
+                  <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }} />
+                </div>
+              ) : interlocuteursFiltrees.length === 0 ? (
                 <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                  Aucun interlocuteur créé pour le moment.
+                  {interlocuteurs.length === 0
+                    ? "Aucun interlocuteur créé pour le moment."
+                    : filtreStatutInterlocuteurs === "actif"
+                    ? "Aucun interlocuteur actif."
+                    : filtreStatutInterlocuteurs === "inactif"
+                    ? "Aucun interlocuteur désactivé."
+                    : "Aucun résultat pour cette recherche."}
                 </p>
               ) : (
                 <table className="data-table">
@@ -2542,7 +2711,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   </thead>
 
                   <tbody>
-                    {interlocuteurs.map((interlocuteur) => (
+                    {interlocuteursFiltrees.slice((pageInterlocuteurs - 1) * ITEMS_PER_PAGE, pageInterlocuteurs * ITEMS_PER_PAGE).map((interlocuteur) => (
                       <tr key={interlocuteur.id} style={interlocuteur.actif === false ? { opacity: 0.6, backgroundColor: "#F3F4F6" } : {}}>
                         <td>{interlocuteur.nom}</td>
 
@@ -2621,6 +2790,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   </tbody>
                 </table>
               )}
+              {renderPagination(interlocuteursFiltrees.length, pageInterlocuteurs, setPageInterlocuteurs)}
             </div>
           </div>
         </div>

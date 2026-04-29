@@ -25,6 +25,10 @@ export const MODULES_STRUCTURE = {
       gestion: "Gestion des Demandes",
     },
   },
+  audit: {
+    label: "Piste d'Audit",
+    submodules: {},
+  },
 };
 
 // Charger les permissions d'un profil
@@ -210,8 +214,23 @@ export const genererPermissionsStructure = () => {
   const permissions = [];
 
   Object.entries(MODULES_STRUCTURE).forEach(([moduleKey, moduleData]) => {
-    Object.entries(moduleData.submodules).forEach(
-      ([submoduleKey, submoduleLabel]) => {
+    const submodules = Object.entries(moduleData.submodules);
+
+    if (submodules.length === 0) {
+      // Module sans sous-modules (ex: audit) — une seule entrée pour le module
+      permissions.push({
+        module: moduleKey,
+        submodule: null,
+        moduleLabel: moduleData.label,
+        submoduleLabel: moduleData.label,
+        access: false,
+        créer: false,
+        lire: true,
+        modifier: false,
+        supprimer: false,
+      });
+    } else {
+      submodules.forEach(([submoduleKey, submoduleLabel]) => {
         permissions.push({
           module: moduleKey,
           submodule: submoduleKey,
@@ -223,8 +242,8 @@ export const genererPermissionsStructure = () => {
           modifier: false,
           supprimer: false,
         });
-      },
-    );
+      });
+    }
   });
 
   return permissions;

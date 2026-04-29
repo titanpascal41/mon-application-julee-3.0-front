@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import "./Sidebar.css";
 import { useAuth } from "./AuthProvider";
 
-const Sidebar = ({ collapsed, setCollapsed }) => {
+const Sidebar = ({ collapsed }) => {
   const location = useLocation();
   const { user, permissions } = useAuth();
 
@@ -228,7 +228,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       icon: "fa-solid fa-clock-rotate-left",
       iconColor: "#F97316",
       path: "audit",
-      noPermissionRequired: true,
+      module: "audit",
     },
     // {
     //   key: "plan-charge",

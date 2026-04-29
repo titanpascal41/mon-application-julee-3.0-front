@@ -106,7 +106,7 @@ const Authentification = () => {
               type="email"
               placeholder="exemple@mail.fr"
               value={emailConnexion}
-              onChange={(e) => changerEmailConnexion(e.target.value)}
+              onChange={(e) => changerEmailConnexion(e.target.value.toLowerCase())}
               required
               autoComplete="off"
             />
