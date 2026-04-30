@@ -396,10 +396,7 @@ const TableauDeBord = () => {
           Projets dont une date planifiée est dépassée sans réalisation effective
         </p>
         {projetsEnRetard.length === 0 ? (
-          <p className="tdb-empty" style={{ color: "#10B981" }}>
-            <i className="fa-solid fa-circle-check" style={{ marginRight: "6px" }}></i>
-            Aucun projet en retard — tout est dans les délais
-          </p>
+          <p className="tdb-empty">Aucun projet en retard</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {projetsEnRetard
