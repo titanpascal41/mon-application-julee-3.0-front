@@ -81,6 +81,13 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
   const [deleteError, setDeleteError] = useState("");
 
+  // Pagination & recherche
+  const ITEMS_PER_PAGE = 10;
+  const [pageProfils, setPageProfils] = useState(1);
+  const [pageUtilisateurs, setPageUtilisateurs] = useState(1);
+  const [rechercheProfils, setRechercheProfils] = useState("");
+  const [rechercheUtilisateurs, setRechercheUtilisateurs] = useState("");
+
   // États pour désactivation/réactivation
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [profilToToggle, setProfilToToggle] = useState(null);
@@ -1180,6 +1187,40 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     return profil ? profil.nom : "Profil introuvable";
   };
 
+  // eslint-disable-next-line no-misleading-character-class
+  const normaliser = (str) =>
+    (str || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+  const profilsBase = profils.filter(p => p.id !== 1);
+  const profilsFiltres = profilsBase.filter(p =>
+    !rechercheProfils || normaliser(p.nom).includes(normaliser(rechercheProfils)) || normaliser(p.code).includes(normaliser(rechercheProfils))
+  );
+  const utilisateursFiltres = utilisateurs.filter(u =>
+    !rechercheUtilisateurs ||
+    normaliser(u.nom).includes(normaliser(rechercheUtilisateurs)) ||
+    normaliser(u.prenom).includes(normaliser(rechercheUtilisateurs)) ||
+    normaliser(u.email).includes(normaliser(rechercheUtilisateurs))
+  );
+
+  const renderPagination = (total, page, setPage) => {
+    const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+    if (totalPages <= 1) return null;
+    const btnStyle = (disabled) => ({
+      padding: "5px 10px", borderRadius: "6px", border: "1px solid #D1D5DB",
+      backgroundColor: disabled ? "#F3F4F6" : "#fff", color: disabled ? "#9CA3AF" : "#374151",
+      cursor: disabled ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: "500",
+    });
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", marginTop: "16px" }}>
+        <button style={btnStyle(page === 1)} disabled={page === 1} onClick={() => setPage(1)}>«</button>
+        <button style={btnStyle(page === 1)} disabled={page === 1} onClick={() => setPage(p => p - 1)}>‹</button>
+        <span style={{ fontSize: "13px", color: "#6B7280", padding: "0 8px" }}>Page {page} / {totalPages}</span>
+        <button style={btnStyle(page === totalPages)} disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>›</button>
+        <button style={btnStyle(page === totalPages)} disabled={page === totalPages} onClick={() => setPage(totalPages)}>»</button>
+      </div>
+    );
+  };
+
   const subPages = {
     profils: {
       title: "Gestion des Profils",
@@ -1559,9 +1600,17 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
           )}
 
           <div className="table-container" style={{ marginTop: "24px" }}>
-            <h3>Liste des profils</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <h3 style={{ margin: 0 }}>Liste des profils</h3>
+              <div style={{ position: "relative" }}>
+                <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
+                <input type="text" placeholder="Rechercher..." value={rechercheProfils}
+                  onChange={e => { setRechercheProfils(e.target.value); setPageProfils(1); }}
+                  style={{ padding: "7px 10px 7px 30px", borderRadius: "8px", border: "1px solid #D1D5DB", fontSize: "13px", width: "200px", outline: "none" }} />
+              </div>
+            </div>
 
-            {profils.length === 0 ? (
+            {profilsFiltres.length === 0 ? (
               <p style={{ color: "#6b7280", marginTop: "16px" }}>
                 Aucun profil créé pour le moment.
               </p>
@@ -1582,11 +1631,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                 </thead>
 
                 <tbody>
-                  {profils
-
-                    .filter((profil) => profil.id !== 1)
-
-                    .map((profil) => (
+                  {profilsFiltres.slice((pageProfils - 1) * ITEMS_PER_PAGE, pageProfils * ITEMS_PER_PAGE).map((profil) => (
                       <tr
                         key={profil.id}
                         style={{
@@ -1812,6 +1857,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                 </tbody>
               </table>
             )}
+            {renderPagination(profilsFiltres.length, pageProfils, setPageProfils)}
           </div>
 
           {motifTooltipProfilId && (
@@ -2493,9 +2539,17 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
           )}
 
           <div className="table-container" style={{ marginTop: "24px" }}>
-            <h3>Liste des utilisateurs</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <h3 style={{ margin: 0 }}>Liste des utilisateurs</h3>
+              <div style={{ position: "relative" }}>
+                <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
+                <input type="text" placeholder="Rechercher..." value={rechercheUtilisateurs}
+                  onChange={e => { setRechercheUtilisateurs(e.target.value); setPageUtilisateurs(1); }}
+                  style={{ padding: "7px 10px 7px 30px", borderRadius: "8px", border: "1px solid #D1D5DB", fontSize: "13px", width: "200px", outline: "none" }} />
+              </div>
+            </div>
 
-            {utilisateurs.length === 0 ? (
+            {utilisateursFiltres.length === 0 ? (
               <p style={{ color: "#6b7280", marginTop: "16px" }}>
                 Aucun utilisateur créé pour le moment.
               </p>
@@ -2516,7 +2570,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                 </thead>
 
                 <tbody>
-                  {utilisateurs.map((user) => (
+                  {utilisateursFiltres.slice((pageUtilisateurs - 1) * ITEMS_PER_PAGE, pageUtilisateurs * ITEMS_PER_PAGE).map((user) => (
                     <tr key={user.id}>
                       <td>{user.nom}</td>
 
@@ -2552,6 +2606,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                 </tbody>
               </table>
             )}
+            {renderPagination(utilisateursFiltres.length, pageUtilisateurs, setPageUtilisateurs)}
           </div>
 
           {showUserDeleteConfirm && (
