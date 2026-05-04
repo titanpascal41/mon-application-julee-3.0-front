@@ -191,7 +191,7 @@ const GanttChart = ({ sprints, compact = false }) => {
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Utilitaire pour formater les dates pour les input type="date"
+// Utilitaire pour formater les dates pour les input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
 const formatDateForInput = (dateString) => {
   if (!dateString) return "";
 
@@ -208,7 +208,7 @@ const formatDateForInput = (dateString) => {
       return "";
     }
 
-    // Retourner le format yyyy-MM-dd pour les input type="date"
+    // Retourner le format yyyy-MM-dd pour les input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
     return date.toISOString().split("T")[0];
   } catch (error) {
     console.error("Erreur de formatage de date:", dateString, error);
@@ -291,6 +291,7 @@ const Demandes = () => {
 
   // États pour la sélection de type de demande
   const [selectedDemandeType, setSelectedDemandeType] = useState(null);
+  const [isModificationMode, setIsModificationMode] = useState(false);
   const [showSelectionCards, setShowSelectionCards] = useState(() => {
     try {
       const saved = localStorage.getItem("julee_nouvelle_demande_wip");
@@ -521,6 +522,7 @@ const Demandes = () => {
     setShowSelectionCards(true);
     setNouvelleDemandeStep(1);
     setDemandeMessage({ type: "", text: "" });
+    setIsModificationMode(false);
   };
 
   const handleNouvelleDemandeSubmit = async (e) => {
@@ -643,32 +645,35 @@ const Demandes = () => {
     }
   };
 
+  const sanitizeDate = (value) => {
+    if (!value) return value;
+    const parts = value.split("-");
+    if (parts.length !== 3 || parts[0].length !== 4) return value;
+    const year = parseInt(parts[0], 10);
+    if (isNaN(year)) return value;
+    const currentYear = new Date().getFullYear();
+    if (year > currentYear + 15) return `${currentYear}-${parts[1]}-${parts[2]}`;
+    return value;
+  };
+
   const handleNouvelleDemandeInputChange = (e) => {
-    const { name, value } = e.target;
-
-    // Debug pour les dates
-    if (name === "dateReception") {
-      console.log("dateReception changée:", {
-        name,
-        value,
-        type: typeof value,
-        formDataAvant: nouvelleDemandeFormData.dateReception,
-      });
-    }
-
+    const { name, value, type } = e.target;
+    const finalValue = type === "date" ? sanitizeDate(value) : value;
     setNouvelleDemandeFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: finalValue,
     }));
     if (demandeMessage.text) {
       setDemandeMessage({ type: "", text: "" });
     }
   };
   const handleSprintDataChange = (index, field, value) => {
+    const isDateField = ["datePrevTIF", "dateEffTIF", "datePrevClient", "dateEffClient"].includes(field);
+    const finalValue = isDateField ? sanitizeDate(value) : value;
     setNouvelleDemandeFormData((prev) => {
       const updatedSprints = [...(prev.sprintsData || [])];
       if (!updatedSprints[index]) updatedSprints[index] = {};
-      updatedSprints[index] = { ...updatedSprints[index], [field]: value };
+      updatedSprints[index] = { ...updatedSprints[index], [field]: finalValue };
       return { ...prev, sprintsData: updatedSprints };
     });
   };
@@ -1555,6 +1560,7 @@ const Demandes = () => {
     setShowNouvelleDemandeForm(true);
     setNouvelleDemandeStep(step);
     setDemandeMessage({ type: "", text: "" });
+    setIsModificationMode(true);
 
     setNouvelleDemandeFormData((prev) => {
       const updatedData = {
@@ -2033,7 +2039,7 @@ const Demandes = () => {
                           Date d'enregistrement
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateEnregistrement"
                           value={formatDateForInput(
                             nouvelleDemandeFormData.dateEnregistrement,
@@ -2203,7 +2209,7 @@ const Demandes = () => {
                           Date de réception de la demande
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={formatDateForInput(nouvelleDemandeFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateReception"
                           value={formatDateForInput(
                             nouvelleDemandeFormData.dateReception,
@@ -2253,7 +2259,7 @@ const Demandes = () => {
                           Date de transmission du backlog <span style={{ color: "#ef4444" }}>*</span>
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={formatDateForInput(nouvelleDemandeFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateTransmissionBacklog"
                           value={nouvelleDemandeFormData.dateTransmissionBacklog}
                           onChange={handleNouvelleDemandeInputChange}
@@ -2266,7 +2272,7 @@ const Demandes = () => {
                           Date de confirmation de validation <span style={{ color: "#ef4444" }}>*</span>
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateTransmissionBacklog || formatDateForInput(nouvelleDemandeFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateConfirmationValidation"
                           value={nouvelleDemandeFormData.dateConfirmationValidation}
                           onChange={handleNouvelleDemandeInputChange}
@@ -2331,7 +2337,7 @@ const Demandes = () => {
                       <div className="form-group">
                         <label>Date de demande de planification DEV</label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateConfirmationValidation || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateDemandePlanificationDev"
                           value={nouvelleDemandeFormData.dateDemandePlanificationDev}
                           onChange={handleNouvelleDemandeInputChange}
@@ -2340,7 +2346,7 @@ const Demandes = () => {
                       <div className="form-group">
                         <label>Date de demande de planification TIF</label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateConfirmationValidation || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateDemandePlanificationTif"
                           value={nouvelleDemandeFormData.dateDemandePlanificationTif}
                           onChange={handleNouvelleDemandeInputChange}
@@ -2354,7 +2360,7 @@ const Demandes = () => {
                           <>
                             <div className="form-group">
                               <label>Date du retour des équipes DEV</label>
-                              <input type="date" name="dateRetourEquipesDev"
+                              <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateDemandePlanificationDev || nouvelleDemandeFormData.dateConfirmationValidation || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`} name="dateRetourEquipesDev"
                                 value={nouvelleDemandeFormData.dateRetourEquipesDev}
                                 onChange={handleNouvelleDemandeInputChange}
                                 className={retard(nouvelleDemandeFormData.dateRetourEquipesDev) ? flashClass : ""}
@@ -2362,7 +2368,7 @@ const Demandes = () => {
                             </div>
                             <div className="form-group">
                               <label>Date du retour des équipes TIF</label>
-                              <input type="date" name="dateRetourEquipesTif"
+                              <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateDemandePlanificationTif || nouvelleDemandeFormData.dateConfirmationValidation || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`} name="dateRetourEquipesTif"
                                 value={nouvelleDemandeFormData.dateRetourEquipesTif}
                                 onChange={handleNouvelleDemandeInputChange}
                                 className={retard(nouvelleDemandeFormData.dateRetourEquipesTif) ? flashClass : ""}
@@ -2370,7 +2376,7 @@ const Demandes = () => {
                             </div>
                             <div className="form-group">
                               <label>Date de communication du planning au client <span className="required">*</span></label>
-                              <input type="date" name="dateCommunicationPlanningClient"
+                              <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateConfirmationValidation || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`} name="dateCommunicationPlanningClient"
                                 value={nouvelleDemandeFormData.dateCommunicationPlanningClient}
                                 onChange={handleNouvelleDemandeInputChange}
                                 required
@@ -2433,7 +2439,17 @@ const Demandes = () => {
                                       <input
                                         type="text"
                                         value={sprintData.chantier || ""}
-                                        onChange={(e) => handleSprintDataChange(i, "chantier", e.target.value)}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          const nb = parseInt(nouvelleDemandeFormData.nombreSprint) || 0;
+                                          setNouvelleDemandeFormData((prev) => {
+                                            const updated = [...(prev.sprintsData || [])];
+                                            for (let idx = 0; idx < nb; idx++) {
+                                              updated[idx] = { ...(updated[idx] || {}), chantier: val };
+                                            }
+                                            return { ...prev, sprintsData: updated };
+                                          });
+                                        }}
                                         placeholder="Chantier obligatoire..."
                                         style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
                                       />
@@ -2441,7 +2457,7 @@ const Demandes = () => {
 
                                     <td className={tifDepasse && flashRetards ? "flash-retard" : ""} style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                       <input
-                                        type="date"
+                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                                         value={sprintData.datePrevTIF || ""}
                                         onChange={(e) => handleSprintDataChange(i, "datePrevTIF", e.target.value)}
                                         style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
@@ -2449,7 +2465,7 @@ const Demandes = () => {
                                     </td>
                                     <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardTIF ? "#fff7ed" : undefined }}>
                                       <input
-                                        type="date"
+                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.datePrevTIF || nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                                         value={sprintData.dateEffTIF || ""}
                                         onChange={(e) => handleSprintDataChange(i, "dateEffTIF", e.target.value)}
                                         style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
@@ -2468,7 +2484,7 @@ const Demandes = () => {
                                     </td>
                                     <td className={clientDepasse && flashRetards ? "flash-retard" : ""} style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                       <input
-                                        type="date"
+                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.datePrevTIF || nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                                         value={sprintData.datePrevClient || ""}
                                         onChange={(e) => handleSprintDataChange(i, "datePrevClient", e.target.value)}
                                         style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
@@ -2476,7 +2492,7 @@ const Demandes = () => {
                                     </td>
                                     <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardClient ? "#fff7ed" : undefined }}>
                                       <input
-                                        type="date"
+                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.datePrevClient || sprintData.datePrevTIF || nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                                         value={sprintData.dateEffClient || ""}
                                         onChange={(e) => handleSprintDataChange(i, "dateEffClient", e.target.value)}
                                         style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
@@ -2754,7 +2770,7 @@ const Demandes = () => {
                       <div className="form-group">
                         <label>Date effective de livraison au client</label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateCommunicationPlanningClient || formatDateForInput(nouvelleDemandeFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateEffectiveLivraisonClient"
                           value={nouvelleDemandeFormData.dateEffectiveLivraisonClient}
                           onChange={(e) => {
@@ -2826,6 +2842,23 @@ const Demandes = () => {
                     alignItems: "center",
                   }}
                 >
+                  {isModificationMode && nouvelleDemandeStep < 6 && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ color: "#EF4444", borderColor: "#EF4444" }}
+                      onClick={() => {
+                        setIsModificationMode(false);
+                        setShowNouvelleDemandeForm(false);
+                        setShowSelectionCards(true);
+                        setShowDemandesList(true);
+                        setNouvelleDemandeStep(1);
+                        setDemandeMessage({ type: "", text: "" });
+                      }}
+                    >
+                      Annuler
+                    </button>
+                  )}
                   {nouvelleDemandeStep < 6 && (
                   <button
                     type="button"
@@ -2929,7 +2962,7 @@ const Demandes = () => {
                       Date d'enregistrement <span className="required">*</span>
                     </label>
                     <input
-                      type="date"
+                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                       name="dateEnregistrement"
                       value={formatDateForInput(
                         prospecteFormData.dateEnregistrement,
@@ -2943,7 +2976,7 @@ const Demandes = () => {
                       Date de réception <span className="required">*</span>
                     </label>
                     <input
-                      type="date"
+                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                       name="dateReception"
                       value={formatDateForInput(
                         prospecteFormData.dateReception,
@@ -3239,7 +3272,7 @@ const Demandes = () => {
                           Date d'enregistrement
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateEnregistrement"
                           value={formatDateForInput(
                             evolutionFormData.dateEnregistrement,
@@ -3253,7 +3286,7 @@ const Demandes = () => {
                           Date de réception <span className="required">*</span>
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateReception"
                           value={formatDateForInput(
                             evolutionFormData.dateReception,
@@ -3372,7 +3405,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateDemandeMiseAJourDATFL"
                           value={evolutionFormData.dateDemandeMiseAJourDATFL}
                           onChange={handleEvolutionInputChange}
@@ -3385,7 +3418,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateReponseMiseAJourDATFL"
                           value={evolutionFormData.dateReponseMiseAJourDATFL}
                           onChange={handleEvolutionInputChange}
@@ -3437,7 +3470,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                           name="planningDateDebut"
                           value={evolutionFormData.planningDateDebut}
                           onChange={handleEvolutionInputChange}
@@ -3450,7 +3483,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                           name="planningDateFin"
                           value={evolutionFormData.planningDateFin}
                           onChange={handleEvolutionInputChange}
@@ -3463,7 +3496,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateDemandeDevolution"
                           value={evolutionFormData.dateDemandeDevolution}
                           onChange={handleEvolutionInputChange}
@@ -3476,7 +3509,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date"
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateReponseDevolution"
                           value={evolutionFormData.dateReponseDevolution}
                           onChange={handleEvolutionInputChange}
@@ -4480,7 +4513,7 @@ const Demandes = () => {
                       Date de suspension <span style={{ color: "#ef4444" }}>*</span>
                     </label>
                     <input
-                      type="date"
+                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
                       value={suspensionDate}
                       onChange={(e) => setSuspensionDate(e.target.value)}
                       style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "8px", fontSize: "14px", boxSizing: "border-box" }}

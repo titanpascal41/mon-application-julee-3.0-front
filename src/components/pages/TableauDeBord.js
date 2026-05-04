@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import "./PageStyles.css";
 import "./TableauDeBord.css";
 import { chargerDemandes } from "../../data/gestionDemandes";
+import RoadmapDashboard from "../RoadmapDashboard";
 import { useAuth } from "../AuthProvider";
 import { useNavigate } from "react-router-dom";
 import {
@@ -527,6 +528,37 @@ const TableauDeBord = () => {
           </div>
         )}
       </div>
+
+      {/* Roadmap — Vue Gantt */}
+      {(() => {
+        const projets = demandes
+          .filter(d => {
+            if (!d.sprintsData) return false;
+            try {
+              const s = typeof d.sprintsData === "string" ? JSON.parse(d.sprintsData) : d.sprintsData;
+              return Array.isArray(s) && s.some(sp => sp.datePrevTIF || sp.datePrevClient);
+            } catch { return false; }
+          })
+          .map(d => {
+            try {
+              const s = typeof d.sprintsData === "string" ? JSON.parse(d.sprintsData) : d.sprintsData;
+              return { id: d.id, nom: d.nomProjet || `Demande #${d.id}`, sprints: s.map((sp, i) => ({ ...sp, num: i + 1 })) };
+            } catch { return null; }
+          })
+          .filter(Boolean);
+
+        if (projets.length === 0) return null;
+
+        return (
+          <div className="tdb-card" style={{ marginTop: "24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+              <i className="fa-solid fa-chart-gantt" style={{ color: "#4A90E2" }}></i>
+              <h3 style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>Roadmap — Vue Gantt</h3>
+            </div>
+            <RoadmapDashboard projets={projets} />
+          </div>
+        );
+      })()}
 
       {/* Actions rapides */}
       <div className="tdb-quick-actions">

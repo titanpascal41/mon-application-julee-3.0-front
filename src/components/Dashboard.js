@@ -42,7 +42,7 @@ const Dashboard = () => {
         } else {
           // Fallback pour l'admin : si aucune route trouvée mais c'est un admin, rediriger vers administration-profils
           if (permissions.isAdmin()) {
-            navigate("/administration-profils", { replace: true });
+            navigate("/tableau-de-bord", { replace: true });
             console.log(
               "🔧 Admin détecté, redirection vers /administration-profils",
             );

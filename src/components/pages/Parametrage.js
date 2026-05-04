@@ -2017,6 +2017,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                       >
                         <option value="">-- Choisir un service --</option>
                         {[
+                          "Service Intégration Fonctionnelle et QSE",
                           "Service Cohérence SAPHIR V3",
                           "Service Développement Support V3",
                           "Service Gestion Clientele CIE",

@@ -39,7 +39,7 @@ const Authentification = () => {
         } else {
           // Fallback pour l'admin : si aucune route trouvée mais c'est un admin, rediriger vers administration-profils
           if (permissionService.isAdmin()) {
-            navigate("/administration-profils");
+            navigate("/tableau-de-bord");
             console.log(
               " Admin détecté, redirection vers /administration-profils",
             );

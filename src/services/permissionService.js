@@ -314,28 +314,7 @@ class PermissionService {
 
   // Obtenir la première route complète accessible (module-sousmodule)
   getFirstAccessibleRoute() {
-    // Pour l'admin, toujours retourner une route par défaut
-    if (this.isAdmin()) {
-      return "administration-profils";
-    }
-
-    if (!this.userPermissions) return null;
-
-    // Parcourir les permissions dans l'ordre pour trouver la première route complète
-    for (const perm of this.userPermissions) {
-      if (perm.access && perm.submodule) {
-        return `${perm.module}-${perm.submodule}`;
-      }
-    }
-
-    // Si aucun sous-module trouvé, chercher un module principal
-    for (const perm of this.userPermissions) {
-      if (perm.access && !perm.submodule) {
-        return perm.module;
-      }
-    }
-
-    return null;
+    return "tableau-de-bord";
   }
 }
 
