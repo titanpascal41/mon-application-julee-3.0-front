@@ -73,6 +73,8 @@ const GanttChart = ({ sprints, compact = false }) => {
   const allTs = allDates.map(d => new Date(d).getTime());
   const rawMin = new Date(Math.min(...allTs));
   const rawMax = new Date(Math.max(...allTs));
+  const nbJoursTotal = Math.round((rawMax - rawMin) / 86400000);
+  const jourDisponible = nbJoursTotal <= 90;
 
   let timelineStart, timelineEnd;
   if (mode === "mois") {
@@ -84,15 +86,6 @@ const GanttChart = ({ sprints, compact = false }) => {
   } else {
     timelineStart = new Date(rawMin.getFullYear(), rawMin.getMonth(), rawMin.getDate());
     timelineEnd   = new Date(rawMax.getFullYear(), rawMax.getMonth(), rawMax.getDate() + 1);
-    const nbJours = (timelineEnd - timelineStart) / 86400000;
-    if (nbJours > 90) {
-      return (
-        <div style={{ padding: "20px", background: "#fff7ed", borderRadius: "8px", color: "#92400e", textAlign: "center", border: "1px solid #fed7aa" }}>
-          <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: "8px" }}></i>
-          Plage trop large pour la vue Jour ({Math.round(nbJours)} jours). Utilisez la vue Semaine ou Mois.
-        </div>
-      );
-    }
   }
 
   const totalMs = timelineEnd - timelineStart;
@@ -107,16 +100,19 @@ const GanttChart = ({ sprints, compact = false }) => {
     <div>
       {/* Toggle vue */}
       <div style={{ display: "flex", gap: "6px", marginBottom: "12px", justifyContent: "flex-end" }}>
-        {["jour","semaine","mois"].map(v => (
-          <button key={v} type="button" onClick={() => setMode(v)} style={{
-            padding: "4px 14px", borderRadius: "6px", border: "1px solid",
-            borderColor: mode === v ? "#4A90E2" : "#D1D5DB",
-            background: mode === v ? "#4A90E2" : "white",
-            color: mode === v ? "white" : "#374151",
-            fontWeight: mode === v ? "600" : "400",
-            fontSize: "12px", cursor: "pointer", textTransform: "capitalize",
-          }}>{v === "jour" ? "Jour" : v === "semaine" ? "Semaine" : "Mois"}</button>
-        ))}
+        {["jour","semaine","mois"].map(v => {
+          const disabled = v === "jour" && !jourDisponible;
+          return (
+            <button key={v} type="button" onClick={() => !disabled && setMode(v)} title={disabled ? `Vue Jour indisponible (plage de ${nbJoursTotal} jours > 90)` : undefined} style={{
+              padding: "4px 14px", borderRadius: "6px", border: "1px solid",
+              borderColor: mode === v ? "#4A90E2" : disabled ? "#E5E7EB" : "#D1D5DB",
+              background: mode === v ? "#4A90E2" : disabled ? "#F9FAFB" : "white",
+              color: mode === v ? "white" : disabled ? "#D1D5DB" : "#374151",
+              fontWeight: mode === v ? "600" : "400",
+              fontSize: "12px", cursor: disabled ? "not-allowed" : "pointer", textTransform: "capitalize",
+            }}>{v === "jour" ? "Jour" : v === "semaine" ? "Semaine" : "Mois"}</button>
+          );
+        })}
       </div>
 
       <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflowX: "auto" }}>
@@ -440,6 +436,11 @@ const Demandes = () => {
           setDemandeMessage({ type: "error", text: "Le type de projet est obligatoire." });
           scrollToFormTop(); return;
         }
+        if (nouvelleDemandeFormData.dateReception && nouvelleDemandeFormData.dateEnregistrement &&
+            nouvelleDemandeFormData.dateReception > nouvelleDemandeFormData.dateEnregistrement) {
+          setDemandeMessage({ type: "error", text: "La date de réception ne peut pas dépasser la date d'enregistrement." });
+          scrollToFormTop(); return;
+        }
         scrollToFormTop();
       }
 
@@ -449,8 +450,16 @@ const Demandes = () => {
           setDemandeMessage({ type: "error", text: "La date de transmission du backlog est obligatoire." });
           scrollToFormTop(); return;
         }
+        if (nouvelleDemandeFormData.dateReception && nouvelleDemandeFormData.dateTransmissionBacklog < nouvelleDemandeFormData.dateReception) {
+          setDemandeMessage({ type: "error", text: "La date de transmission du backlog ne peut pas être avant la date de réception." });
+          scrollToFormTop(); return;
+        }
         if (!nouvelleDemandeFormData.dateConfirmationValidation) {
           setDemandeMessage({ type: "error", text: "La date de confirmation/validation est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (nouvelleDemandeFormData.dateConfirmationValidation < nouvelleDemandeFormData.dateTransmissionBacklog) {
+          setDemandeMessage({ type: "error", text: "La date de confirmation/validation ne peut pas être avant la date de transmission du backlog." });
           scrollToFormTop(); return;
         }
       }
@@ -1237,9 +1246,21 @@ const Demandes = () => {
     return nom && nom.toUpperCase().includes("SUSP");
   };
 
+  const parseSprintsData = (raw) => {
+    if (!raw) return [];
+    if (typeof raw === "string") { try { return JSON.parse(raw); } catch { return []; } }
+    return Array.isArray(raw) ? raw : [];
+  };
+
   const chargerLesDemandes = useCallback(async () => {
     // Si admin : charge toutes les demandes, sinon : charge seulement les demandes de l'utilisateur
     const demandesChargees = await chargerDemandes(isAdmin ? null : user?.id);
+
+    // Normaliser sprintsData pour chaque demande (peut arriver comme string JSON depuis MySQL)
+    const demandesNormalisees = demandesChargees.map((d) => ({
+      ...d,
+      sprintsData: parseSprintsData(d.sprintsData),
+    }));
 
     // Charger les statuts pour avoir les informations complètes
     try {
@@ -1248,7 +1269,7 @@ const Demandes = () => {
         const statuts = await response.json();
 
         // Enrichir les demandes avec les informations du statut
-        const demandesEnrichies = demandesChargees.map((demande) => {
+        const demandesEnrichies = demandesNormalisees.map((demande) => {
           const statut = statuts.find((s) => s.id === demande.statutId);
           return {
             ...demande,
@@ -1259,11 +1280,11 @@ const Demandes = () => {
 
         setDemandes(demandesEnrichies);
       } else {
-        setDemandes(demandesChargees);
+        setDemandes(demandesNormalisees);
       }
     } catch (error) {
       console.error("Erreur lors du chargement des statuts:", error);
-      setDemandes(demandesChargees);
+      setDemandes(demandesNormalisees);
     }
   }, [isAdmin, user?.id]);
 
@@ -1398,6 +1419,28 @@ const Demandes = () => {
     e.preventDefault();
     setDemandeMessage({ type: "", text: "" });
 
+    if (!prospecteFormData.dateReception) {
+      setDemandeMessage({ type: "error", text: "La date de réception est obligatoire." });
+      scrollToFormTop(); return;
+    }
+    if (!prospecteFormData.societesDemandeurs?.[0]) {
+      setDemandeMessage({ type: "error", text: "La société demandeuse est obligatoire." });
+      scrollToFormTop(); return;
+    }
+    if (!prospecteFormData.interlocuteur) {
+      setDemandeMessage({ type: "error", text: "L'interlocuteur est obligatoire." });
+      scrollToFormTop(); return;
+    }
+    if (!prospecteFormData.nomProjet?.trim()) {
+      setDemandeMessage({ type: "error", text: "Le nom du projet est obligatoire." });
+      scrollToFormTop(); return;
+    }
+    if (prospecteFormData.dateReception && prospecteFormData.dateEnregistrement &&
+        prospecteFormData.dateReception > prospecteFormData.dateEnregistrement) {
+      setDemandeMessage({ type: "error", text: "La date de réception ne peut pas dépasser la date d'enregistrement." });
+      scrollToFormTop(); return;
+    }
+
     const dataToSave = {
       ...prospecteFormData,
       typeProjet: "Prospecte",
@@ -1473,8 +1516,52 @@ const Demandes = () => {
 
   const handleEvolutionNext = () => {
     if (evolutionStep < 3) {
-      setEvolutionStep(evolutionStep + 1);
       setDemandeMessage({ type: "", text: "" });
+
+      if (evolutionStep === 1) {
+        if (!evolutionFormData.dateReception) {
+          setDemandeMessage({ type: "error", text: "La date de réception est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.societesDemandeurs?.[0]) {
+          setDemandeMessage({ type: "error", text: "La société demandeuse est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.interlocuteur) {
+          setDemandeMessage({ type: "error", text: "L'interlocuteur est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.nomProjet?.trim()) {
+          setDemandeMessage({ type: "error", text: "Le nom du projet est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (evolutionFormData.dateReception && evolutionFormData.dateEnregistrement &&
+            evolutionFormData.dateReception > evolutionFormData.dateEnregistrement) {
+          setDemandeMessage({ type: "error", text: "La date de réception ne peut pas dépasser la date d'enregistrement." });
+          scrollToFormTop(); return;
+        }
+      }
+
+      if (evolutionStep === 2) {
+        if (!evolutionFormData.dateDemandeMiseAJourDATFL) {
+          setDemandeMessage({ type: "error", text: "La date de demande de mise à jour du DATFL est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (evolutionFormData.dateReception && evolutionFormData.dateDemandeMiseAJourDATFL < evolutionFormData.dateReception) {
+          setDemandeMessage({ type: "error", text: "La date de demande DATFL ne peut pas être avant la date de réception." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.dateReponseMiseAJourDATFL) {
+          setDemandeMessage({ type: "error", text: "La date de réponse de mise à jour du DATFL est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (evolutionFormData.dateReponseMiseAJourDATFL < evolutionFormData.dateDemandeMiseAJourDATFL) {
+          setDemandeMessage({ type: "error", text: "La date de réponse DATFL ne peut pas être avant la date de demande DATFL." });
+          scrollToFormTop(); return;
+        }
+      }
+
+      setEvolutionStep(evolutionStep + 1);
       scrollToFormTop();
     }
   };
@@ -1497,6 +1584,28 @@ const Demandes = () => {
   const handleEvolutionSubmit = async (e) => {
     e.preventDefault();
     setDemandeMessage({ type: "", text: "" });
+
+    if (!evolutionFormData.charge) {
+      setDemandeMessage({ type: "error", text: "La charge est obligatoire." });
+      scrollToFormTop(); return;
+    }
+    if (!evolutionFormData.planningDateDebut) {
+      setDemandeMessage({ type: "error", text: "La date de début du planning est obligatoire." });
+      scrollToFormTop(); return;
+    }
+    if (!evolutionFormData.planningDateFin) {
+      setDemandeMessage({ type: "error", text: "La date de fin du planning est obligatoire." });
+      scrollToFormTop(); return;
+    }
+    if (evolutionFormData.planningDateFin < evolutionFormData.planningDateDebut) {
+      setDemandeMessage({ type: "error", text: "La date de fin du planning ne peut pas être avant la date de début." });
+      scrollToFormTop(); return;
+    }
+    if (evolutionFormData.dateDemandeDevolution && evolutionFormData.dateReponseDevolution &&
+        evolutionFormData.dateReponseDevolution < evolutionFormData.dateDemandeDevolution) {
+      setDemandeMessage({ type: "error", text: "La date de réponse dévolution ne peut pas être avant la date de demande dévolution." });
+      scrollToFormTop(); return;
+    }
 
     // Sauvegarder comme brouillon (comme le bouton Enregistrer le brouillon)
     await sauvegarderEvolutionBrouillon();
@@ -1595,11 +1704,17 @@ const Demandes = () => {
         dateRetourEquipesDev: formatDateForInput(demande.dateRetourEquipesDev || prev.dateRetourEquipesDev || ""),
         dateRetourEquipesTif: formatDateForInput(demande.dateRetourEquipesTif || prev.dateRetourEquipesTif || ""),
         dateCommunicationPlanningClient: formatDateForInput(demande.dateCommunicationPlanningClient || prev.dateCommunicationPlanningClient || ""),
+        nombreSprint: demande.nombreSprint != null ? String(demande.nombreSprint) : (prev.nombreSprint || ""),
         // Étape 4: Réalisation
         dateEffectiveLivraisonTIF: formatDateForInput(demande.dateEffectiveLivraisonTIF || prev.dateEffectiveLivraisonTIF || ""),
         // Suspension
         dateSuspension: formatDateForInput(demande.dateSuspension || prev.dateSuspension || ""),
-        sprintsData: demande.sprintsData || prev.sprintsData || [],
+        sprintsData: (() => {
+          const raw = demande.sprintsData ?? prev.sprintsData;
+          if (!raw) return [];
+          if (typeof raw === "string") { try { return JSON.parse(raw); } catch { return []; } }
+          return Array.isArray(raw) ? raw : [];
+        })(),
         statutLivraisonClient: demande.statutLivraison || demande.statutLivraisonClient || prev.statutLivraisonClient || "en attente",
         dateEffectiveLivraisonClient: formatDateForInput(demande.dateEffectiveLivraisonClient || prev.dateEffectiveLivraisonClient || ""),
       };
@@ -1749,24 +1864,24 @@ const Demandes = () => {
       buttonColor: "#4A90E2",
       description: "Créer une nouvelle demande de développement",
     },
-    // {
-    //   id: "prospecte",
-    //   label: "Demande prospecte",
-    //   icon: "fa-solid fa-search",
-    //   iconColor: "#FF6B35",
-    //   borderColor: "#FF6B35",
-    //   buttonColor: "#FF6B35",
-    //   description: "Demande pour un projet prospecté",
-    // },
-    // {
-    //   id: "evolution",
-    //   label: "Demande d'évolution",
-    //   icon: "fa-solid fa-arrow-up",
-    //   iconColor: "#10B981",
-    //   borderColor: "#10B981",
-    //   buttonColor: "#10B981",
-    //   description: "Demande d'amélioration ou d'évolution",
-    // },
+    {
+      id: "prospecte",
+      label: "Demande prospecte",
+      icon: "fa-solid fa-search",
+      iconColor: "#FF6B35",
+      borderColor: "#FF6B35",
+      buttonColor: "#FF6B35",
+      description: "Demande pour un projet prospecté",
+    },
+    {
+      id: "evolution",
+      label: "Demande d'évolution",
+      icon: "fa-solid fa-arrow-up",
+      iconColor: "#10B981",
+      borderColor: "#10B981",
+      buttonColor: "#10B981",
+      description: "Demande d'amélioration ou d'évolution",
+    },
   ];
 
   return (
@@ -1794,13 +1909,6 @@ const Demandes = () => {
                       borderColor: isSelected ? type.borderColor : "#e5e7eb",
                     }}
                   >
-                    <div
-                      className="card-checkbox"
-                      style={{
-                        background: isSelected ? type.borderColor : "white",
-                        borderColor: isSelected ? type.borderColor : "#9ca3af",
-                      }}
-                    ></div>
                     <div className="card-icon">
                       <i
                         className={type.icon}
@@ -2039,7 +2147,7 @@ const Demandes = () => {
                           Date d'enregistrement
                         </label>
                         <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={new Date().toISOString().split("T")[0]}
                           name="dateEnregistrement"
                           value={formatDateForInput(
                             nouvelleDemandeFormData.dateEnregistrement,
@@ -2209,7 +2317,7 @@ const Demandes = () => {
                           Date de réception de la demande
                         </label>
                         <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={formatDateForInput(nouvelleDemandeFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={formatDateForInput(nouvelleDemandeFormData.dateEnregistrement) || `${new Date().getFullYear() + 15}-12-31`}
                           name="dateReception"
                           value={formatDateForInput(
                             nouvelleDemandeFormData.dateReception,
@@ -2259,7 +2367,7 @@ const Demandes = () => {
                           Date de transmission du backlog <span style={{ color: "#ef4444" }}>*</span>
                         </label>
                         <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={formatDateForInput(nouvelleDemandeFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateReception || formatDateForInput(nouvelleDemandeFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateTransmissionBacklog"
                           value={nouvelleDemandeFormData.dateTransmissionBacklog}
                           onChange={handleNouvelleDemandeInputChange}
@@ -2376,7 +2484,7 @@ const Demandes = () => {
                             </div>
                             <div className="form-group">
                               <label>Date de communication du planning au client <span className="required">*</span></label>
-                              <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateConfirmationValidation || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`} name="dateCommunicationPlanningClient"
+                              <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={[nouvelleDemandeFormData.dateRetourEquipesDev, nouvelleDemandeFormData.dateRetourEquipesTif, nouvelleDemandeFormData.dateConfirmationValidation].filter(Boolean).sort().pop() || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`} name="dateCommunicationPlanningClient"
                                 value={nouvelleDemandeFormData.dateCommunicationPlanningClient}
                                 onChange={handleNouvelleDemandeInputChange}
                                 required
@@ -2962,7 +3070,7 @@ const Demandes = () => {
                       Date d'enregistrement <span className="required">*</span>
                     </label>
                     <input
-                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={new Date().toISOString().split("T")[0]}
                       name="dateEnregistrement"
                       value={formatDateForInput(
                         prospecteFormData.dateEnregistrement,
@@ -2976,7 +3084,7 @@ const Demandes = () => {
                       Date de réception <span className="required">*</span>
                     </label>
                     <input
-                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={formatDateForInput(prospecteFormData.dateEnregistrement) || `${new Date().getFullYear() + 15}-12-31`}
                       name="dateReception"
                       value={formatDateForInput(
                         prospecteFormData.dateReception,
@@ -3272,7 +3380,7 @@ const Demandes = () => {
                           Date d'enregistrement
                         </label>
                         <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={new Date().toISOString().split("T")[0]}
                           name="dateEnregistrement"
                           value={formatDateForInput(
                             evolutionFormData.dateEnregistrement,
@@ -3286,7 +3394,7 @@ const Demandes = () => {
                           Date de réception <span className="required">*</span>
                         </label>
                         <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={formatDateForInput(evolutionFormData.dateEnregistrement) || `${new Date().getFullYear() + 15}-12-31`}
                           name="dateReception"
                           value={formatDateForInput(
                             evolutionFormData.dateReception,
@@ -3405,7 +3513,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateReception || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateDemandeMiseAJourDATFL"
                           value={evolutionFormData.dateDemandeMiseAJourDATFL}
                           onChange={handleEvolutionInputChange}
@@ -3418,7 +3526,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateDemandeMiseAJourDATFL || evolutionFormData.dateReception || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateReponseMiseAJourDATFL"
                           value={evolutionFormData.dateReponseMiseAJourDATFL}
                           onChange={handleEvolutionInputChange}
@@ -3470,7 +3578,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateReponseMiseAJourDATFL || evolutionFormData.dateReception || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="planningDateDebut"
                           value={evolutionFormData.planningDateDebut}
                           onChange={handleEvolutionInputChange}
@@ -3483,7 +3591,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.planningDateDebut || evolutionFormData.dateReponseMiseAJourDATFL || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="planningDateFin"
                           value={evolutionFormData.planningDateFin}
                           onChange={handleEvolutionInputChange}
@@ -3496,7 +3604,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateReception || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateDemandeDevolution"
                           value={evolutionFormData.dateDemandeDevolution}
                           onChange={handleEvolutionInputChange}
@@ -3509,7 +3617,7 @@ const Demandes = () => {
                           <span className="required">*</span>
                         </label>
                         <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateDemandeDevolution || evolutionFormData.dateReception || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateReponseDevolution"
                           value={evolutionFormData.dateReponseDevolution}
                           onChange={handleEvolutionInputChange}

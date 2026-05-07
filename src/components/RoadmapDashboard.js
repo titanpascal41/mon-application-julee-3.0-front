@@ -81,6 +81,8 @@ const RoadmapDashboard = ({ projets }) => {
   const allTs = toutesLesDates.map(d => new Date(d).getTime());
   const rawMin = new Date(Math.min(...allTs));
   const rawMax = new Date(Math.max(...allTs));
+  const nbJoursTotal = Math.round((rawMax - rawMin) / 86400000);
+  const jourDisponible = nbJoursTotal <= 90;
 
   let timelineStart, timelineEnd;
   if (mode === "mois") {
@@ -92,11 +94,6 @@ const RoadmapDashboard = ({ projets }) => {
   } else {
     timelineStart = new Date(rawMin.getFullYear(), rawMin.getMonth(), rawMin.getDate());
     timelineEnd   = new Date(rawMax.getFullYear(), rawMax.getMonth(), rawMax.getDate() + 1);
-    if ((timelineEnd - timelineStart) / 86400000 > 90) {
-      return <div style={{ padding: "16px", background: "#fff7ed", borderRadius: "8px", color: "#92400e", border: "1px solid #fed7aa", textAlign: "center" }}>
-        Plage trop large pour la vue Jour. Utilisez Semaine ou Mois.
-      </div>;
-    }
   }
 
   const totalMs = timelineEnd - timelineStart;
@@ -114,16 +111,19 @@ const RoadmapDashboard = ({ projets }) => {
     <div>
       {/* Toggle vue */}
       <div style={{ display: "flex", gap: "6px", marginBottom: "12px", justifyContent: "flex-end" }}>
-        {["jour","semaine","mois"].map(v => (
-          <button key={v} type="button" onClick={() => setMode(v)} style={{
-            padding: "4px 14px", borderRadius: "6px", border: "1px solid",
-            borderColor: mode === v ? "#4A90E2" : "#D1D5DB",
-            background: mode === v ? "#4A90E2" : "#fff",
-            color: mode === v ? "#fff" : "#374151",
-            fontWeight: mode === v ? "600" : "400",
-            fontSize: "12px", cursor: "pointer",
-          }}>{v === "jour" ? "Jour" : v === "semaine" ? "Semaine" : "Mois"}</button>
-        ))}
+        {["jour","semaine","mois"].map(v => {
+          const disabled = v === "jour" && !jourDisponible;
+          return (
+            <button key={v} type="button" onClick={() => !disabled && setMode(v)} title={disabled ? `Vue Jour indisponible (plage de ${nbJoursTotal} jours > 90)` : undefined} style={{
+              padding: "4px 14px", borderRadius: "6px", border: "1px solid",
+              borderColor: mode === v ? "#4A90E2" : disabled ? "#E5E7EB" : "#D1D5DB",
+              background: mode === v ? "#4A90E2" : disabled ? "#F9FAFB" : "#fff",
+              color: mode === v ? "#fff" : disabled ? "#D1D5DB" : "#374151",
+              fontWeight: mode === v ? "600" : "400",
+              fontSize: "12px", cursor: disabled ? "not-allowed" : "pointer",
+            }}>{v === "jour" ? "Jour" : v === "semaine" ? "Semaine" : "Mois"}</button>
+          );
+        })}
       </div>
 
       <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflowX: "auto" }}>

@@ -60,6 +60,8 @@ const GanttChart = ({ sprints, compact = false }) => {
   const allTs = allDates.map(d => new Date(d).getTime());
   const rawMin = new Date(Math.min(...allTs));
   const rawMax = new Date(Math.max(...allTs));
+  const nbJoursTotal = Math.round((rawMax - rawMin) / 86400000);
+  const jourDisponible = nbJoursTotal <= 90;
 
   let timelineStart, timelineEnd;
   if (mode === "mois") {
@@ -71,15 +73,6 @@ const GanttChart = ({ sprints, compact = false }) => {
   } else {
     timelineStart = new Date(rawMin.getFullYear(), rawMin.getMonth(), rawMin.getDate());
     timelineEnd   = new Date(rawMax.getFullYear(), rawMax.getMonth(), rawMax.getDate() + 1);
-    const nbJours = (timelineEnd - timelineStart) / 86400000;
-    if (nbJours > 90) {
-      return (
-        <div style={{ padding: "20px", background: "#fff7ed", borderRadius: "8px", color: "#92400e", textAlign: "center", border: "1px solid #fed7aa" }}>
-          <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: "8px" }}></i>
-          Plage trop large pour la vue Jour ({Math.round(nbJours)} jours). Utilisez la vue Semaine ou Mois.
-        </div>
-      );
-    }
   }
 
   const totalMs = timelineEnd - timelineStart;
@@ -93,16 +86,19 @@ const GanttChart = ({ sprints, compact = false }) => {
   return (
     <div>
       <div style={{ display: "flex", gap: "6px", marginBottom: "12px", justifyContent: "flex-end" }}>
-        {["jour","semaine","mois"].map(v => (
-          <button key={v} type="button" onClick={() => setMode(v)} style={{
-            padding: "4px 14px", borderRadius: "6px", border: "1px solid",
-            borderColor: mode === v ? "#4A90E2" : "#D1D5DB",
-            background: mode === v ? "#4A90E2" : "white",
-            color: mode === v ? "white" : "#374151",
-            fontWeight: mode === v ? "600" : "400",
-            fontSize: "12px", cursor: "pointer", textTransform: "capitalize",
-          }}>{v === "jour" ? "Jour" : v === "semaine" ? "Semaine" : "Mois"}</button>
-        ))}
+        {["jour","semaine","mois"].map(v => {
+          const disabled = v === "jour" && !jourDisponible;
+          return (
+            <button key={v} type="button" onClick={() => !disabled && setMode(v)} title={disabled ? `Vue Jour indisponible (plage de ${nbJoursTotal} jours > 90)` : undefined} style={{
+              padding: "4px 14px", borderRadius: "6px", border: "1px solid",
+              borderColor: mode === v ? "#4A90E2" : disabled ? "#E5E7EB" : "#D1D5DB",
+              background: mode === v ? "#4A90E2" : disabled ? "#F9FAFB" : "white",
+              color: mode === v ? "white" : disabled ? "#D1D5DB" : "#374151",
+              fontWeight: mode === v ? "600" : "400",
+              fontSize: "12px", cursor: disabled ? "not-allowed" : "pointer", textTransform: "capitalize",
+            }}>{v === "jour" ? "Jour" : v === "semaine" ? "Semaine" : "Mois"}</button>
+          );
+        })}
       </div>
 
       <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflowX: "auto" }}>
