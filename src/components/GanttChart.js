@@ -1,4 +1,5 @@
 import React from "react";
+import "./pages/PageStyles.css";
 
 const MONTH_NAMES = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
 
@@ -101,7 +102,7 @@ const GanttChart = ({ sprints, compact = false }) => {
         })}
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflowX: "auto" }}>
+      <div className="roadmap-scroll" style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflowX: "auto" }}>
         <div style={{ minWidth: `${labelW + cols.length * colMinW}px`, display: "grid", gridTemplateColumns: `${labelW}px repeat(${cols.length}, minmax(${colMinW}px, 1fr))` }}>
           <div style={{ background: "#F3F4F6", borderRight: "1px solid #D1D5DB", borderBottom: "1px solid #D1D5DB" }} />
           {groupes.map((g, i) => (
@@ -125,9 +126,8 @@ const GanttChart = ({ sprints, compact = false }) => {
             return (
               <React.Fragment key={i}>
                 {/* Ligne unique : sprint + chantier + barre de progression */}
-                <div style={{ background: "#6B7280", padding: "5px 10px", display: "flex", flexDirection: "column", justifyContent: "center", borderBottom: "1px solid #4B5563", borderRight: "1px solid #E5E7EB" }}>
+                <div style={{ background: "#6B7280", padding: "5px 10px", display: "flex", alignItems: "center", borderBottom: "1px solid #4B5563", borderRight: "1px solid #E5E7EB" }}>
                   <span style={{ fontSize: "11px", fontWeight: "700", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Sprint {sprint.num}</span>
-                  {sprint.chantier && <span style={{ fontSize: "9px", color: "#D1D5DB", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: "1px" }}>{sprint.chantier}</span>}
                 </div>
                 <div style={{ gridColumn: `span ${cols.length}`, position: "relative", height: barLeft !== null ? "36px" : "36px", borderBottom: "1px solid #E5E7EB", background: "#FAFAFA" }}>
                   {cols.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi+1)/cols.length)*100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
@@ -148,14 +148,6 @@ const GanttChart = ({ sprints, compact = false }) => {
               </React.Fragment>
             );
           })}
-          <div style={{ gridColumn: "1 / -1", display: "flex", gap: "16px", padding: "8px 12px", fontSize: "12px", color: "#6B7280", borderTop: "1px solid #E5E7EB" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <div style={{ width: "36px", height: "8px", background: "#DBEAFE", borderRadius: "2px", overflow: "hidden" }}>
-                <div style={{ width: "60%", height: "100%", background: "#4A90E2", borderRadius: "2px" }} />
-              </div>
-              <span>Réalisation (progression)</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -912,6 +912,17 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setStatutMessage({ type: "", text: "" });
   };
 
+  const handleToggleActivationStatut = async (statut) => {
+    const resultat = await mettreAJourStatut(statut.id, { ...statut, actif: !statut.actif });
+    if (resultat.succes) {
+      setStatuts((prev) => prev.map((s) => (s.id === statut.id ? resultat.statut : s)));
+      setStatutMessage({ type: "success", text: `Statut "${statut.nom}" ${!statut.actif ? "activé" : "désactivé"}.` });
+      setTimeout(() => setStatutMessage({ type: "", text: "" }), 3000);
+    } else {
+      setStatutMessage({ type: "error", text: resultat.message || "Erreur lors de la modification." });
+    }
+  };
+
   const handleDeleteStatut = (statut) => {
     setStatutToDelete(statut);
     setShowStatutDeleteConfirm(true);
@@ -2351,19 +2362,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label className="toggle-switch">
-                      <input
-                        type="checkbox"
-                        name="actif"
-                        checked={statutFormData.actif}
-                        onChange={handleStatutInputChange}
-                      />
-
-                      <span>Actif</span>
-                    </label>
-                  </div>
-
                   <div className="modal-actions">
                     <button type="submit" className="btn-primary">
                       {editingStatut ? "Mettre à jour" : "Créer"}
@@ -2434,37 +2432,38 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                     return (
                     <tr
                       key={statut.id}
-                      draggable
-                      onDragStart={() => { dragStatutIndex.current = index; }}
                       onDragEnter={() => { dragOverStatutIndex.current = index; }}
                       onDragOver={(e) => e.preventDefault()}
                       onDragEnd={handleStatutDragEnd}
-                      style={{ cursor: "grab" }}
-                      title="Glisser pour réordonner"
                     >
                       <td style={{ userSelect: "none" }}>
-                        <span style={{ marginRight: "8px", color: "#9CA3AF", fontSize: "14px" }}>⠿</span>
+                        <span
+                          draggable
+                          onDragStart={() => { dragStatutIndex.current = index; }}
+                          title="Glisser pour réordonner"
+                          style={{ marginRight: "8px", color: "#9CA3AF", fontSize: "14px", cursor: "grab" }}
+                        >⠿</span>
                         {statut.nom}
                       </td>
 
                       <td>{statut.description || "-"}</td>
 
                       <td>
-                        <span
-                          style={{
-                            display: "inline-block",
-                            padding: "4px 12px",
-                            borderRadius: "12px",
-                            fontSize: "13px",
-                            fontWeight: "600",
-                            backgroundColor: statut.actif
-                              ? "#d1fae5"
-                              : "#fee2e2",
-                            color: statut.actif ? "#065f46" : "#991b1b",
-                          }}
-                        >
-                          {statut.actif ? "Actif" : "Non actif"}
-                        </span>
+                        <PermissionGuard module="parametrage" submodule="statuts" action="update" fallback={
+                          <span style={{ display: "inline-block", padding: "4px 12px", borderRadius: "12px", fontSize: "13px", fontWeight: "600", backgroundColor: statut.actif ? "#d1fae5" : "#fee2e2", color: statut.actif ? "#065f46" : "#991b1b" }}>
+                            {statut.actif ? "Actif" : "Non actif"}
+                          </span>
+                        }>
+                          <span
+                            onClick={() => handleToggleActivationStatut(statut)}
+                            title={statut.actif ? "Cliquer pour désactiver" : "Cliquer pour activer"}
+                            style={{ display: "inline-block", padding: "4px 12px", borderRadius: "12px", fontSize: "13px", fontWeight: "600", cursor: "pointer", userSelect: "none", backgroundColor: statut.actif ? "#d1fae5" : "#fee2e2", color: statut.actif ? "#065f46" : "#991b1b", transition: "opacity 0.15s" }}
+                            onMouseEnter={e => e.currentTarget.style.opacity = "0.75"}
+                            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                          >
+                            {statut.actif ? "Actif" : "Non actif"}
+                          </span>
+                        </PermissionGuard>
                       </td>
 
                       {aActionsStatuts && (

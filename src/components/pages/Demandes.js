@@ -115,7 +115,7 @@ const GanttChart = ({ sprints, compact = false }) => {
         })}
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflowX: "auto" }}>
+      <div className="roadmap-scroll" style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflowX: "auto" }}>
         <div style={{ minWidth: `${labelW + cols.length * colMinW}px`, display: "grid", gridTemplateColumns: `${labelW}px repeat(${cols.length}, minmax(${colMinW}px, 1fr))` }}>
 
           {/* Groupes (trimestres / mois / semaines) */}
@@ -137,49 +137,30 @@ const GanttChart = ({ sprints, compact = false }) => {
           {sprints.map((sprint, i) => {
             const pTIF = toP(sprint.datePrevTIF), pCli = toP(sprint.datePrevClient);
             const eTIF = toP(sprint.dateEffTIF),  eCli = toP(sprint.dateEffClient);
-            const hasPlan = pTIF !== null && pCli !== null;
-            const hasReal = eTIF !== null && eCli !== null;
+            const barLeft  = pTIF !== null && pCli !== null ? Math.min(pTIF, pCli) : (eTIF !== null && eCli !== null ? Math.min(eTIF, eCli) : null);
+            const barWidth = pTIF !== null && pCli !== null ? Math.abs(pCli - pTIF) : (eTIF !== null && eCli !== null ? Math.abs(eCli - eTIF) : null);
+            const avancement = sprint.avancement ?? 0;
             return (
               <React.Fragment key={i}>
-                {/* Bandeau sprint */}
-                <div style={{ background: "#6B7280", padding: "5px 10px", display: "flex", alignItems: "center", borderBottom: "1px solid #E5E7EB" }}>
-                  <span style={{ fontSize: "11px", fontWeight: "700", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>SPRINT {sprint.num}</span>
+                <div style={{ background: "#6B7280", padding: "5px 10px", display: "flex", alignItems: "center", borderBottom: "1px solid #4B5563", borderRight: "1px solid #E5E7EB" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Sprint {sprint.num}</span>
                 </div>
-                {cols.map((_, mi) => <div key={mi} style={{ background: "#F3F4F6", height: "24px", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB" }} />)}
-
-                {hasPlan && (
-                  <>
-                    <div style={{ padding: "3px 10px 3px 18px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", overflow: "hidden" }}>
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sprint.chantier || "Planifié"}</span>
-                    </div>
-                    <div style={{ gridColumn: `span ${cols.length}`, position: "relative", height: "26px", borderBottom: "1px solid #F3F4F6" }}>
-                      {cols.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi+1)/cols.length)*100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
-                      <div style={{ position: "absolute", left: `${Math.min(pTIF,pCli)}%`, width: `${Math.max(1,Math.abs(pCli-pTIF))}%`, top: "3px", bottom: "3px", background: "#4A90E2", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
-                        <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Planifié</span>
+                <div style={{ gridColumn: `span ${cols.length}`, position: "relative", height: "36px", borderBottom: "1px solid #E5E7EB", background: "#FAFAFA" }}>
+                  {cols.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi+1)/cols.length)*100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
+                  {barLeft !== null && (
+                    <div style={{ position: "absolute", left: `${barLeft}%`, width: `${Math.max(1, barWidth)}%`, top: "8px", bottom: "8px", background: "#DBEAFE", borderRadius: "4px", overflow: "hidden" }}>
+                      <div style={{ width: `${avancement}%`, height: "100%", background: "#4A90E2", display: "flex", alignItems: "center", paddingLeft: "6px", transition: "width 0.4s ease" }}>
+                        {avancement > 12 && <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>{avancement}%</span>}
                       </div>
+                      {avancement <= 12 && avancement > 0 && <span style={{ position: "absolute", left: `${avancement + 2}%`, top: "50%", transform: "translateY(-50%)", fontSize: "10px", color: "#1D4ED8", fontWeight: "600", whiteSpace: "nowrap" }}>{avancement}%</span>}
+                      {avancement === 0 && <span style={{ position: "absolute", left: "4px", top: "50%", transform: "translateY(-50%)", fontSize: "10px", color: "#93C5FD", fontWeight: "600", whiteSpace: "nowrap" }}>0%</span>}
                     </div>
-                  </>
-                )}
-                {hasReal && (
-                  <>
-                    <div style={{ padding: "3px 10px 3px 18px", fontSize: "11px", color: "#6B7280", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center" }}>Réalisé</div>
-                    <div style={{ gridColumn: `span ${cols.length}`, position: "relative", height: "26px", borderBottom: "1px solid #F3F4F6" }}>
-                      {cols.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi+1)/cols.length)*100}%`, top: 0, bottom: 0, width: "1px", background: "#E5E7EB" }} />)}
-                      <div style={{ position: "absolute", left: `${Math.min(eTIF,eCli)}%`, width: `${Math.max(1,Math.abs(eCli-eTIF))}%`, top: "3px", bottom: "3px", background: "#10B981", borderRadius: "4px", display: "flex", alignItems: "center", paddingLeft: "6px", overflow: "hidden" }}>
-                        <span style={{ fontSize: "10px", color: "white", fontWeight: "600", whiteSpace: "nowrap" }}>Réalisé</span>
-                      </div>
-                    </div>
-                  </>
-                )}
+                  )}
+                </div>
               </React.Fragment>
             );
           })}
 
-          {/* Légende */}
-          <div style={{ gridColumn: "1 / -1", display: "flex", gap: "16px", padding: "8px 12px", fontSize: "12px", color: "#6B7280", borderTop: "1px solid #E5E7EB" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ width: "14px", height: "8px", background: "#4A90E2", borderRadius: "2px" }} /><span>Planifié</span></div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ width: "14px", height: "8px", background: "#10B981", borderRadius: "2px" }} /><span>Réalisé</span></div>
-          </div>
         </div>
       </div>
     </div>
@@ -226,6 +207,7 @@ const getNouvelleDemandeInitialState = () => ({
   statutDemande: "",
   dateReception: "",
   lienIngridCDC: "",
+  observations: "",
   // Étape 2: Clarification de la demande
   dateTransmissionBacklog: "",
   dateConfirmationValidation: "",
@@ -765,6 +747,7 @@ const Demandes = () => {
           nouvelleDemandeFormData.descriptionPerimetre || null,
         statutDemande: nouvelleDemandeFormData.statutDemande || null,
         lienIngridCDC: nouvelleDemandeFormData.lienIngridCDC || null,
+        observations: nouvelleDemandeFormData.observations || null,
 
         // Étape 3: Planification
         dateTransmissionBacklog:
@@ -1695,6 +1678,7 @@ const Demandes = () => {
           demande.dateReception || prev.dateReception || "",
         ),
         lienIngridCDC: demande.lienIngridCDC || prev.lienIngridCDC || "",
+        observations: demande.observations || prev.observations || "",
         // Étape 2: Clarification — formatage obligatoire (ISO → YYYY-MM-DD)
         dateTransmissionBacklog: formatDateForInput(demande.dateTransmissionBacklog || prev.dateTransmissionBacklog || ""),
         dateConfirmationValidation: formatDateForInput(demande.dateConfirmationValidation || prev.dateConfirmationValidation || ""),
@@ -2200,7 +2184,7 @@ const Demandes = () => {
                               key={societe.id}
                               value={societe.id.toString()}
                             >
-                              {societe.nom}
+                              {societe.code || societe.nom}
                             </option>
                           ))}
                         </select>
@@ -2411,8 +2395,8 @@ const Demandes = () => {
                         Observations / Commentaires
                       </label>
                       <textarea
-                        name="descriptionPerimetre"
-                        value={nouvelleDemandeFormData.descriptionPerimetre || ""}
+                        name="observations"
+                        value={nouvelleDemandeFormData.observations || ""}
                         onChange={handleNouvelleDemandeInputChange}
                         placeholder="Notez ici les observations issues de la clarification, les points à préciser, les décisions prises..."
                         rows={6}
@@ -2573,7 +2557,7 @@ const Demandes = () => {
                                     </td>
                                     <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardTIF ? "#fff7ed" : undefined }}>
                                       <input
-                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.datePrevTIF || nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                                         value={sprintData.dateEffTIF || ""}
                                         onChange={(e) => handleSprintDataChange(i, "dateEffTIF", e.target.value)}
                                         style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
@@ -2600,7 +2584,7 @@ const Demandes = () => {
                                     </td>
                                     <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardClient ? "#fff7ed" : undefined }}>
                                       <input
-                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.datePrevClient || sprintData.datePrevTIF || nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.dateEffTIF || sprintData.datePrevTIF || nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                                         value={sprintData.dateEffClient || ""}
                                         onChange={(e) => handleSprintDataChange(i, "dateEffClient", e.target.value)}
                                         style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
@@ -2710,7 +2694,8 @@ const Demandes = () => {
                           const sprints = nouvelleDemandeFormData.sprintsData || [];
                           const termines = sprints.filter((s) => s.statutSprint === "terminé").length;
                           const enCours = sprints.findIndex((s) => s.statutSprint === "en cours");
-                          const pct = total > 0 ? Math.round((termines / total) * 100) : 0;
+                          const sommeAvancements = Array.from({ length: total }, (_, i) => Number((sprints[i] || {}).avancement) || 0).reduce((a, b) => a + b, 0);
+                          const pct = total > 0 ? Math.round(sommeAvancements / total) : 0;
                           return (
                             <div style={{ display: "flex", alignItems: "center", gap: "24px", marginBottom: "20px", padding: "16px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                               <div>
@@ -2748,14 +2733,17 @@ const Demandes = () => {
                             <tbody>
                               {Array.from({ length: parseInt(nouvelleDemandeFormData.nombreSprint) }, (_, i) => {
                                 const sprintData = (nouvelleDemandeFormData.sprintsData || [])[i] || {};
+                                const prevSprintData = i > 0 ? ((nouvelleDemandeFormData.sprintsData || [])[i - 1] || {}) : null;
+                                const prevTermine = i === 0 || prevSprintData?.statutSprint === "terminé";
+                                const isBloque = !prevTermine;
                                 const isEnCours = sprintData.statutSprint === "en cours";
                                 const isTermine = sprintData.statutSprint === "terminé";
                                 return (
-                                  <tr key={i} style={{ backgroundColor: isEnCours ? "#eff6ff" : isTermine ? "#f0fdf4" : i % 2 === 0 ? "#fff" : "#fafafa" }}>
-                                    <td style={{ padding: "10px 12px", border: "1px solid #e5e7eb", fontWeight: "600", color: isEnCours ? "#1d4ed8" : "#374151" }}>
+                                  <tr key={i} style={{ backgroundColor: isBloque ? "#f9fafb" : isEnCours ? "#eff6ff" : isTermine ? "#f0fdf4" : i % 2 === 0 ? "#fff" : "#fafafa", opacity: isBloque ? 0.6 : 1 }}>
+                                    <td style={{ padding: "10px 12px", border: "1px solid #e5e7eb", fontWeight: "600", color: isBloque ? "#9ca3af" : isEnCours ? "#1d4ed8" : "#374151" }}>
                                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                        {isEnCours && <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3b82f6", display: "inline-block" }} />}
-                                        {isTermine && <span style={{ color: "#10b981" }}>✓</span>}
+                                        {isBloque && <i className="fa-solid fa-lock" style={{ fontSize: "10px", color: "#9ca3af" }} title={`Sprint ${i} doit être terminé d'abord`} />}
+                                        {!isBloque && isEnCours && <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3b82f6", display: "inline-block" }} />}
                                         Sprint {i + 1}
                                       </div>
                                     </td>
@@ -2765,8 +2753,13 @@ const Demandes = () => {
                                     <td style={{ padding: "8px 12px", border: "1px solid #e5e7eb" }}>
                                       <select
                                         value={sprintData.statutSprint || "en attente"}
-                                        onChange={(e) => handleSprintDataChange(i, "statutSprint", e.target.value)}
-                                        style={{ fontSize: "13px", padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", background: "white" }}
+                                        onChange={(e) => {
+                                          handleSprintDataChange(i, "statutSprint", e.target.value);
+                                          if (e.target.value === "terminé") handleSprintDataChange(i, "avancement", 100);
+                                        }}
+                                        disabled={isBloque}
+                                        title={isBloque ? `Terminez le Sprint ${i} avant de modifier ce sprint` : undefined}
+                                        style={{ fontSize: "13px", padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", background: isBloque ? "#f3f4f6" : "white", cursor: isBloque ? "not-allowed" : "default" }}
                                       >
                                         <option value="en attente">En attente</option>
                                         <option value="en cours">En cours</option>
@@ -2778,14 +2771,16 @@ const Demandes = () => {
                                         <input
                                           type="number"
                                           value={sprintData.avancement || ""}
-                                          onChange={(e) => handleSprintDataChange(i, "avancement", e.target.value)}
+                                          onChange={(e) => handleSprintDataChange(i, "avancement", Math.min(100, Math.max(0, Number(e.target.value))))}
                                           min="0"
                                           max="100"
                                           placeholder="0"
-                                          style={{ width: "60px", padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "13px" }}
+                                          disabled={isBloque}
+                                          title={isBloque ? `Terminez le Sprint ${i} avant de saisir l'avancement` : undefined}
+                                          style={{ width: "60px", padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "13px", background: isBloque ? "#f3f4f6" : "white", cursor: isBloque ? "not-allowed" : "default" }}
                                         />
                                         <span style={{ color: "#6b7280" }}>%</span>
-                                        {sprintData.avancement > 0 && (
+                                        {!isBloque && sprintData.avancement > 0 && (
                                           <div style={{ flex: 1, height: "6px", background: "#e5e7eb", borderRadius: "3px", overflow: "hidden" }}>
                                             <div style={{ height: "100%", width: `${Math.min(100, sprintData.avancement)}%`, background: sprintData.avancement >= 100 ? "#10b981" : "#3b82f6", borderRadius: "3px" }} />
                                           </div>
@@ -3122,7 +3117,7 @@ const Demandes = () => {
                       )}
                       {(societes || []).map((societe) => (
                         <option key={societe.id} value={societe.id.toString()}>
-                          {societe.nom}
+                          {societe.code || societe.nom}
                         </option>
                       ))}
                     </select>
@@ -3439,7 +3434,7 @@ const Demandes = () => {
                               key={societe.id}
                               value={societe.id.toString()}
                             >
-                              {societe.nom}
+                              {societe.code || societe.nom}
                             </option>
                           ))}
                         </select>

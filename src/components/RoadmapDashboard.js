@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import GanttChart from "./GanttChart";
+import "./pages/PageStyles.css";
 
 const MONTH_NAMES = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
 
@@ -45,6 +46,7 @@ const genGroupes = (mode, cols) => {
 const RoadmapDashboard = ({ projets }) => {
   const [mode, setMode] = useState("mois");
   const [projetSelectionne, setProjetSelectionne] = useState(null);
+  const [hoveredProjet, setHoveredProjet] = useState(null);
 
   if (projetSelectionne) {
     const projet = projets.find(p => p.id === projetSelectionne);
@@ -126,7 +128,7 @@ const RoadmapDashboard = ({ projets }) => {
         })}
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflowX: "auto" }}>
+      <div className="roadmap-scroll" style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px", overflowX: "auto" }}>
         <div style={{ minWidth: `${LABEL_W + cols.length * COL_W}px`, display: "grid", gridTemplateColumns: gridCols }}>
 
           {/* Ligne groupes */}
@@ -156,13 +158,18 @@ const RoadmapDashboard = ({ projets }) => {
               <React.Fragment key={projet.id}>
                 <div
                   onClick={() => setProjetSelectionne(projet.id)}
-                  style={{ padding: "8px 10px", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", background: "#EFF6FF", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", fontWeight: "600", fontSize: "12px", color: "#111827" }}
+                  onMouseEnter={() => setHoveredProjet(projet.id)}
+                  onMouseLeave={() => setHoveredProjet(null)}
+                  style={{ padding: "8px 10px", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", background: hoveredProjet === projet.id ? "#DBEAFE" : "#EFF6FF", borderRight: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", fontWeight: "600", fontSize: "12px", color: hoveredProjet === projet.id ? "#1D4ED8" : "#111827", transition: "background 0.15s, color 0.15s" }}
                 >
+                  <i className="fa-solid fa-chart-gantt" style={{ fontSize: "10px", opacity: hoveredProjet === projet.id ? 1 : 0, transition: "opacity 0.15s", color: "#1D4ED8" }} />
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{projet.nom}</span>
                 </div>
                 <div
                   onClick={() => setProjetSelectionne(projet.id)}
-                  style={{ gridColumn: `span ${cols.length}`, position: "relative", height: "36px", cursor: "pointer", background: "#fff", borderBottom: "1px solid #E5E7EB" }}
+                  onMouseEnter={() => setHoveredProjet(projet.id)}
+                  onMouseLeave={() => setHoveredProjet(null)}
+                  style={{ gridColumn: `span ${cols.length}`, position: "relative", height: "36px", cursor: "pointer", background: hoveredProjet === projet.id ? "#F0F9FF" : "#fff", borderBottom: "1px solid #E5E7EB", transition: "background 0.15s" }}
                 >
                   {cols.map((_, mi) => <div key={mi} style={{ position: "absolute", left: `${((mi+1)/cols.length)*100}%`, top: 0, bottom: 0, width: "1px", background: "#F3F4F6" }} />)}
                   {pMin !== null && pMax !== null && (() => {
@@ -187,12 +194,6 @@ const RoadmapDashboard = ({ projets }) => {
 
           {/* Légende */}
           <div style={{ gridColumn: "1 / -1", display: "flex", gap: "16px", padding: "8px 12px", fontSize: "12px", color: "#6B7280", borderTop: "1px solid #E5E7EB" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <div style={{ width: "36px", height: "8px", background: "#DBEAFE", borderRadius: "2px", overflow: "hidden" }}>
-                <div style={{ width: "60%", height: "100%", background: "#4A90E2", borderRadius: "2px" }} />
-              </div>
-              <span>Réalisation (progression moyenne)</span>
-            </div>
             <span style={{ marginLeft: "auto", fontSize: "11px", color: "#9CA3AF" }}>Cliquez sur un projet pour afficher son Gantt détaillé</span>
           </div>
         </div>

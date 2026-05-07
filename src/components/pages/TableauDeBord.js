@@ -73,24 +73,15 @@ const TableauDeBord = () => {
     (d.statut?.nom || d.statutDemande || "").toUpperCase() === "SUSPENDU"
   );
 
-  const totalSprints = demandesEnCours.reduce((acc, d) => {
-    if (!d.sprintsData) return acc;
-    try {
-      const s = typeof d.sprintsData === "string" ? JSON.parse(d.sprintsData) : d.sprintsData;
-      return acc + (Array.isArray(s) ? s.length : 0);
-    } catch { return acc; }
-  }, 0);
+  // Calcul basé sur nombreSprint (total réel) + sprintsData (statuts réels)
+  const getSprints = (d) => {
+    const nb = parseInt(d.nombreSprint) || 0;
+    let data = [];
+    try { data = typeof d.sprintsData === "string" ? JSON.parse(d.sprintsData) : (d.sprintsData || []); } catch {}
+    return Array.from({ length: nb }, (_, i) => data[i] || { statutSprint: "en attente" });
+  };
 
-  const sprintsEnCours = demandesEnCours
-    .filter(d => d.sprintsData)
-    .map(d => {
-      let sprints = [];
-      try { sprints = typeof d.sprintsData === "string" ? JSON.parse(d.sprintsData) : d.sprintsData; } catch {}
-      const actif = Array.isArray(sprints) ? sprints.find(s => s.statutSprint === "en cours") : null;
-      return actif ? { demande: d, sprint: actif, totalSprints: sprints.length } : null;
-    })
-    .filter(Boolean)
-    .slice(0, 4);
+  const totalSprints = demandesEnCours.reduce((acc, d) => acc + (parseInt(d.nombreSprint) || 0), 0);
 
   // ── Données graphiques ────────────────────────────────────────────
 
@@ -124,17 +115,13 @@ const TableauDeBord = () => {
     .slice(0, 6)
     .map(([name, total]) => ({ name, total }));
 
-  // 3. Statut des sprints (tous sprints confondus)
+  // 3. Statut des sprints (basé sur nombreSprint + sprintsData)
   const sprintStatMap = { "en attente": 0, "en cours": 0, "terminé": 0 };
   demandesEnCours.forEach(d => {
-    if (!d.sprintsData) return;
-    try {
-      const s = typeof d.sprintsData === "string" ? JSON.parse(d.sprintsData) : d.sprintsData;
-      if (Array.isArray(s)) s.forEach(sp => {
-        const k = sp.statutSprint || "en attente";
-        sprintStatMap[k] = (sprintStatMap[k] || 0) + 1;
-      });
-    } catch {}
+    getSprints(d).forEach(sp => {
+      const k = sp.statutSprint || "en attente";
+      sprintStatMap[k] = (sprintStatMap[k] || 0) + 1;
+    });
   });
   const dataSprints = [
     { name: "En attente", value: sprintStatMap["en attente"], color: "#94A3B8" },
@@ -479,52 +466,6 @@ const TableauDeBord = () => {
                   : `Voir les ${projetsEnRetard.length - 3} autres ▼`}
               </button>
             )}
-          </div>
-        )}
-      </div>
-
-      {/* Sprints en cours */}
-      <div className="tdb-card tdb-sprints" style={{ marginBottom: "24px" }}>
-        <div className="tdb-card-header">
-          <i className="fa-solid fa-gauge-high" style={{ color: "#F97316" }}></i>
-          <h3>Sprints en cours</h3>
-        </div>
-        {sprintsEnCours.length === 0 ? (
-          <p className="tdb-empty">Aucun sprint actif en ce moment</p>
-        ) : (
-          <div className="tdb-sprints-list">
-            {sprintsEnCours.map(({ demande, sprint, totalSprints: total }) => {
-              const avancement = parseInt(sprint.avancement) || 0;
-              return (
-                <div
-                  key={demande.id}
-                  className="tdb-sprint-item"
-                  onClick={() => navigate("/demandes-gestion", { state: { openDemandeId: demande.id, openDemandeStep: 4 } })}
-                  style={{ cursor: "pointer" }}
-                  title="Cliquer pour mettre à jour l'avancement"
-                >
-                  <div className="tdb-sprint-header">
-                    <span className="tdb-sprint-projet">{demande.nomProjet || `Demande #${demande.id}`}</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span className="tdb-sprint-pct">{avancement}%</span>
-                      <i className="fa-solid fa-pen-to-square" style={{ fontSize: "11px", color: "#9CA3AF" }}></i>
-                    </div>
-                  </div>
-                  <div className="tdb-sprint-meta">
-                    {sprint.chantier && (
-                      <span className="tdb-sprint-chantier">
-                        <i className="fa-solid fa-hammer" style={{ fontSize: "11px", marginRight: "4px" }}></i>
-                        {sprint.chantier}
-                      </span>
-                    )}
-                    <span className="tdb-sprint-total">{total} sprint{total > 1 ? "s" : ""}</span>
-                  </div>
-                  <div className="tdb-progress-track">
-                    <div className="tdb-progress-fill" style={{ width: `${avancement}%` }}></div>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         )}
       </div>
