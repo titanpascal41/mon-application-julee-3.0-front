@@ -495,6 +495,23 @@ const Demandes = () => {
         }
       }
 
+      // ── ÉTAPE 5 → 6 : vérifier que tous les sprints sont terminés ─────────
+      if (nouvelleDemandeStep === 5) {
+        const nb = parseInt(nouvelleDemandeFormData.nombreSprint) || 0;
+        if (nb > 0) {
+          const sprints = nouvelleDemandeFormData.sprintsData || [];
+          const nonTermines = Array.from({ length: nb }, (_, i) => sprints[i] || {})
+            .filter(s => s.statutSprint !== "terminé").length;
+          if (nonTermines > 0) {
+            setDemandeMessage({
+              type: "error",
+              text: `Impossible de passer à la livraison : ${nonTermines} sprint${nonTermines > 1 ? "s" : ""} non terminé${nonTermines > 1 ? "s" : ""}. Terminez tous les sprints à l'étape Réalisation.`,
+            });
+            scrollToFormTop(); return;
+          }
+        }
+      }
+
       setNouvelleDemandeStep(nouvelleDemandeStep + 1);
       setDemandeMessage({ type: "", text: "" });
     }
@@ -561,6 +578,23 @@ const Demandes = () => {
   const handleTerminerDemande = async () => {
     const statutLiv = nouvelleDemandeFormData.statutLivraisonClient;
     const dateLiv = nouvelleDemandeFormData.dateEffectiveLivraisonClient;
+
+    // Vérifier que tous les sprints sont terminés
+    const nb = parseInt(nouvelleDemandeFormData.nombreSprint) || 0;
+    if (nb > 0) {
+      const sprints = nouvelleDemandeFormData.sprintsData || [];
+      const nonTermines = Array.from({ length: nb }, (_, i) => sprints[i] || {})
+        .filter(s => s.statutSprint !== "terminé");
+      if (nonTermines.length > 0) {
+        setDemandeMessage({
+          type: "error",
+          text: `Impossible de livrer : ${nonTermines.length} sprint${nonTermines.length > 1 ? "s" : ""} non terminé${nonTermines.length > 1 ? "s" : ""}. Tous les sprints doivent être à "Terminé" avant la livraison.`,
+        });
+        scrollToFormTop();
+        return;
+      }
+    }
+
     if (!dateLiv?.trim() || statutLiv !== "livré au client") {
       setDemandeMessage({
         type: "error",
@@ -2517,6 +2551,11 @@ const Demandes = () => {
                             <tbody>
                               {Array.from({ length: parseInt(nouvelleDemandeFormData.nombreSprint) }, (_, i) => {
                                 const sprintData = (nouvelleDemandeFormData.sprintsData || [])[i] || {};
+                                const prevSprintData = i > 0 ? ((nouvelleDemandeFormData.sprintsData || [])[i - 1] || {}) : null;
+                                // Min du sprint N = fin du sprint N-1 (dateEffClient ou datePrevClient)
+                                const minDateSprint = prevSprintData
+                                  ? (prevSprintData.dateEffClient || prevSprintData.datePrevClient || prevSprintData.dateEffTIF || prevSprintData.datePrevTIF || nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01")
+                                  : (nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01");
                                 const retardTIF = sprintData.datePrevTIF && sprintData.dateEffTIF && sprintData.dateEffTIF > sprintData.datePrevTIF;
                                 const retardClient = sprintData.datePrevClient && sprintData.dateEffClient && sprintData.dateEffClient > sprintData.datePrevClient;
                                 const today = new Date(); today.setHours(0,0,0,0);
@@ -2549,7 +2588,7 @@ const Demandes = () => {
 
                                     <td className={tifDepasse && flashRetards ? "flash-retard" : ""} style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                       <input
-                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
                                         value={sprintData.datePrevTIF || ""}
                                         onChange={(e) => handleSprintDataChange(i, "datePrevTIF", e.target.value)}
                                         style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
@@ -2557,7 +2596,7 @@ const Demandes = () => {
                                     </td>
                                     <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardTIF ? "#fff7ed" : undefined }}>
                                       <input
-                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
                                         value={sprintData.dateEffTIF || ""}
                                         onChange={(e) => handleSprintDataChange(i, "dateEffTIF", e.target.value)}
                                         style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
@@ -2576,7 +2615,7 @@ const Demandes = () => {
                                     </td>
                                     <td className={clientDepasse && flashRetards ? "flash-retard" : ""} style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                       <input
-                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.datePrevTIF || nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.datePrevTIF || minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
                                         value={sprintData.datePrevClient || ""}
                                         onChange={(e) => handleSprintDataChange(i, "datePrevClient", e.target.value)}
                                         style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
@@ -2584,7 +2623,7 @@ const Demandes = () => {
                                     </td>
                                     <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardClient ? "#fff7ed" : undefined }}>
                                       <input
-                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.dateEffTIF || sprintData.datePrevTIF || nouvelleDemandeFormData.dateCommunicationPlanningClient || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.dateEffTIF || sprintData.datePrevTIF || minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
                                         value={sprintData.dateEffClient || ""}
                                         onChange={(e) => handleSprintDataChange(i, "dateEffClient", e.target.value)}
                                         style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
@@ -2977,7 +3016,7 @@ const Demandes = () => {
                       className="btn-primary"
                       onClick={handleNouvelleDemandeNext}
                     >
-                      Suivant &rarr;
+                      {nouvelleDemandeStep === 5 ? "Livraison →" : "Suivant →"}
                     </button>
                   ) : (
                     <button
