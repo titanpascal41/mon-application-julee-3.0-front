@@ -1509,6 +1509,7 @@ const Demandes = () => {
     setShowProspecteForm(false);
     setShowSelectionCards(true);
     setDemandeMessage({ type: "", text: "" });
+    setIsModificationMode(false);
   };
 
   const handleProspecteSubmit = async (e) => {
@@ -3554,17 +3555,35 @@ const Demandes = () => {
                 >
                   ← Retour à la page principale
                 </button>
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #FF6B35 0%, #FF6B35dd 100%)",
-                    boxShadow: "0 4px 12px rgba(255, 107, 53, 0.3)",
-                  }}
-                >
-                  Créer la demande prospecte
-                </button>
+                <div style={{ display: "flex", gap: "12px" }}>
+                  {isModificationMode && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ color: "#EF4444", borderColor: "#EF4444" }}
+                      onClick={() => {
+                        localStorage.removeItem(PROSPECTE_STORAGE_KEY);
+                        setIsModificationMode(false);
+                        setShowProspecteForm(false);
+                        setShowSelectionCards(true);
+                        setShowDemandesList(true);
+                        setDemandeMessage({ type: "", text: "" });
+                      }}
+                    >
+                      Annuler
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    style={{
+                      background: "linear-gradient(135deg, #FF6B35 0%, #FF6B35dd 100%)",
+                      boxShadow: "0 4px 12px rgba(255, 107, 53, 0.3)",
+                    }}
+                  >
+                    {isModificationMode ? "Enregistrer les modifications" : "Créer la demande prospecte"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
