@@ -4249,42 +4249,86 @@ const Demandes = () => {
                                   : (evolutionFormData.dateCommunicationPlanningClient || "2000-01-01");
                                 const retardTIF = sprintData.datePrevTIF && sprintData.dateEffTIF && sprintData.dateEffTIF > sprintData.datePrevTIF;
                                 const retardClient = sprintData.datePrevClient && sprintData.dateEffClient && sprintData.dateEffClient > sprintData.datePrevClient;
+                                const today = new Date(); today.setHours(0,0,0,0);
+                                const tifDepasse = sprintData.datePrevTIF && !sprintData.dateEffTIF && new Date(sprintData.datePrevTIF) < today;
+                                const clientDepasse = sprintData.datePrevClient && !sprintData.dateEffClient && new Date(sprintData.datePrevClient) < today;
                                 return (
                                   <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#fff" : "#fafafa" }}>
-                                    <td style={{ padding: "8px", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap", color: "#374151" }}>Sprint {i + 1}</td>
+                                    <td style={{ padding: "8px", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap", color: "#374151" }}>
+                                      Sprint {i + 1}
+                                    </td>
                                     <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: sprintData.chantier?.trim() ? "transparent" : "#FEF2F2" }}>
-                                      <input type="text" value={sprintData.chantier || ""} onChange={(e) => handleEvolutionSprintDataChange(i, "chantier", e.target.value)}
-                                        style={{ width: "100%", padding: "4px 6px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "12px" }} placeholder="Chantier *" />
+                                      <input
+                                        type="text"
+                                        value={sprintData.chantier || ""}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          const nb = parseInt(evolutionFormData.nombreSprint) || 0;
+                                          setEvolutionFormData((prev) => {
+                                            const updated = [...(prev.sprintsData || [])];
+                                            for (let idx = 0; idx < nb; idx++) {
+                                              updated[idx] = { ...(updated[idx] || {}), chantier: val };
+                                            }
+                                            return { ...prev, sprintsData: updated };
+                                          });
+                                        }}
+                                        placeholder="Chantier obligatoire..."
+                                        style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
+                                      />
                                     </td>
-                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
-                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} value={sprintData.datePrevTIF || ""} min={minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                    <td className={tifDepasse && flashRetards ? "flash-retard" : ""} style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
+                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        value={sprintData.datePrevTIF || ""}
                                         onChange={(e) => handleEvolutionSprintDataChange(i, "datePrevTIF", e.target.value)}
-                                        style={{ padding: "4px 6px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "12px" }} />
+                                        style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }} />
                                     </td>
-                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardTIF ? "#FEF2F2" : "transparent" }}>
-                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} value={sprintData.dateEffTIF || ""} min={sprintData.datePrevTIF || minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardTIF ? "#fff7ed" : undefined }}>
+                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        value={sprintData.dateEffTIF || ""}
                                         onChange={(e) => handleEvolutionSprintDataChange(i, "dateEffTIF", e.target.value)}
-                                        style={{ padding: "4px 6px", border: `1px solid ${retardTIF ? "#FCA5A5" : "#d1d5db"}`, borderRadius: "4px", fontSize: "12px" }} />
-                                      {retardTIF && <div style={{ fontSize: "10px", color: "#DC2626", marginTop: "2px" }}>Retard</div>}
+                                        style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }} />
+                                      {retardTIF && (
+                                        <div style={{ marginTop: "4px" }}>
+                                          <textarea
+                                            value={sprintData.motifRetardTIF || ""}
+                                            onChange={(e) => handleEvolutionSprintDataChange(i, "motifRetardTIF", e.target.value)}
+                                            placeholder="Motif du retard TIF..."
+                                            rows={2}
+                                            style={{ width: "100%", fontSize: "12px", border: "1px solid #fed7aa", borderRadius: "4px", padding: "4px", resize: "vertical", background: "#fff7ed" }}
+                                          />
+                                        </div>
+                                      )}
                                     </td>
-                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
-                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} value={sprintData.datePrevClient || ""} min={sprintData.datePrevTIF || minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                    <td className={clientDepasse && flashRetards ? "flash-retard" : ""} style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
+                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.datePrevTIF || minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        value={sprintData.datePrevClient || ""}
                                         onChange={(e) => handleEvolutionSprintDataChange(i, "datePrevClient", e.target.value)}
-                                        style={{ padding: "4px 6px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "12px" }} />
+                                        style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }} />
                                     </td>
-                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardClient ? "#FEF2F2" : "transparent" }}>
-                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} value={sprintData.dateEffClient || ""} min={sprintData.datePrevClient || minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardClient ? "#fff7ed" : undefined }}>
+                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={sprintData.datePrevTIF || minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        value={sprintData.dateEffClient || ""}
                                         onChange={(e) => handleEvolutionSprintDataChange(i, "dateEffClient", e.target.value)}
-                                        style={{ padding: "4px 6px", border: `1px solid ${retardClient ? "#FCA5A5" : "#d1d5db"}`, borderRadius: "4px", fontSize: "12px" }} />
-                                      {retardClient && <div style={{ fontSize: "10px", color: "#DC2626", marginTop: "2px" }}>Retard</div>}
+                                        style={{ border: "none", outline: "none", background: "transparent", fontSize: "13px" }} />
+                                      {retardClient && (
+                                        <div style={{ marginTop: "4px" }}>
+                                          <textarea
+                                            value={sprintData.motifRetardClient || ""}
+                                            onChange={(e) => handleEvolutionSprintDataChange(i, "motifRetardClient", e.target.value)}
+                                            placeholder="Motif du retard client..."
+                                            rows={2}
+                                            style={{ width: "100%", fontSize: "12px", border: "1px solid #fed7aa", borderRadius: "4px", padding: "4px", resize: "vertical", background: "#fff7ed" }}
+                                          />
+                                        </div>
+                                      )}
                                     </td>
                                     <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                       <input type="number" value={sprintData.charges || ""} onChange={(e) => handleEvolutionSprintDataChange(i, "charges", e.target.value)}
-                                        style={{ width: "60px", padding: "4px 6px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "12px" }} placeholder="0" min="0" />
+                                        style={{ width: "60px", border: "none", outline: "none", background: "transparent", fontSize: "13px" }} placeholder="0" min="0" />
                                     </td>
                                     <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                       <input type="number" value={sprintData.nbFonctionnalites || ""} onChange={(e) => handleEvolutionSprintDataChange(i, "nbFonctionnalites", e.target.value)}
-                                        style={{ width: "60px", padding: "4px 6px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "12px" }} placeholder="0" min="0" />
+                                        style={{ width: "60px", border: "none", outline: "none", background: "transparent", fontSize: "13px" }} placeholder="0" min="0" />
                                     </td>
                                   </tr>
                                 );
