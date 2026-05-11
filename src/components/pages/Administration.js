@@ -1191,16 +1191,23 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
   const normaliser = (str) =>
     (str || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
+  const sortInactifEnHaut = (a, b) => {
+    if (a.actif === b.actif) return 0;
+    return a.actif === false ? -1 : 1;
+  };
+
   const profilsBase = profils.filter(p => p.id !== 1);
-  const profilsFiltres = profilsBase.filter(p =>
-    !rechercheProfils || normaliser(p.nom).includes(normaliser(rechercheProfils)) || normaliser(p.code).includes(normaliser(rechercheProfils))
-  );
-  const utilisateursFiltres = utilisateurs.filter(u =>
-    !rechercheUtilisateurs ||
-    normaliser(u.nom).includes(normaliser(rechercheUtilisateurs)) ||
-    normaliser(u.prenom).includes(normaliser(rechercheUtilisateurs)) ||
-    normaliser(u.email).includes(normaliser(rechercheUtilisateurs))
-  );
+  const profilsFiltres = profilsBase
+    .filter(p => !rechercheProfils || normaliser(p.nom).includes(normaliser(rechercheProfils)) || normaliser(p.code).includes(normaliser(rechercheProfils)))
+    .sort(sortInactifEnHaut);
+  const utilisateursFiltres = utilisateurs
+    .filter(u =>
+      !rechercheUtilisateurs ||
+      normaliser(u.nom).includes(normaliser(rechercheUtilisateurs)) ||
+      normaliser(u.prenom).includes(normaliser(rechercheUtilisateurs)) ||
+      normaliser(u.email).includes(normaliser(rechercheUtilisateurs))
+    )
+    .sort(sortInactifEnHaut);
 
   const renderPagination = (total, page, setPage) => {
     const totalPages = Math.ceil(total / ITEMS_PER_PAGE);

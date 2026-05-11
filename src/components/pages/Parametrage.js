@@ -237,12 +237,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const chargerLesSocietes = useCallback(async () => {
     setLoading(true);
     const toutesChargees = await chargerToutesSocietes();
-    const triees = [...toutesChargees].sort((a, b) => {
-      if (a.actif === b.actif) return 0;
-      return a.actif ? -1 : 1;
-    });
-    setSocietes(triees);
-    setToutesSocietes(triees);
+    setSocietes(toutesChargees);
+    setToutesSocietes(toutesChargees);
     setLoading(false);
   }, []);
 
@@ -301,12 +297,18 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
   const applyFiltre = (items, recherche, filtreStatut, fields) => {
     const q = normaliser(recherche);
-    return items.filter(item => {
-      const matchStatut = filtreStatut === "tous"
-        || (filtreStatut === "actif" ? item.actif !== false : item.actif === false);
-      const matchRecherche = !q || fields.some(f => normaliser(item[f]).includes(q));
-      return matchStatut && matchRecherche;
-    });
+    return items
+      .filter(item => {
+        const matchStatut = filtreStatut === "tous"
+          || (filtreStatut === "actif" ? item.actif !== false : item.actif === false);
+        const matchRecherche = !q || fields.some(f => normaliser(item[f]).includes(q));
+        return matchStatut && matchRecherche;
+      })
+      .sort((a, b) => {
+        // Désactivés en haut
+        if (a.actif === b.actif) return 0;
+        return a.actif === false ? -1 : 1;
+      });
   };
 
   const societesFiltrees       = applyFiltre(societes,       rechercheSocietes,       filtreStatutSocietes,       ["code","nom","departement"]);
