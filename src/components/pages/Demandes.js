@@ -4709,7 +4709,17 @@ const Demandes = () => {
                                 {demande.statutDemande}
                               </span>
                             ) : (
-                              <span style={{ color: "#9ca3af", fontSize: "13px" }}>—</span>
+                              <span style={{
+                                display: "inline-block",
+                                padding: "3px 12px",
+                                borderRadius: "999px",
+                                backgroundColor: "#F9FAFB",
+                                border: "1px dashed #D1D5DB",
+                                color: "#9ca3af",
+                                fontSize: "13px",
+                                fontWeight: 500,
+                                letterSpacing: "2px",
+                              }}>—</span>
                             )}
                             {peutModifierDemande && (
                               <button
@@ -4883,7 +4893,19 @@ const Demandes = () => {
                             <span style={{ padding: "2px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "600", backgroundColor: "#F3F4F6", color: "#374151" }}>
                               {demande.statutDemande}
                             </span>
-                          ) : <span style={{ color: "#9ca3af" }}>—</span>}
+                          ) : (
+                            <span style={{
+                              display: "inline-block",
+                              padding: "3px 12px",
+                              borderRadius: "999px",
+                              backgroundColor: "#F9FAFB",
+                              border: "1px dashed #D1D5DB",
+                              color: "#9ca3af",
+                              fontSize: "13px",
+                              fontWeight: 500,
+                              letterSpacing: "2px",
+                            }}>—</span>
+                          )}
                         </td>
                         <td style={{ whiteSpace: "nowrap", fontSize: "13px", color: "#10B981", fontWeight: "500" }}>
                           {demande.dateEffectiveLivraisonClient
