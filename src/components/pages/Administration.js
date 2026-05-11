@@ -1599,7 +1599,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
             </div>
           )}
 
-          <div className="table-container" style={{ marginTop: "119px" }}>
+          <div className="table-container" style={{ marginTop: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
               {profils.length > 0 && <h3 style={{ margin: 0 }}>Liste des profils</h3>}
               {profils.length >= 5 && (
@@ -2546,7 +2546,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
             </div>
           )}
 
-          <div className="table-container" style={{ marginTop: "119px" }}>
+          <div className="table-container" style={{ marginTop: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
               {utilisateurs.length > 0 && <h3 style={{ margin: 0 }}>Liste des utilisateurs</h3>}
               {utilisateurs.length >= 5 && (

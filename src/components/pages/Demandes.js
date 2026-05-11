@@ -4768,7 +4768,7 @@ const Demandes = () => {
                                 {demande.statutDemande}
                               </span>
                             ) : (
-                              <span style={{ color: "#9ca3af", fontSize: "12px" }}>
+                              <span style={{ color: "#9ca3af", fontSize: "13px" }}>
                                 {normalizeTypeProjet(demande.typeProjet) === "prospecte" ? "Aucun statut" : "—"}
                               </span>
                             )}
