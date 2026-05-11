@@ -4708,9 +4708,10 @@ const Demandes = () => {
 
           {showDemandesList && !vueLivrees && (
             <div className="table-container" style={{ marginTop: "24px" }}>
-              {/* ── Barre de filtres ── */}
+              {/* ── Barre de filtres (visible si > 10 demandes) ── */}
               {(() => {
                 const baseEnCours = demandes.filter(d => d.isDraft !== false);
+                if (baseEnCours.length <= 10) return null;
                 const societesUniques = [...new Set(baseEnCours.map(d => d.societesDemandeurs || d.societeDemandeur).filter(Boolean))].sort();
                 const statutsUniques = [...new Set(baseEnCours.map(d => d.statutDemande).filter(Boolean))].sort();
                 const aFiltreActif = filtreRecherche || filtreType || filtreSociete || filtreStatut || filtreDateDebut || filtreDateFin;
