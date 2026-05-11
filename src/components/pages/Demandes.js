@@ -320,25 +320,59 @@ const Demandes = () => {
 
   // États pour le formulaire multi-étapes "Demande d'évolution"
   const [showEvolutionForm, setShowEvolutionForm] = useState(false);
-  const [evolutionStep, setEvolutionStep] = useState(1); // 1 à 3
+  const [evolutionStep, setEvolutionStep] = useState(1); // 1 à 9
   const [evolutionFormData, setEvolutionFormData] = useState({
     dateEnregistrement: new Date().toISOString().split("T")[0],
     societesDemandeurs: [],
+    societesDemandeursNames: [],
     interlocuteur: "",
     nomProjet: "",
     dateReception: "",
-    // Étape 1
+    // Étape 1 - Info demande
     dateDemandeMiseAJourDATFL: "",
     dateReponseMiseAJourDATFL: "",
-    // Étape 2
+    // Étape 2 - Charge & Planning
     charge: "",
     planningDateDebut: "",
     planningDateFin: "",
-    // Étape 3
+    // Étape 3 - Planning & SLT
     dateDemandeDevolution: "",
     dateReponseDevolution: "",
     slt: "",
     aleasNormeParJour: "",
+    // Étape 4 - Enregistrement (= nouvelle demande étape 1)
+    interlocuteurClient: "",
+    typeProjet: "",
+    demandeur: "",
+    descriptionProjet: "",
+    descriptionPerimetre: "",
+    statutDemande: "",
+    lienIngridCDC: "",
+    // Étape 5 - Clarification (= nouvelle demande étape 2)
+    dateTransmissionBacklog: "",
+    dateConfirmationValidation: "",
+    observations: "",
+    // Étape 6 - Planification (= nouvelle demande étape 3)
+    dateDemandePlanificationDev: "",
+    dateDemandePlanificationTif: "",
+    dateRetourEquipesDev: "",
+    dateRetourEquipesTif: "",
+    dateCommunicationPlanningClient: "",
+    nombreSprint: "",
+    sprintsData: [],
+    // Étape 7 - Réalisation (= nouvelle demande étape 4)
+    statutCodage: "en attente",
+    statutTIF: "en attente",
+    // Étape 8 - Documents (= nouvelle demande étape 5)
+    lienIngridKickoff: "",
+    lienIngridPointsControleTIF: "",
+    lienIngridSignoff: "",
+    // Étape 9 - Livraison (= nouvelle demande étape 6)
+    dateEffectiveLivraisonTIF: "",
+    motifsRetardTIF: "",
+    dateEffectiveLivraisonClient: "",
+    motifsRetardClient: "",
+    statutLivraisonClient: "en attente",
   });
 
   // Fonction pour formater une date en français (ex: "lundi 15 janvier 2025")
@@ -703,6 +737,17 @@ const Demandes = () => {
     });
   };
 
+  const handleEvolutionSprintDataChange = (index, field, value) => {
+    const isDateField = ["datePrevTIF", "dateEffTIF", "datePrevClient", "dateEffClient"].includes(field);
+    const finalValue = isDateField ? sanitizeDate(value) : value;
+    setEvolutionFormData((prev) => {
+      const updatedSprints = [...(prev.sprintsData || [])];
+      if (!updatedSprints[index]) updatedSprints[index] = {};
+      updatedSprints[index] = { ...updatedSprints[index], [field]: finalValue };
+      return { ...prev, sprintsData: updatedSprints };
+    });
+  };
+
   const perimetreOptions = [
     "ND",
     "ANL",
@@ -998,86 +1043,95 @@ const Demandes = () => {
       1: "Info demande",
       2: "DATFL",
       3: "Planning & SLT",
+      4: "Enregistrement",
+      5: "Clarification",
+      6: "Planification",
+      7: "Réalisation",
+      8: "Documents",
+      9: "Livraison",
     };
 
-    // Vérifier si on est en train d'éditer une demande existante
+    if (!evolutionFormData.nomProjet?.trim()) {
+      setDemandeMessage({ type: "error", text: "Le nom du projet est obligatoire pour enregistrer le brouillon." });
+      scrollToFormTop();
+      return;
+    }
+
     const currentDemandeId = evolutionFormData.id;
 
     const payload = {
-      dateEnregistrement:
-        evolutionFormData.dateEnregistrement ||
-        new Date().toISOString().split("T")[0],
-      dateReception: evolutionFormData.dateReception || "",
-      societeDemandeur: evolutionFormData.societesDemandeurs || "",
-      interlocuteur: evolutionFormData.interlocuteur || "",
       typeProjet: "Evolution",
       nomProjet: evolutionFormData.nomProjet || "",
-      descriptionProjet: evolutionFormData.descriptionProjet || "",
-      descriptionPerimetre: evolutionFormData.descriptionPerimetre || "",
-      perimetre: evolutionFormData.perimetre || "",
-      statutDemande: evolutionFormData.statutDemande || "",
-      dateTransmissionBacklog: evolutionFormData.dateTransmissionBacklog || "",
-      dateConfirmationValidation:
-        evolutionFormData.dateConfirmationValidation || "",
-      dateDemandePlanificationDev:
-        evolutionFormData.dateDemandePlanificationDev || "",
-      dateDemandePlanificationTif:
-        evolutionFormData.dateDemandePlanificationTif || "",
-      dateRetourEquipesDev: evolutionFormData.dateRetourEquipesDev || "",
-      dateRetourEquipesTif: evolutionFormData.dateRetourEquipesTif || "",
-      dateCommunicationPlanningClient:
-        evolutionFormData.dateCommunicationPlanningClient || "",
-      nombreSprint: evolutionFormData.nombreSprint || "",
-      roadmap: evolutionFormData.roadmap || "",
+      dateEnregistrement: evolutionFormData.dateEnregistrement || new Date().toISOString().split("T")[0],
+      dateReception: evolutionFormData.dateReception || null,
+      societeDemandeur: evolutionFormData.societesDemandeursNames?.[0] || null,
+      societesDemandeurs: evolutionFormData.societesDemandeursNames?.join(", ") || null,
+      interlocuteur: evolutionFormData.interlocuteur || null,
+      interlocuteurClient: evolutionFormData.interlocuteurClient || null,
+      demandeur: evolutionFormData.demandeur || null,
+      dateDemandeMiseAJourDATFL: evolutionFormData.dateDemandeMiseAJourDATFL || null,
+      dateReponseMiseAJourDATFL: evolutionFormData.dateReponseMiseAJourDATFL || null,
+      charge: evolutionFormData.charge ? parseFloat(evolutionFormData.charge) : null,
+      planningDateDebut: evolutionFormData.planningDateDebut || null,
+      planningDateFin: evolutionFormData.planningDateFin || null,
+      dateDemandeDevolution: evolutionFormData.dateDemandeDevolution || null,
+      dateReponseDevolution: evolutionFormData.dateReponseDevolution || null,
+      slt: evolutionFormData.slt || null,
+      aleasNormeParJour: evolutionFormData.aleasNormeParJour || null,
+      descriptionProjet: evolutionFormData.descriptionProjet || null,
+      descriptionPerimetre: evolutionFormData.descriptionPerimetre || null,
+      statutDemande: evolutionFormData.statutDemande || null,
+      lienIngridCDC: evolutionFormData.lienIngridCDC || null,
+      dateTransmissionBacklog: evolutionFormData.dateTransmissionBacklog || null,
+      dateConfirmationValidation: evolutionFormData.dateConfirmationValidation || null,
+      observations: evolutionFormData.observations || null,
+      dateDemandePlanificationDev: evolutionFormData.dateDemandePlanificationDev || null,
+      dateDemandePlanificationTif: evolutionFormData.dateDemandePlanificationTif || null,
+      dateRetourEquipesDev: evolutionFormData.dateRetourEquipesDev || null,
+      dateRetourEquipesTif: evolutionFormData.dateRetourEquipesTif || null,
+      dateCommunicationPlanningClient: evolutionFormData.dateCommunicationPlanningClient || null,
+      nombreSprint: evolutionFormData.nombreSprint || null,
+      sprintsData: evolutionFormData.sprintsData?.length > 0 ? evolutionFormData.sprintsData : null,
+      statutCodage: evolutionFormData.statutCodage || null,
+      statutTIF: evolutionFormData.statutTIF || null,
+      lienIngridKickoff: evolutionFormData.lienIngridKickoff || null,
+      lienIngridPointsControleTIF: evolutionFormData.lienIngridPointsControleTIF || null,
+      lienIngridSignoff: evolutionFormData.lienIngridSignoff || null,
+      dateEffectiveLivraisonTIF: evolutionFormData.dateEffectiveLivraisonTIF || null,
+      motifsRetardTIF: evolutionFormData.motifsRetardTIF || null,
+      dateEffectiveLivraisonClient: evolutionFormData.dateEffectiveLivraisonClient || null,
+      motifsRetardClient: evolutionFormData.motifsRetardClient || null,
+      statutLivraison: evolutionFormData.statutLivraisonClient || null,
       isDraft: true,
       draftStep: stepToStore,
-      draftStepLabel:
-        evolutionStepLabels[stepToStore] || `Étape ${stepToStore}/3`,
-      utilisateurId: user?.id,
+      draftStepLabel: evolutionStepLabels[stepToStore] || `Étape ${stepToStore}`,
+      utilisateurId: user?.id || 1,
     };
 
     try {
       if (currentDemandeId) {
-        // Mettre à jour la demande existante
-        await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:3001"}/demandes/${currentDemandeId}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          },
-        );
-        console.log(
-          "🔄 Mise à jour du brouillon évolution existant:",
-          currentDemandeId,
-        );
+        const resp = await apiFetch(`/demandes/${currentDemandeId}`, { method: "PUT", body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error(`Erreur HTTP ${resp.status}`);
       } else {
-        // Créer une nouvelle demande
-        const response = await creerDemande(payload);
-        console.log("Création d'une nouvelle demande évolution");
-
-        // Récupérer l'ID pour les futures mises à jour
-        if (response && response.id) {
-          setEvolutionFormData((prev) => ({
-            ...prev,
-            id: response.id,
-          }));
-          console.log(
-            "📝 ID de la nouvelle demande évolution enregistré:",
-            response.id,
-          );
+        const resp = await apiFetch(`/demandes`, { method: "POST", body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error(`Erreur HTTP ${resp.status}`);
+        const created = await resp.json();
+        if (created?.id) {
+          setEvolutionFormData((prev) => ({ ...prev, id: created.id }));
         }
       }
 
-      chargerLesDemandes();
+      await chargerLesDemandes();
+      setShowEvolutionForm(false);
+      setShowSelectionCards(true);
+      setEvolutionStep(1);
+      setIsModificationMode(false);
       setDemandeMessage({
         type: "success",
-        text: currentDemandeId
-          ? "Brouillon évolution mis à jour."
-          : "Brouillon évolution enregistré.",
+        text: currentDemandeId ? "Brouillon évolution mis à jour." : "Brouillon évolution enregistré.",
       });
+      setTimeout(() => setDemandeMessage({ type: "", text: "" }), 3000);
     } catch (error) {
-      console.error("Erreur évolution brouillon:", error);
       setDemandeMessage({
         type: "error",
         text: `Impossible d'enregistrer le brouillon. ${error?.message || "Vérifiez la connexion au serveur."}`,
@@ -1483,32 +1537,47 @@ const Demandes = () => {
     setShowProspecteForm(false);
     setEvolutionFormData({
       dateEnregistrement: new Date().toISOString().split("T")[0],
-      societesDemandeurs:
-        societes.length > 0 ? [societes[0].id.toString()] : [],
+      societesDemandeurs: [],
+      societesDemandeursNames: [],
       interlocuteur: "",
       nomProjet: "",
       dateReception: "",
       dateDemandeMiseAJourDATFL: "",
       dateReponseMiseAJourDATFL: "",
       charge: "",
+      planningDateDebut: "",
+      planningDateFin: "",
+      dateDemandeDevolution: "",
+      dateReponseDevolution: "",
+      slt: "",
+      aleasNormeParJour: "",
+      interlocuteurClient: "",
+      typeProjet: "",
+      demandeur: "",
+      descriptionProjet: "",
+      descriptionPerimetre: "",
+      statutDemande: "",
+      lienIngridCDC: "",
       dateTransmissionBacklog: "",
       dateConfirmationValidation: "",
-      dateDemandePlanificationDevTif: "",
-      dateRetourEquipes: "",
+      observations: "",
+      dateDemandePlanificationDev: "",
+      dateDemandePlanificationTif: "",
+      dateRetourEquipesDev: "",
+      dateRetourEquipesTif: "",
       dateCommunicationPlanningClient: "",
       nombreSprint: "",
-      chargePrevisionnelleParSprint: "",
-      dateLivraisonPrevisionnelleTIFParSprint: "",
-      dateLivraisonPrevisionnelleClientParSprint: "",
-      roadmap: "",
+      sprintsData: [],
+      statutCodage: "en attente",
+      statutTIF: "en attente",
+      lienIngridKickoff: "",
+      lienIngridPointsControleTIF: "",
+      lienIngridSignoff: "",
       dateEffectiveLivraisonTIF: "",
       motifsRetardTIF: "",
       dateEffectiveLivraisonClient: "",
       motifsRetardClient: "",
-      statutCodage: "",
-      statutPresentationDocs: "",
-      statutRecette: "",
-      statutLivraison: "",
+      statutLivraisonClient: "en attente",
     });
 
     // Plus de localStorage - tout vient de la base de données
@@ -1520,10 +1589,11 @@ const Demandes = () => {
   };
 
   const handleEvolutionInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    const finalValue = type === "date" ? sanitizeDate(value) : value;
     setEvolutionFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: finalValue,
     }));
     if (demandeMessage.text) {
       setDemandeMessage({ type: "", text: "" });
@@ -1531,7 +1601,7 @@ const Demandes = () => {
   };
 
   const handleEvolutionNext = () => {
-    if (evolutionStep < 3) {
+    if (evolutionStep < 9) {
       setDemandeMessage({ type: "", text: "" });
 
       if (evolutionStep === 1) {
@@ -1577,6 +1647,123 @@ const Demandes = () => {
         }
       }
 
+      if (evolutionStep === 3) {
+        if (!evolutionFormData.charge) {
+          setDemandeMessage({ type: "error", text: "La charge est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.planningDateDebut) {
+          setDemandeMessage({ type: "error", text: "La date de début du planning est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.planningDateFin) {
+          setDemandeMessage({ type: "error", text: "La date de fin du planning est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (evolutionFormData.planningDateFin < evolutionFormData.planningDateDebut) {
+          setDemandeMessage({ type: "error", text: "La date de fin du planning ne peut pas être avant la date de début." });
+          scrollToFormTop(); return;
+        }
+        if (evolutionFormData.dateDemandeDevolution && evolutionFormData.dateReponseDevolution &&
+            evolutionFormData.dateReponseDevolution < evolutionFormData.dateDemandeDevolution) {
+          setDemandeMessage({ type: "error", text: "La date de réponse dévolution ne peut pas être avant la date de demande." });
+          scrollToFormTop(); return;
+        }
+      }
+
+      if (evolutionStep === 4) {
+        if (!evolutionFormData.nomProjet?.trim()) {
+          setDemandeMessage({ type: "error", text: "Le nom du projet est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.societesDemandeurs?.[0]) {
+          setDemandeMessage({ type: "error", text: "La société demandeuse est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.interlocuteurClient) {
+          setDemandeMessage({ type: "error", text: "L'interlocuteur client est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.methodologie) {
+          setDemandeMessage({ type: "error", text: "La méthodologie est obligatoire." });
+          scrollToFormTop(); return;
+        }
+      }
+
+      if (evolutionStep === 5) {
+        if (!evolutionFormData.dateTransmissionBacklog) {
+          setDemandeMessage({ type: "error", text: "La date de transmission du backlog est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.dateConfirmationValidation) {
+          setDemandeMessage({ type: "error", text: "La date de confirmation/validation est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (evolutionFormData.dateConfirmationValidation < evolutionFormData.dateTransmissionBacklog) {
+          setDemandeMessage({ type: "error", text: "La date de confirmation/validation ne peut pas être avant la date de transmission." });
+          scrollToFormTop(); return;
+        }
+      }
+
+      if (evolutionStep === 6) {
+        if (!evolutionFormData.dateCommunicationPlanningClient) {
+          setDemandeMessage({ type: "error", text: "La date de communication du planning client est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        const nb = parseInt(evolutionFormData.nombreSprint) || 0;
+        if (nb < 1) {
+          setDemandeMessage({ type: "error", text: "Le nombre de sprints doit être d'au moins 1." });
+          scrollToFormTop(); return;
+        }
+        const sprints = evolutionFormData.sprintsData || [];
+        const manquants = Array.from({ length: nb }, (_, i) => i + 1).filter(
+          (i) => !sprints[i - 1]?.chantier?.trim()
+        );
+        if (manquants.length > 0) {
+          setDemandeMessage({ type: "error", text: `Le chantier est obligatoire pour chaque sprint. Sprint${manquants.length > 1 ? "s" : ""} sans chantier : ${manquants.map((n) => `Sprint ${n}`).join(", ")}.` });
+          scrollToFormTop(); return;
+        }
+      }
+
+      if (evolutionStep === 7) {
+        if (!evolutionFormData.statutCodage) {
+          setDemandeMessage({ type: "error", text: "Le statut du codage est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.statutTIF) {
+          setDemandeMessage({ type: "error", text: "Le statut TIF est obligatoire." });
+          scrollToFormTop(); return;
+        }
+      }
+
+      if (evolutionStep === 8) {
+        if (!evolutionFormData.lienIngridKickoff?.trim()) {
+          setDemandeMessage({ type: "error", text: "Le lien du document Kickoff est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.lienIngridPointsControleTIF?.trim()) {
+          setDemandeMessage({ type: "error", text: "Le lien des points de contrôle TIF est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        if (!evolutionFormData.lienIngridSignoff?.trim()) {
+          setDemandeMessage({ type: "error", text: "Le lien du document Signoff est obligatoire." });
+          scrollToFormTop(); return;
+        }
+        const nb = parseInt(evolutionFormData.nombreSprint) || 0;
+        if (nb > 0) {
+          const sprints = evolutionFormData.sprintsData || [];
+          const nonTermines = Array.from({ length: nb }, (_, i) => sprints[i] || {})
+            .filter(s => s.statutSprint !== "terminé").length;
+          if (nonTermines > 0) {
+            setDemandeMessage({
+              type: "error",
+              text: `Impossible de passer à la livraison : ${nonTermines} sprint${nonTermines > 1 ? "s" : ""} non terminé${nonTermines > 1 ? "s" : ""}. Terminez tous les sprints à l'étape Réalisation.`,
+            });
+            scrollToFormTop(); return;
+          }
+        }
+      }
+
       setEvolutionStep(evolutionStep + 1);
       scrollToFormTop();
     }
@@ -1595,65 +1782,113 @@ const Demandes = () => {
     setShowSelectionCards(true);
     setEvolutionStep(1);
     setDemandeMessage({ type: "", text: "" });
+    setIsModificationMode(false);
   };
 
-  const handleEvolutionSubmit = async (e) => {
+  const handleEvolutionSubmit = (e) => {
     e.preventDefault();
-    setDemandeMessage({ type: "", text: "" });
+  };
 
-    if (!evolutionFormData.charge) {
-      setDemandeMessage({ type: "error", text: "La charge est obligatoire." });
-      scrollToFormTop(); return;
-    }
-    if (!evolutionFormData.planningDateDebut) {
-      setDemandeMessage({ type: "error", text: "La date de début du planning est obligatoire." });
-      scrollToFormTop(); return;
-    }
-    if (!evolutionFormData.planningDateFin) {
-      setDemandeMessage({ type: "error", text: "La date de fin du planning est obligatoire." });
-      scrollToFormTop(); return;
-    }
-    if (evolutionFormData.planningDateFin < evolutionFormData.planningDateDebut) {
-      setDemandeMessage({ type: "error", text: "La date de fin du planning ne peut pas être avant la date de début." });
-      scrollToFormTop(); return;
-    }
-    if (evolutionFormData.dateDemandeDevolution && evolutionFormData.dateReponseDevolution &&
-        evolutionFormData.dateReponseDevolution < evolutionFormData.dateDemandeDevolution) {
-      setDemandeMessage({ type: "error", text: "La date de réponse dévolution ne peut pas être avant la date de demande dévolution." });
-      scrollToFormTop(); return;
+  const handleTerminerEvolution = async () => {
+    const statutLiv = evolutionFormData.statutLivraisonClient;
+    const dateLiv = evolutionFormData.dateEffectiveLivraisonClient;
+
+    const nb = parseInt(evolutionFormData.nombreSprint) || 0;
+    if (nb > 0) {
+      const sprints = evolutionFormData.sprintsData || [];
+      const nonTermines = Array.from({ length: nb }, (_, i) => sprints[i] || {})
+        .filter(s => s.statutSprint !== "terminé");
+      if (nonTermines.length > 0) {
+        setDemandeMessage({
+          type: "error",
+          text: `Impossible de livrer : ${nonTermines.length} sprint${nonTermines.length > 1 ? "s" : ""} non terminé${nonTermines.length > 1 ? "s" : ""}. Tous les sprints doivent être à "Terminé" avant la livraison.`,
+        });
+        scrollToFormTop();
+        return;
+      }
     }
 
-    // Sauvegarder comme brouillon (comme le bouton Enregistrer le brouillon)
-    await sauvegarderEvolutionBrouillon();
+    if (!dateLiv?.trim() || statutLiv !== "livré au client") {
+      setDemandeMessage({
+        type: "error",
+        text: "La demande ne peut pas être terminée : la livraison au client n'a pas été effectuée. Veuillez renseigner la date de livraison effective.",
+      });
+      scrollToFormTop();
+      return;
+    }
 
-    setDemandeMessage({
-      type: "success",
-      text: "Brouillon d'évolution enregistré avec succès !",
-    });
-    chargerLesDemandes();
-    setShowEvolutionForm(false);
-    setShowSelectionCards(true);
-    setEvolutionStep(1);
-    setEvolutionFormData({
-      dateEnregistrement: new Date().toISOString().split("T")[0],
-      societesDemandeurs: [],
-      interlocuteur: "",
-      nomProjet: "",
-      dateReception: "",
-      // Étape 1
-      dateDemandeMiseAJourDATFL: "",
-      dateReponseMiseAJourDATFL: "",
-      // Étape 2
-      charge: "",
-      planningDateDebut: "",
-      planningDateFin: "",
-      // Étape 3
-      dateDemandeDevolution: "",
-      dateReponseDevolution: "",
-      slt: "",
-      aleasNormeParJour: "",
-    });
-    setTimeout(() => setDemandeMessage({ type: "", text: "" }), 3000);
+    try {
+      setDemandeMessage({ type: "info", text: "Finalisation en cours..." });
+      const currentDemandeId = evolutionFormData.id;
+      const payload = {
+        typeProjet: "Evolution",
+        nomProjet: evolutionFormData.nomProjet || "",
+        dateEnregistrement: evolutionFormData.dateEnregistrement || null,
+        dateReception: evolutionFormData.dateReception || null,
+        societeDemandeur: evolutionFormData.societesDemandeursNames?.[0] || evolutionFormData.societesDemandeurs?.[0] || null,
+        societesDemandeurs: evolutionFormData.societesDemandeursNames?.join(", ") || null,
+        interlocuteur: evolutionFormData.interlocuteur || null,
+        interlocuteurClient: evolutionFormData.interlocuteurClient || null,
+        demandeur: evolutionFormData.demandeur || null,
+        dateDemandeMiseAJourDATFL: evolutionFormData.dateDemandeMiseAJourDATFL || null,
+        dateReponseMiseAJourDATFL: evolutionFormData.dateReponseMiseAJourDATFL || null,
+        charge: evolutionFormData.charge ? parseFloat(evolutionFormData.charge) : null,
+        planningDateDebut: evolutionFormData.planningDateDebut || null,
+        planningDateFin: evolutionFormData.planningDateFin || null,
+        dateDemandeDevolution: evolutionFormData.dateDemandeDevolution || null,
+        dateReponseDevolution: evolutionFormData.dateReponseDevolution || null,
+        slt: evolutionFormData.slt || null,
+        aleasNormeParJour: evolutionFormData.aleasNormeParJour || null,
+        descriptionProjet: evolutionFormData.descriptionProjet || null,
+        descriptionPerimetre: evolutionFormData.descriptionPerimetre || null,
+        statutDemande: evolutionFormData.statutDemande || null,
+        lienIngridCDC: evolutionFormData.lienIngridCDC || null,
+        dateTransmissionBacklog: evolutionFormData.dateTransmissionBacklog || null,
+        dateConfirmationValidation: evolutionFormData.dateConfirmationValidation || null,
+        observations: evolutionFormData.observations || null,
+        dateDemandePlanificationDev: evolutionFormData.dateDemandePlanificationDev || null,
+        dateDemandePlanificationTif: evolutionFormData.dateDemandePlanificationTif || null,
+        dateRetourEquipesDev: evolutionFormData.dateRetourEquipesDev || null,
+        dateRetourEquipesTif: evolutionFormData.dateRetourEquipesTif || null,
+        dateCommunicationPlanningClient: evolutionFormData.dateCommunicationPlanningClient || null,
+        nombreSprint: evolutionFormData.nombreSprint || null,
+        sprintsData: evolutionFormData.sprintsData?.length > 0 ? evolutionFormData.sprintsData : null,
+        statutCodage: evolutionFormData.statutCodage || null,
+        statutTIF: evolutionFormData.statutTIF || null,
+        lienIngridKickoff: evolutionFormData.lienIngridKickoff || null,
+        lienIngridPointsControleTIF: evolutionFormData.lienIngridPointsControleTIF || null,
+        lienIngridSignoff: evolutionFormData.lienIngridSignoff || null,
+        dateEffectiveLivraisonTIF: evolutionFormData.dateEffectiveLivraisonTIF || null,
+        motifsRetardTIF: evolutionFormData.motifsRetardTIF || null,
+        dateEffectiveLivraisonClient: evolutionFormData.dateEffectiveLivraisonClient || null,
+        motifsRetardClient: evolutionFormData.motifsRetardClient || null,
+        statutLivraison: evolutionFormData.statutLivraisonClient || null,
+        isDraft: false,
+        draftStep: 9,
+        draftStepLabel: "Livraison",
+        utilisateurId: user?.id || 1,
+      };
+
+      if (currentDemandeId) {
+        const resp = await apiFetch(`/demandes/${currentDemandeId}`, { method: "PUT", body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error("Erreur sauvegarde");
+      } else {
+        const resp = await apiFetch(`/demandes`, { method: "POST", body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error("Erreur création");
+      }
+
+      await chargerLesDemandes();
+      setVueLivrees(true);
+      setShowDemandesList(true);
+      setShowEvolutionForm(false);
+      setShowSelectionCards(true);
+      setEvolutionStep(1);
+      setIsModificationMode(false);
+      setDemandeMessage({ type: "success", text: "Demande d'évolution terminée avec succès !" });
+      setTimeout(() => setDemandeMessage({ type: "", text: "" }), 4000);
+    } catch (error) {
+      setDemandeMessage({ type: "error", text: `Impossible de terminer la demande. ${error?.message || ""}` });
+    }
   };
 
   const mapLabelToStep = (label) => {
@@ -1702,20 +1937,48 @@ const Demandes = () => {
         dateEnregistrement: demande.dateEnregistrement?.split?.("T")[0] || new Date().toISOString().split("T")[0],
         dateReception: demande.dateReception?.split?.("T")[0] || "",
         societesDemandeurs: demande.societesDemandeurs ? [demande.societesDemandeurs] : (demande.societeDemandeur ? [demande.societeDemandeur] : []),
-        interlocuteur: demande.interlocuteur || demande.interlocuteurClient || "",
+        societesDemandeursNames: demande.societesDemandeurs ? [demande.societesDemandeurs] : (demande.societeDemandeur ? [demande.societeDemandeur] : []),
+        interlocuteur: demande.interlocuteur || "",
+        interlocuteurClient: demande.interlocuteurClient || "",
         nomProjet: demande.nomProjet || "",
         dateDemandeMiseAJourDATFL: demande.dateDemandeMiseAJourDATFL?.split?.("T")[0] || "",
         dateReponseMiseAJourDATFL: demande.dateReponseMiseAJourDATFL?.split?.("T")[0] || "",
+        charge: demande.charge ? String(demande.charge) : "",
         planningDateDebut: demande.planningDateDebut?.split?.("T")[0] || "",
         planningDateFin: demande.planningDateFin?.split?.("T")[0] || "",
         dateDemandeDevolution: demande.dateDemandeDevolution?.split?.("T")[0] || "",
         dateReponseDevolution: demande.dateReponseDevolution?.split?.("T")[0] || "",
         slt: demande.slt || "",
         aleasNormeParJour: demande.aleasNormeParJour || "",
-        charge: demande.charge || "",
+        typeProjet: demande.typeProjet || "",
+        demandeur: demande.demandeur || "",
+        descriptionProjet: demande.descriptionProjet || "",
+        descriptionPerimetre: demande.descriptionPerimetre || "",
+        statutDemande: demande.statutDemande || "",
+        lienIngridCDC: demande.lienIngridCDC || "",
+        dateTransmissionBacklog: formatDateForInput(demande.dateTransmissionBacklog || ""),
+        dateConfirmationValidation: formatDateForInput(demande.dateConfirmationValidation || ""),
+        observations: demande.observations || "",
+        dateDemandePlanificationDev: formatDateForInput(demande.dateDemandePlanificationDev || ""),
+        dateDemandePlanificationTif: formatDateForInput(demande.dateDemandePlanificationTif || ""),
+        dateRetourEquipesDev: formatDateForInput(demande.dateRetourEquipesDev || ""),
+        dateRetourEquipesTif: formatDateForInput(demande.dateRetourEquipesTif || ""),
+        dateCommunicationPlanningClient: formatDateForInput(demande.dateCommunicationPlanningClient || ""),
+        nombreSprint: demande.nombreSprint != null ? String(demande.nombreSprint) : "",
+        sprintsData: parseSprintsData(demande.sprintsData),
+        statutCodage: demande.statutCodage || "en attente",
+        statutTIF: demande.statutTIF || "en attente",
+        lienIngridKickoff: demande.lienIngridKickoff || "",
+        lienIngridPointsControleTIF: demande.lienIngridPointsControleTIF || "",
+        lienIngridSignoff: demande.lienIngridSignoff || "",
+        dateEffectiveLivraisonTIF: formatDateForInput(demande.dateEffectiveLivraisonTIF || ""),
+        motifsRetardTIF: demande.motifsRetardTIF || "",
+        dateEffectiveLivraisonClient: formatDateForInput(demande.dateEffectiveLivraisonClient || ""),
+        motifsRetardClient: demande.motifsRetardClient || "",
+        statutLivraisonClient: demande.statutLivraison || demande.statutLivraisonClient || "en attente",
       }));
       const savedStep = Number(demande.draftStep) || 1;
-      setEvolutionStep(Math.min(Math.max(savedStep, 1), 3));
+      setEvolutionStep(Math.min(Math.max(savedStep, 1), 9));
       setShowSelectionCards(false);
       setShowEvolutionForm(true);
       setDemandeMessage({ type: "", text: "" });
@@ -3299,7 +3562,7 @@ const Demandes = () => {
           </div>
         )}
 
-        {/* Formulaire "Demande d'évolution" - 3 étapes */}
+        {/* Formulaire "Demande d'évolution" - 9 étapes */}
         {showEvolutionForm && (
           <div
             className="nouvelle-demande-form-container"
@@ -3319,7 +3582,7 @@ const Demandes = () => {
                 display: "flex",
                 justifyContent: "space-between",
                 marginBottom: "40px",
-                padding: "0 20px",
+                padding: "0 10px",
                 position: "relative",
               }}
             >
@@ -3327,9 +3590,16 @@ const Demandes = () => {
                 { num: 1, label: "Info demande" },
                 { num: 2, label: "DATFL" },
                 { num: 3, label: "Planning & SLT" },
+                { num: 4, label: "Enregistrement" },
+                { num: 5, label: "Clarification" },
+                { num: 6, label: "Planification" },
+                { num: 7, label: "Réalisation" },
+                { num: 8, label: "Documents" },
+                { num: 9, label: "Livraison" },
               ].map((step, index) => (
                 <div
                   key={step.num}
+                  onClick={() => step.num <= evolutionStep && setEvolutionStep(step.num)}
                   style={{
                     flex: 1,
                     display: "flex",
@@ -3337,12 +3607,13 @@ const Demandes = () => {
                     alignItems: "center",
                     position: "relative",
                     zIndex: 1,
+                    cursor: step.num <= evolutionStep ? "pointer" : "default",
                   }}
                 >
                   <div
                     style={{
-                      width: "48px",
-                      height: "48px",
+                      width: "36px",
+                      height: "36px",
                       borderRadius: "50%",
                       backgroundColor:
                         evolutionStep >= step.num ? "#10B981" : "#e5e7eb",
@@ -3351,7 +3622,8 @@ const Demandes = () => {
                       alignItems: "center",
                       justifyContent: "center",
                       fontWeight: "bold",
-                      marginBottom: "8px",
+                      fontSize: "13px",
+                      marginBottom: "6px",
                       transition: "all 0.3s ease",
                       border:
                         evolutionStep === step.num
@@ -3359,7 +3631,7 @@ const Demandes = () => {
                           : "none",
                       boxShadow:
                         evolutionStep === step.num
-                          ? "0 0 0 4px rgba(16, 185, 129, 0.2)"
+                          ? "0 0 0 3px rgba(16, 185, 129, 0.2)"
                           : "none",
                     }}
                   >
@@ -3367,7 +3639,7 @@ const Demandes = () => {
                   </div>
                   <span
                     style={{
-                      fontSize: "13px",
+                      fontSize: "11px",
                       color: evolutionStep >= step.num ? "#10B981" : "#6b7280",
                       fontWeight: evolutionStep >= step.num ? "600" : "400",
                       textAlign: "center",
@@ -3375,13 +3647,13 @@ const Demandes = () => {
                   >
                     {step.label}
                   </span>
-                  {index < 2 && (
+                  {index < 8 && (
                     <div
                       style={{
                         position: "absolute",
-                        top: "24px",
-                        left: "calc(50% + 24px)",
-                        width: "calc(100% - 96px)",
+                        top: "18px",
+                        left: "calc(50% + 18px)",
+                        width: "calc(100% - 72px)",
                         height: "3px",
                         backgroundColor:
                           evolutionStep > step.num ? "#10B981" : "#e5e7eb",
@@ -3393,6 +3665,28 @@ const Demandes = () => {
                 </div>
               ))}
             </div>
+
+            {/* Aperçu du nom du projet */}
+            {evolutionFormData.nomProjet && evolutionStep > 1 && (
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+                borderRadius: "10px",
+                padding: "12px 20px",
+                marginBottom: "24px",
+                boxShadow: "0 2px 8px rgba(16, 185, 129, 0.25)",
+              }}>
+                <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <i className="fa-solid fa-arrow-up" style={{ fontSize: "15px", color: "white" }}></i>
+                </div>
+                <div>
+                  <div style={{ fontSize: "10px", fontWeight: "600", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>Demande d'évolution</div>
+                  <div style={{ fontSize: "15px", fontWeight: "700", color: "white" }}>{evolutionFormData.nomProjet}</div>
+                </div>
+              </div>
+            )}
 
             <form autoComplete="off" onSubmit={handleEvolutionSubmit}>
               {demandeMessage.text && (
@@ -3756,6 +4050,417 @@ const Demandes = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Étape 4: Enregistrement (= nouvelle demande étape 1) */}
+                {evolutionStep === 4 && (
+                  <div>
+                    <h3 style={{ marginBottom: "32px", color: "#1a1a1a", fontSize: "24px", fontWeight: "600" }}>
+                      4. Enregistrement de la demande
+                    </h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+                      <div className="form-group">
+                        <label>Date d'enregistrement</label>
+                        <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={new Date().toISOString().split("T")[0]}
+                          name="dateEnregistrement"
+                          value={formatDateForInput(evolutionFormData.dateEnregistrement)}
+                          onChange={handleEvolutionInputChange}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Société demandeur <span className="required">*</span></label>
+                        <select
+                          value={evolutionFormData.societesDemandeurs?.[0] || ""}
+                          onChange={(e) => {
+                            const sel = societes.find(s => s.id.toString() === e.target.value);
+                            setEvolutionFormData(prev => ({
+                              ...prev,
+                              societesDemandeurs: e.target.value ? [e.target.value] : [],
+                              societesDemandeursNames: e.target.value && sel ? [sel.nom] : [],
+                            }));
+                          }}
+                        >
+                          <option value="">-- Sélectionner une société --</option>
+                          {(societes || []).map(s => <option key={s.id} value={s.id.toString()}>{s.code || s.nom}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Interlocuteur client <span className="required">*</span></label>
+                        <select name="interlocuteurClient" value={evolutionFormData.interlocuteurClient} onChange={handleEvolutionInputChange}>
+                          <option value="">Sélectionner un interlocuteur</option>
+                          {interlocuteurs.map(i => <option key={i.id} value={i.nom}>{i.nom}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Méthodologie <span className="required">*</span></label>
+                        <select name="methodologie" value={evolutionFormData.methodologie || ""} onChange={handleEvolutionInputChange}>
+                          <option value="">-- Choisir une méthodologie --</option>
+                          <option value="Agile">Agile</option>
+                          <option value="Classique">Classique</option>
+                        </select>
+                      </div>
+                      <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                        <label>Nom du projet <span className="required">*</span></label>
+                        <input type="text" name="nomProjet" value={evolutionFormData.nomProjet} onChange={handleEvolutionInputChange} placeholder="Nom du projet" />
+                      </div>
+                      <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                        <label>Description du projet</label>
+                        <textarea name="descriptionProjet" value={evolutionFormData.descriptionProjet} onChange={handleEvolutionInputChange} rows={4} placeholder="Décrivez le projet..." />
+                      </div>
+                      <div className="form-group">
+                        <label>Périmètre</label>
+                        <input type="text" name="descriptionPerimetre" value={evolutionFormData.descriptionPerimetre} onChange={handleEvolutionInputChange} placeholder="Saisir le périmètre..." />
+                      </div>
+                      <div className="form-group">
+                        <label>Statut de la demande</label>
+                        <select name="statutDemande" value={evolutionFormData.statutDemande} onChange={handleEvolutionInputChange}>
+                          <option value="">Sélectionnez un statut</option>
+                          {statutsDisponibles.filter(s => s.actif).map(s => <option key={s.id} value={s.nom}>{s.nom}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                        <label>Lien INGRID du CDC</label>
+                        <input type="url" name="lienIngridCDC" value={evolutionFormData.lienIngridCDC} onChange={handleEvolutionInputChange} placeholder="https://ingrid.example.com/..." />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Étape 5: Clarification (= nouvelle demande étape 2) */}
+                {evolutionStep === 5 && (
+                  <div>
+                    <h3 style={{ marginBottom: "24px", color: "#1a1a1a", fontSize: "24px", fontWeight: "600" }}>
+                      5. Clarification de la demande
+                    </h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Date de transmission du backlog <span style={{ color: "#ef4444" }}>*</span></label>
+                        <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateReception || formatDateForInput(evolutionFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                          name="dateTransmissionBacklog" value={evolutionFormData.dateTransmissionBacklog} onChange={handleEvolutionInputChange}
+                          style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
+                      </div>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Date de confirmation de validation <span style={{ color: "#ef4444" }}>*</span></label>
+                        <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateTransmissionBacklog || evolutionFormData.dateReception || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                          name="dateConfirmationValidation" value={evolutionFormData.dateConfirmationValidation} onChange={handleEvolutionInputChange}
+                          style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
+                      </div>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: "20px" }}>
+                      <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Lien Ingrid CDC</label>
+                      <input type="text" name="lienIngridCDC" value={evolutionFormData.lienIngridCDC || ""} onChange={handleEvolutionInputChange} placeholder="URL du Cahier Des Charges dans Ingrid..."
+                        style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Observations / Commentaires</label>
+                      <textarea name="observations" value={evolutionFormData.observations || ""} onChange={handleEvolutionInputChange}
+                        placeholder="Notez ici les observations issues de la clarification..." rows={6}
+                        style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", resize: "vertical", boxSizing: "border-box" }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Étape 6: Planification (= nouvelle demande étape 3) */}
+                {evolutionStep === 6 && (
+                  <div>
+                    <h3 style={{ marginBottom: "32px", color: "#1a1a1a", fontSize: "24px", fontWeight: "600" }}>
+                      6. Planification du périmètre
+                    </h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+                      <div className="form-group">
+                        <label>Date de demande de planification DEV</label>
+                        <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateConfirmationValidation || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                          name="dateDemandePlanificationDev" value={evolutionFormData.dateDemandePlanificationDev} onChange={handleEvolutionInputChange} />
+                      </div>
+                      <div className="form-group">
+                        <label>Date de demande de planification TIF</label>
+                        <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateConfirmationValidation || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                          name="dateDemandePlanificationTif" value={evolutionFormData.dateDemandePlanificationTif} onChange={handleEvolutionInputChange} />
+                      </div>
+                      <div className="form-group">
+                        <label>Date du retour des équipes DEV</label>
+                        <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateDemandePlanificationDev || evolutionFormData.dateConfirmationValidation || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                          name="dateRetourEquipesDev" value={evolutionFormData.dateRetourEquipesDev} onChange={handleEvolutionInputChange} />
+                      </div>
+                      <div className="form-group">
+                        <label>Date du retour des équipes TIF</label>
+                        <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateDemandePlanificationTif || evolutionFormData.dateConfirmationValidation || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                          name="dateRetourEquipesTif" value={evolutionFormData.dateRetourEquipesTif} onChange={handleEvolutionInputChange} />
+                      </div>
+                      <div className="form-group">
+                        <label>Date de communication du planning au client <span className="required">*</span></label>
+                        <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={[evolutionFormData.dateRetourEquipesDev, evolutionFormData.dateRetourEquipesTif, evolutionFormData.dateConfirmationValidation].filter(Boolean).sort().pop() || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                          name="dateCommunicationPlanningClient" value={evolutionFormData.dateCommunicationPlanningClient} onChange={handleEvolutionInputChange} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Nombre de sprint <span className="required">*</span></label>
+                        <input type="number" name="nombreSprint" value={evolutionFormData.nombreSprint} onChange={handleEvolutionInputChange} min="1" placeholder="Ex: 3" required />
+                      </div>
+                    </div>
+                    {parseInt(evolutionFormData.nombreSprint) > 0 && (
+                      <div style={{ marginTop: "32px" }}>
+                        <h4 style={{ fontSize: "16px", fontWeight: "600", color: "#1a1a1a", marginBottom: "16px" }}>Planification par sprint</h4>
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "900px" }}>
+                            <thead>
+                              <tr style={{ backgroundColor: "#f3f4f6" }}>
+                                <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap" }}>Sprint</th>
+                                <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600" }}>Chantiers <span style={{ color: "#EF4444" }}>*</span></th>
+                                <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap" }}>Date Prév. TIF</th>
+                                <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap" }}>Date Liv. Effect. TIF</th>
+                                <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap" }}>Date Livraison Prév.</th>
+                                <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap" }}>Date Livraison Effect.</th>
+                                <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600" }}>Charges (j/h)</th>
+                                <th style={{ padding: "10px 8px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap" }}>Nb Fonctionnalités</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Array.from({ length: parseInt(evolutionFormData.nombreSprint) }, (_, i) => {
+                                const sprintData = (evolutionFormData.sprintsData || [])[i] || {};
+                                const prevSprintData = i > 0 ? ((evolutionFormData.sprintsData || [])[i - 1] || {}) : null;
+                                const minDateSprint = prevSprintData
+                                  ? (prevSprintData.dateEffClient || prevSprintData.datePrevClient || prevSprintData.dateEffTIF || prevSprintData.datePrevTIF || evolutionFormData.dateCommunicationPlanningClient || "2000-01-01")
+                                  : (evolutionFormData.dateCommunicationPlanningClient || "2000-01-01");
+                                const retardTIF = sprintData.datePrevTIF && sprintData.dateEffTIF && sprintData.dateEffTIF > sprintData.datePrevTIF;
+                                const retardClient = sprintData.datePrevClient && sprintData.dateEffClient && sprintData.dateEffClient > sprintData.datePrevClient;
+                                return (
+                                  <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                                    <td style={{ padding: "8px", border: "1px solid #e5e7eb", fontWeight: "600", whiteSpace: "nowrap", color: "#374151" }}>Sprint {i + 1}</td>
+                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: sprintData.chantier?.trim() ? "transparent" : "#FEF2F2" }}>
+                                      <input type="text" value={sprintData.chantier || ""} onChange={(e) => handleEvolutionSprintDataChange(i, "chantier", e.target.value)}
+                                        style={{ width: "100%", padding: "4px 6px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "12px" }} placeholder="Chantier *" />
+                                    </td>
+                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
+                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} value={sprintData.datePrevTIF || ""} min={minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        onChange={(e) => handleEvolutionSprintDataChange(i, "datePrevTIF", e.target.value)}
+                                        style={{ padding: "4px 6px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "12px" }} />
+                                    </td>
+                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardTIF ? "#FEF2F2" : "transparent" }}>
+                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} value={sprintData.dateEffTIF || ""} min={sprintData.datePrevTIF || minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        onChange={(e) => handleEvolutionSprintDataChange(i, "dateEffTIF", e.target.value)}
+                                        style={{ padding: "4px 6px", border: `1px solid ${retardTIF ? "#FCA5A5" : "#d1d5db"}`, borderRadius: "4px", fontSize: "12px" }} />
+                                      {retardTIF && <div style={{ fontSize: "10px", color: "#DC2626", marginTop: "2px" }}>Retard</div>}
+                                    </td>
+                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
+                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} value={sprintData.datePrevClient || ""} min={sprintData.datePrevTIF || minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        onChange={(e) => handleEvolutionSprintDataChange(i, "datePrevClient", e.target.value)}
+                                        style={{ padding: "4px 6px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "12px" }} />
+                                    </td>
+                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", background: retardClient ? "#FEF2F2" : "transparent" }}>
+                                      <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} value={sprintData.dateEffClient || ""} min={sprintData.datePrevClient || minDateSprint} max={`${new Date().getFullYear() + 15}-12-31`}
+                                        onChange={(e) => handleEvolutionSprintDataChange(i, "dateEffClient", e.target.value)}
+                                        style={{ padding: "4px 6px", border: `1px solid ${retardClient ? "#FCA5A5" : "#d1d5db"}`, borderRadius: "4px", fontSize: "12px" }} />
+                                      {retardClient && <div style={{ fontSize: "10px", color: "#DC2626", marginTop: "2px" }}>Retard</div>}
+                                    </td>
+                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
+                                      <input type="number" value={sprintData.charges || ""} onChange={(e) => handleEvolutionSprintDataChange(i, "charges", e.target.value)}
+                                        style={{ width: "60px", padding: "4px 6px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "12px" }} placeholder="0" min="0" />
+                                    </td>
+                                    <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
+                                      <input type="number" value={sprintData.nbFonctionnalites || ""} onChange={(e) => handleEvolutionSprintDataChange(i, "nbFonctionnalites", e.target.value)}
+                                        style={{ width: "60px", padding: "4px 6px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "12px" }} placeholder="0" min="0" />
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                        {parseInt(evolutionFormData.nombreSprint) >= 2 && (
+                          <div style={{ marginTop: "16px" }}>
+                            <GanttChart sprints={(evolutionFormData.sprintsData || []).slice(0, parseInt(evolutionFormData.nombreSprint))} compact />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Étape 7: Réalisation (= nouvelle demande étape 4) */}
+                {evolutionStep === 7 && (
+                  <div>
+                    <h3 style={{ marginBottom: "32px", color: "#1a1a1a", fontSize: "24px", fontWeight: "600" }}>
+                      7. Réalisation – Statut (Codage + TIF)
+                    </h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", maxWidth: "600px" }}>
+                      <div className="form-group">
+                        <label>Statut Codage <span className="required">*</span></label>
+                        <select name="statutCodage" value={evolutionFormData.statutCodage} onChange={handleEvolutionInputChange}>
+                          <option value="en attente">En attente</option>
+                          <option value="en cours">En cours</option>
+                          <option value="terminé">Terminé</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Statut TIF <span className="required">*</span></label>
+                        <select name="statutTIF" value={evolutionFormData.statutTIF} onChange={handleEvolutionInputChange}>
+                          <option value="en attente">En attente</option>
+                          <option value="en cours">En cours</option>
+                          <option value="terminé">Terminé</option>
+                        </select>
+                      </div>
+                    </div>
+                    {parseInt(evolutionFormData.nombreSprint) > 0 && (
+                      <div style={{ marginTop: "32px" }}>
+                        <h4 style={{ fontSize: "16px", fontWeight: "600", color: "#1a1a1a", marginBottom: "16px" }}>Suivi des sprints</h4>
+                        {(() => {
+                          const total = parseInt(evolutionFormData.nombreSprint) || 0;
+                          const sprints = evolutionFormData.sprintsData || [];
+                          const termines = sprints.filter(s => s.statutSprint === "terminé").length;
+                          const enCours = sprints.findIndex(s => s.statutSprint === "en cours");
+                          const somme = Array.from({ length: total }, (_, i) => Number((sprints[i] || {}).avancement) || 0).reduce((a, b) => a + b, 0);
+                          const pct = total > 0 ? Math.round(somme / total) : 0;
+                          return (
+                            <div style={{ display: "flex", alignItems: "center", gap: "24px", marginBottom: "20px", padding: "16px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                              <div>
+                                <div style={{ fontSize: "12px", color: "#6b7280", marginBottom: "4px" }}>Avancement global</div>
+                                <div style={{ fontSize: "24px", fontWeight: "700", color: pct === 100 ? "#10b981" : "#3b82f6" }}>{pct}%</div>
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ height: "12px", background: "#e5e7eb", borderRadius: "6px", overflow: "hidden" }}>
+                                  <div style={{ height: "100%", width: `${pct}%`, background: pct === 100 ? "#10b981" : "#3b82f6", borderRadius: "6px", transition: "width 0.4s ease" }} />
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "12px", color: "#6b7280" }}>
+                                  <span>{termines} sprint{termines > 1 ? "s" : ""} terminé{termines > 1 ? "s" : ""}</span>
+                                  <span>{total - termines} restant{total - termines > 1 ? "s" : ""}</span>
+                                </div>
+                              </div>
+                              {enCours >= 0 && (
+                                <div style={{ padding: "6px 12px", background: "#dbeafe", color: "#1d4ed8", borderRadius: "20px", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>
+                                  Sprint {enCours + 1} en cours
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                            <thead>
+                              <tr style={{ backgroundColor: "#f3f4f6" }}>
+                                <th style={{ padding: "10px 12px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600" }}>Sprint</th>
+                                <th style={{ padding: "10px 12px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600" }}>Chantier</th>
+                                <th style={{ padding: "10px 12px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600" }}>Statut</th>
+                                <th style={{ padding: "10px 12px", textAlign: "left", border: "1px solid #e5e7eb", fontWeight: "600" }}>Avancement (%)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Array.from({ length: parseInt(evolutionFormData.nombreSprint) }, (_, i) => {
+                                const sprintData = (evolutionFormData.sprintsData || [])[i] || {};
+                                const prevSprintData = i > 0 ? ((evolutionFormData.sprintsData || [])[i - 1] || {}) : null;
+                                const prevTermine = i === 0 || prevSprintData?.statutSprint === "terminé";
+                                const isBloque = !prevTermine;
+                                const isEnCours = sprintData.statutSprint === "en cours";
+                                const isTermine = sprintData.statutSprint === "terminé";
+                                return (
+                                  <tr key={i} style={{ backgroundColor: isBloque ? "#f9fafb" : isEnCours ? "#eff6ff" : isTermine ? "#f0fdf4" : i % 2 === 0 ? "#fff" : "#fafafa", opacity: isBloque ? 0.6 : 1 }}>
+                                    <td style={{ padding: "10px 12px", border: "1px solid #e5e7eb", fontWeight: "600", color: isBloque ? "#9ca3af" : isEnCours ? "#1d4ed8" : "#374151" }}>
+                                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        {isBloque && <i className="fa-solid fa-lock" style={{ fontSize: "10px", color: "#9ca3af" }} title={`Sprint ${i} doit être terminé d'abord`} />}
+                                        {!isBloque && isEnCours && <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3b82f6", display: "inline-block" }} />}
+                                        Sprint {i + 1}
+                                      </div>
+                                    </td>
+                                    <td style={{ padding: "10px 12px", border: "1px solid #e5e7eb", color: "#6b7280" }}>{sprintData.chantier || "—"}</td>
+                                    <td style={{ padding: "8px 12px", border: "1px solid #e5e7eb" }}>
+                                      <select
+                                        value={sprintData.statutSprint || "en attente"}
+                                        onChange={(e) => {
+                                          handleEvolutionSprintDataChange(i, "statutSprint", e.target.value);
+                                          if (e.target.value === "terminé") handleEvolutionSprintDataChange(i, "avancement", 100);
+                                        }}
+                                        disabled={isBloque}
+                                        style={{ fontSize: "13px", padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", background: isBloque ? "#f3f4f6" : "white", cursor: isBloque ? "not-allowed" : "default" }}
+                                      >
+                                        <option value="en attente">En attente</option>
+                                        <option value="en cours">En cours</option>
+                                        <option value="terminé">Terminé</option>
+                                      </select>
+                                    </td>
+                                    <td style={{ padding: "8px 12px", border: "1px solid #e5e7eb" }}>
+                                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <input type="number" value={sprintData.avancement || ""} onChange={(e) => handleEvolutionSprintDataChange(i, "avancement", Math.min(100, Math.max(0, Number(e.target.value))))}
+                                          min="0" max="100" placeholder="0" disabled={isBloque}
+                                          style={{ width: "60px", padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "13px", background: isBloque ? "#f3f4f6" : "white", cursor: isBloque ? "not-allowed" : "default" }} />
+                                        <span style={{ color: "#6b7280" }}>%</span>
+                                        {!isBloque && sprintData.avancement > 0 && (
+                                          <div style={{ flex: 1, height: "6px", background: "#e5e7eb", borderRadius: "3px", overflow: "hidden" }}>
+                                            <div style={{ height: "100%", width: `${Math.min(100, sprintData.avancement)}%`, background: sprintData.avancement >= 100 ? "#10b981" : "#3b82f6", borderRadius: "3px" }} />
+                                          </div>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Étape 8: Documents (= nouvelle demande étape 5) */}
+                {evolutionStep === 8 && (
+                  <div>
+                    <h3 style={{ marginBottom: "32px", color: "#1a1a1a", fontSize: "24px", fontWeight: "600" }}>
+                      8. Présentation des documents
+                    </h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "24px" }}>
+                      <div className="form-group">
+                        <label>Présentation de kickoff - Lien INGRID <span className="required">*</span></label>
+                        <input type="url" name="lienIngridKickoff" value={evolutionFormData.lienIngridKickoff} onChange={handleEvolutionInputChange} placeholder="https://ingrid.example.com/..." required />
+                      </div>
+                      <div className="form-group">
+                        <label>Rédaction des points de contrôles (TIF) - Lien INGRID <span className="required">*</span></label>
+                        <input type="url" name="lienIngridPointsControleTIF" value={evolutionFormData.lienIngridPointsControleTIF} onChange={handleEvolutionInputChange} placeholder="https://ingrid.example.com/..." required />
+                      </div>
+                      <div className="form-group">
+                        <label>Rédaction du signoff document - Lien INGRID <span className="required">*</span></label>
+                        <input type="url" name="lienIngridSignoff" value={evolutionFormData.lienIngridSignoff} onChange={handleEvolutionInputChange} placeholder="https://ingrid.example.com/..." required />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Étape 9: Livraison (= nouvelle demande étape 6) */}
+                {evolutionStep === 9 && (
+                  <div>
+                    <h3 style={{ marginBottom: "32px", color: "#1a1a1a", fontSize: "24px", fontWeight: "600" }}>
+                      9. Livraison effective au client
+                    </h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", maxWidth: "600px" }}>
+                      <div className="form-group">
+                        <label>Date effective de livraison au client</label>
+                        <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateCommunicationPlanningClient || formatDateForInput(evolutionFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
+                          name="dateEffectiveLivraisonClient"
+                          value={evolutionFormData.dateEffectiveLivraisonClient}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEvolutionFormData(prev => ({
+                              ...prev,
+                              dateEffectiveLivraisonClient: val,
+                              statutLivraisonClient: val ? "livré au client" : prev.statutLivraisonClient,
+                            }));
+                          }}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Statut livraison</label>
+                        <select name="statutLivraisonClient" value={evolutionFormData.statutLivraisonClient} onChange={handleEvolutionInputChange}>
+                          <option value="en attente">En attente</option>
+                          <option value="en cours">En cours</option>
+                          <option value="livré au client">Livré au client</option>
+                        </select>
+                      </div>
+                    </div>
+                    {evolutionFormData.dateEffectiveLivraisonClient && (
+                      <div style={{ marginTop: "16px", padding: "12px 16px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "8px", display: "flex", alignItems: "center", gap: "8px", color: "#15803d", fontSize: "14px" }}>
+                        <span style={{ fontSize: "18px" }}>✓</span>
+                        <span>Livraison effectuée le <strong>{formatDateForDisplay(evolutionFormData.dateEffectiveLivraisonClient)}</strong></span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Boutons de navigation */}
@@ -3788,47 +4493,59 @@ const Demandes = () => {
                   )}
                 </div>
                 <div style={{ display: "flex", gap: "12px" }}>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() => sauvegarderEvolutionBrouillon()}
-                  >
-                    Enregistrer le brouillon
-                  </button>
-                  {evolutionStep < 3 ? (
+                  {isModificationMode && evolutionStep < 9 && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ color: "#EF4444", borderColor: "#EF4444" }}
+                      onClick={() => {
+                        setIsModificationMode(false);
+                        setShowEvolutionForm(false);
+                        setShowSelectionCards(true);
+                        setShowDemandesList(true);
+                        setEvolutionStep(1);
+                        setDemandeMessage({ type: "", text: "" });
+                      }}
+                    >
+                      Annuler
+                    </button>
+                  )}
+                  {evolutionStep < 9 && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => sauvegarderEvolutionBrouillon()}
+                    >
+                      Enregistrer le brouillon
+                    </button>
+                  )}
+                  {evolutionStep < 9 ? (
                     <button
                       type="button"
                       className="btn-primary"
                       onClick={handleEvolutionNext}
                       style={{
-                        background:
-                          "linear-gradient(135deg, #10B981 0%, #10B981dd 100%)",
+                        background: "linear-gradient(135deg, #10B981 0%, #10B981dd 100%)",
                         boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
                       }}
                     >
-                      Suivant &rarr;
+                      {evolutionStep === 8 ? "Livraison →" : "Suivant →"}
                     </button>
                   ) : (
-                    <PermissionGuard
-                      module="demandes"
-                      submodule="gestion"
-                      action="create"
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={handleTerminerEvolution}
+                      style={{
+                        background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+                        boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
+                        padding: "12px 24px",
+                        fontSize: "16px",
+                        fontWeight: "600",
+                      }}
                     >
-                      <button
-                        type="submit"
-                        className="btn-primary"
-                        style={{
-                          padding: "12px 24px",
-                          fontSize: "16px",
-                          fontWeight: "600",
-                          backgroundColor: "#ff6b35",
-                          borderColor: "#ff6b35",
-                          boxShadow: "0 4px 12px rgba(255, 107, 53, 0.3)",
-                        }}
-                      >
-                        Créer la demande prospecte
-                      </button>
-                    </PermissionGuard>
+                      Terminer
+                    </button>
                   )}
                 </div>
               </div>
