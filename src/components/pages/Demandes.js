@@ -345,6 +345,15 @@ const Demandes = () => {
   // États pour la gestion des demandes
   const [demandes, setDemandes] = useState([]);
   const [vueLivrees, setVueLivrees] = useState(false);
+
+  // Filtres avancés liste demandes
+  const [filtreRecherche, setFiltreRecherche] = useState("");
+  const [filtreType, setFiltreType] = useState("");
+  const [filtreSociete, setFiltreSociete] = useState("");
+  const [filtreStatut, setFiltreStatut] = useState("");
+  const [filtreDateDebut, setFiltreDateDebut] = useState("");
+  const [filtreDateFin, setFiltreDateFin] = useState("");
+  const resetFiltres = () => { setFiltreRecherche(""); setFiltreType(""); setFiltreSociete(""); setFiltreStatut(""); setFiltreDateDebut(""); setFiltreDateFin(""); };
   const [societes, setSocietes] = useState([]);
   const [collaborateurs, setCollaborateurs] = useState([]);
   const [interlocuteurs, setInterlocuteurs] = useState([]);
@@ -4699,11 +4708,91 @@ const Demandes = () => {
 
           {showDemandesList && !vueLivrees && (
             <div className="table-container" style={{ marginTop: "24px" }}>
-              {demandes.filter(d => d.isDraft !== false).length === 0 ? (
-                <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                  Aucune demande en cours pour le moment.
-                </p>
-              ) : (
+              {/* ── Barre de filtres ── */}
+              {(() => {
+                const baseEnCours = demandes.filter(d => d.isDraft !== false);
+                const societesUniques = [...new Set(baseEnCours.map(d => d.societesDemandeurs || d.societeDemandeur).filter(Boolean))].sort();
+                const statutsUniques = [...new Set(baseEnCours.map(d => d.statutDemande).filter(Boolean))].sort();
+                const aFiltreActif = filtreRecherche || filtreType || filtreSociete || filtreStatut || filtreDateDebut || filtreDateFin;
+                return (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "16px", alignItems: "center", padding: "12px 16px", background: "#F8FAFC", borderRadius: "10px", border: "1px solid #E5E7EB" }}>
+                    {/* Recherche nom */}
+                    <div style={{ position: "relative", flex: "1 1 180px", minWidth: "160px" }}>
+                      <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "9px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
+                      <input type="text" placeholder="Rechercher un projet..." value={filtreRecherche} onChange={e => setFiltreRecherche(e.target.value)}
+                        style={{ width: "100%", padding: "7px 10px 7px 28px", borderRadius: "7px", border: "1px solid #D1D5DB", fontSize: "13px", outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                    {/* Type */}
+                    <select value={filtreType} onChange={e => setFiltreType(e.target.value)}
+                      style={{ padding: "7px 10px", borderRadius: "7px", border: "1px solid #D1D5DB", fontSize: "13px", outline: "none", minWidth: "150px", color: filtreType ? "#111827" : "#9CA3AF" }}>
+                      <option value="">Tous les types</option>
+                      <option value="nouvelle">Nouvelle demande</option>
+                      <option value="evolution">Evolution</option>
+                      <option value="prospecte">Prospecte</option>
+                    </select>
+                    {/* Société */}
+                    <select value={filtreSociete} onChange={e => setFiltreSociete(e.target.value)}
+                      style={{ padding: "7px 10px", borderRadius: "7px", border: "1px solid #D1D5DB", fontSize: "13px", outline: "none", minWidth: "150px", color: filtreSociete ? "#111827" : "#9CA3AF" }}>
+                      <option value="">Toutes les sociétés</option>
+                      {societesUniques.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    {/* Statut */}
+                    <select value={filtreStatut} onChange={e => setFiltreStatut(e.target.value)}
+                      style={{ padding: "7px 10px", borderRadius: "7px", border: "1px solid #D1D5DB", fontSize: "13px", outline: "none", minWidth: "140px", color: filtreStatut ? "#111827" : "#9CA3AF" }}>
+                      <option value="">Tous les statuts</option>
+                      {statutsUniques.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    {/* Date début */}
+                    <input type="date" value={filtreDateDebut} onChange={e => setFiltreDateDebut(e.target.value)}
+                      title="Date d'enregistrement — à partir de"
+                      style={{ padding: "7px 10px", borderRadius: "7px", border: "1px solid #D1D5DB", fontSize: "13px", outline: "none", minWidth: "140px", color: filtreDateDebut ? "#111827" : "#9CA3AF" }} />
+                    {/* Date fin */}
+                    <input type="date" value={filtreDateFin} onChange={e => setFiltreDateFin(e.target.value)}
+                      title="Date d'enregistrement — jusqu'au"
+                      style={{ padding: "7px 10px", borderRadius: "7px", border: "1px solid #D1D5DB", fontSize: "13px", outline: "none", minWidth: "140px", color: filtreDateFin ? "#111827" : "#9CA3AF" }} />
+                    {/* Reset */}
+                    {aFiltreActif && (
+                      <button type="button" onClick={resetFiltres}
+                        style={{ padding: "7px 12px", borderRadius: "7px", border: "1px solid #FCA5A5", background: "#FEF2F2", color: "#DC2626", fontSize: "12px", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap" }}>
+                        <i className="fa-solid fa-xmark" style={{ marginRight: "4px" }} /> Réinitialiser
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {(() => {
+                const baseEnCours = demandes.filter(d => d.isDraft !== false);
+                const filtrees = baseEnCours.filter(d => {
+                  if (filtreRecherche && !d.nomProjet?.toLowerCase().includes(filtreRecherche.toLowerCase())) return false;
+                  if (filtreType) {
+                    const t = normalizeTypeProjet(d.typeProjet);
+                    if (filtreType === "nouvelle" && t !== "nouvelle demande" && t !== "agile" && t !== "classique" && t !== "" && t !== "brouillon") {
+                      if (!["nouvelle", "agile", "classique", "brouillon", ""].includes(t)) return false;
+                    }
+                    if (filtreType === "evolution" && t !== "evolution") return false;
+                    if (filtreType === "prospecte" && t !== "prospecte") return false;
+                    if (filtreType === "nouvelle" && (t === "evolution" || t === "prospecte")) return false;
+                  }
+                  if (filtreSociete) {
+                    const soc = d.societesDemandeurs || d.societeDemandeur || "";
+                    if (!soc.toLowerCase().includes(filtreSociete.toLowerCase())) return false;
+                  }
+                  if (filtreStatut && d.statutDemande !== filtreStatut) return false;
+                  if (filtreDateDebut) {
+                    const dateEnr = (d.dateEnregistrement || "").split("T")[0];
+                    if (dateEnr < filtreDateDebut) return false;
+                  }
+                  if (filtreDateFin) {
+                    const dateEnr = (d.dateEnregistrement || "").split("T")[0];
+                    if (dateEnr > filtreDateFin) return false;
+                  }
+                  return true;
+                });
+                const aFiltreActif = filtreRecherche || filtreType || filtreSociete || filtreStatut || filtreDateDebut || filtreDateFin;
+                if (baseEnCours.length === 0) return <p style={{ color: "#6b7280", marginTop: "16px" }}>Aucune demande en cours pour le moment.</p>;
+                if (filtrees.length === 0) return <p style={{ color: "#6b7280", marginTop: "16px", textAlign: "center" }}><i className="fa-solid fa-filter" style={{ marginRight: "6px" }} />Aucun résultat pour ces filtres. {aFiltreActif && <button type="button" onClick={resetFiltres} style={{ background: "none", border: "none", color: "#4A90E2", cursor: "pointer", textDecoration: "underline", fontSize: "13px" }}>Réinitialiser</button>}</p>;
+                return (
                 <table className="data-table" style={{ tableLayout: "auto" }}>
                   <thead>
                     <tr>
@@ -4725,7 +4814,7 @@ const Demandes = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {demandes.filter(d => d.isDraft !== false).map((demande) => (
+                    {filtrees.map((demande) => (
                       <tr key={demande.id}>
                         <td style={{ whiteSpace: "nowrap" }}>
                           {demande.dateEnregistrement
@@ -4871,7 +4960,8 @@ const Demandes = () => {
                     ))}
                   </tbody>
                 </table>
-              )}
+                );
+              })()}
             </div>
           )}
 
