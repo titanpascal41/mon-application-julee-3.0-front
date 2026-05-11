@@ -1553,7 +1553,7 @@ const Demandes = () => {
         societeDemandeur: societyName,
         interlocuteur: prospecteFormData.interlocuteur,
         descriptionPerimetre: prospecteFormData.descriptionPerimetre || "",
-        isDraft: false,
+        isDraft: true,
         draftStep: 1,
         draftStepLabel: "Info demande",
         utilisateurId: user?.id || 1,
