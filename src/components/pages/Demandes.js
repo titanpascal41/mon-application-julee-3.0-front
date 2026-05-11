@@ -4768,17 +4768,7 @@ const Demandes = () => {
                                 {demande.statutDemande}
                               </span>
                             ) : (
-                              <span style={{
-                                display: "inline-block",
-                                padding: "3px 12px",
-                                borderRadius: "999px",
-                                backgroundColor: "#F9FAFB",
-                                border: "1px dashed #D1D5DB",
-                                color: "#9ca3af",
-                                fontSize: "13px",
-                                fontWeight: 500,
-                                letterSpacing: "2px",
-                              }}>—</span>
+                              <span style={{ color: "#9ca3af", fontSize: "13px" }}>—</span>
                             )}
                             {peutModifierDemande && normalizeTypeProjet(demande.typeProjet) !== "prospecte" && (
                               <button
@@ -4936,17 +4926,7 @@ const Demandes = () => {
                               {demande.statutDemande}
                             </span>
                           ) : (
-                            <span style={{
-                              display: "inline-block",
-                              padding: "3px 12px",
-                              borderRadius: "999px",
-                              backgroundColor: "#F9FAFB",
-                              border: "1px dashed #D1D5DB",
-                              color: "#9ca3af",
-                              fontSize: "13px",
-                              fontWeight: 500,
-                              letterSpacing: "2px",
-                            }}>—</span>
+                            <span style={{ color: "#9ca3af" }}>—</span>
                           )}
                         </td>
                         <td style={{ whiteSpace: "nowrap", fontSize: "13px", color: "#10B981", fontWeight: "500" }}>
