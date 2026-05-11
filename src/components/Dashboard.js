@@ -107,9 +107,9 @@ const Dashboard = () => {
   // Gestionnaire pour les clics sur les notifications
   const handleNotificationClick = (page, delaiId) => {
     if (delaiId) {
-      navigate(`/${page}?delaiId=${delaiId}`);
+      navigate(`/${page}?delaiId=${delaiId}`, { replace: true });
     } else {
-      navigate(`/${page}`);
+      navigate(`/${page}`, { replace: true });
     }
   };
 
