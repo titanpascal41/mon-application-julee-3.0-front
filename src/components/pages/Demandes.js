@@ -195,6 +195,18 @@ const formatDateForInput = (dateString) => {
 
 const PROSPECTE_STORAGE_KEY = "julee_prospecte_demande_wip";
 const EVOLUTION_STORAGE_KEY = "julee_evolution_demande_wip";
+const NOUVELLE_STORAGE_KEY  = "julee_nouvelle_demande_wip";
+
+// Retourne quel formulaire était actif en dernier (un seul à la fois)
+const _getInitialActiveForm = () => {
+  try {
+    if (localStorage.getItem(EVOLUTION_STORAGE_KEY)) return "evolution";
+    if (localStorage.getItem(PROSPECTE_STORAGE_KEY)) return "prospecte";
+    const nouv = localStorage.getItem(NOUVELLE_STORAGE_KEY);
+    if (nouv && JSON.parse(nouv).open) return "nouvelle";
+  } catch {}
+  return null;
+};
 
 const getProspecteInitialState = () => ({
   dateEnregistrement: new Date().toISOString().split("T")[0],
@@ -327,15 +339,7 @@ const Demandes = () => {
   // États pour la sélection de type de demande
   const [selectedDemandeType, setSelectedDemandeType] = useState(null);
   const [isModificationMode, setIsModificationMode] = useState(false);
-  const [showSelectionCards, setShowSelectionCards] = useState(() => {
-    try {
-      const nouv = localStorage.getItem("julee_nouvelle_demande_wip");
-      if (nouv && JSON.parse(nouv).open) return false;
-      if (localStorage.getItem(PROSPECTE_STORAGE_KEY)) return false;
-      if (localStorage.getItem(EVOLUTION_STORAGE_KEY)) return false;
-      return true;
-    } catch { return true; }
-  });
+  const [showSelectionCards, setShowSelectionCards] = useState(() => _getInitialActiveForm() === null);
   const [showDemandesList, setShowDemandesList] = useState(true);
 
   // États pour la gestion des demandes
@@ -346,14 +350,9 @@ const Demandes = () => {
   const [interlocuteurs, setInterlocuteurs] = useState([]);
 
   // États pour le formulaire multi-étapes "Nouvelle demande"
-  const FORM_STORAGE_KEY = "julee_nouvelle_demande_wip";
+  const FORM_STORAGE_KEY = NOUVELLE_STORAGE_KEY;
 
-  const [showNouvelleDemandeForm, setShowNouvelleDemandeForm] = useState(() => {
-    try {
-      const saved = localStorage.getItem(FORM_STORAGE_KEY);
-      return saved ? JSON.parse(saved).open === true : false;
-    } catch { return false; }
-  });
+  const [showNouvelleDemandeForm, setShowNouvelleDemandeForm] = useState(() => _getInitialActiveForm() === "nouvelle");
   const [nouvelleDemandeStep, setNouvelleDemandeStep] = useState(() => {
     try {
       const saved = localStorage.getItem(FORM_STORAGE_KEY);
@@ -368,9 +367,7 @@ const Demandes = () => {
   });
 
   // États pour le formulaire multi-étapes "Demande prospecte"
-  const [showProspecteForm, setShowProspecteForm] = useState(() => {
-    try { return !!localStorage.getItem(PROSPECTE_STORAGE_KEY); } catch { return false; }
-  });
+  const [showProspecteForm, setShowProspecteForm] = useState(() => _getInitialActiveForm() === "prospecte");
   const [prospecteFormData, setProspecteFormData] = useState(() => {
     try {
       const saved = localStorage.getItem(PROSPECTE_STORAGE_KEY);
@@ -379,9 +376,7 @@ const Demandes = () => {
   });
 
   // États pour le formulaire multi-étapes "Demande d'évolution"
-  const [showEvolutionForm, setShowEvolutionForm] = useState(() => {
-    try { return !!localStorage.getItem(EVOLUTION_STORAGE_KEY); } catch { return false; }
-  });
+  const [showEvolutionForm, setShowEvolutionForm] = useState(() => _getInitialActiveForm() === "evolution");
   const [evolutionStep, setEvolutionStep] = useState(() => {
     try {
       const saved = localStorage.getItem(EVOLUTION_STORAGE_KEY);
@@ -1032,7 +1027,8 @@ const Demandes = () => {
       await chargerLesDemandes();
       setDraftStepInfo(stepToStore);
 
-      // Fermer le formulaire et afficher les cartes de sélection
+      // Fermer le formulaire et effacer le localStorage
+      localStorage.removeItem(FORM_STORAGE_KEY);
       setShowNouvelleDemandeForm(false);
       setShowSelectionCards(true);
       setSelectedDemandeType(null);
