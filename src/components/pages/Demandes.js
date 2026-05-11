@@ -193,6 +193,63 @@ const formatDateForInput = (dateString) => {
   }
 };
 
+const PROSPECTE_STORAGE_KEY = "julee_prospecte_demande_wip";
+const EVOLUTION_STORAGE_KEY = "julee_evolution_demande_wip";
+
+const getProspecteInitialState = () => ({
+  dateEnregistrement: new Date().toISOString().split("T")[0],
+  societesDemandeurs: [],
+  interlocuteur: "",
+  nomProjet: "",
+  descriptionPerimetre: "",
+  dateReception: "",
+});
+
+const getEvolutionInitialState = () => ({
+  dateEnregistrement: new Date().toISOString().split("T")[0],
+  societesDemandeurs: [],
+  societesDemandeursNames: [],
+  interlocuteur: "",
+  nomProjet: "",
+  dateReception: "",
+  dateDemandeMiseAJourDATFL: "",
+  dateReponseMiseAJourDATFL: "",
+  charge: "",
+  planningDateDebut: "",
+  planningDateFin: "",
+  dateDemandeDevolution: "",
+  dateReponseDevolution: "",
+  slt: "",
+  aleasNormeParJour: "",
+  interlocuteurClient: "",
+  methodologie: "",
+  demandeur: "",
+  descriptionProjet: "",
+  descriptionPerimetre: "",
+  statutDemande: "",
+  lienIngridCDC: "",
+  dateTransmissionBacklog: "",
+  dateConfirmationValidation: "",
+  observations: "",
+  dateDemandePlanificationDev: "",
+  dateDemandePlanificationTif: "",
+  dateRetourEquipesDev: "",
+  dateRetourEquipesTif: "",
+  dateCommunicationPlanningClient: "",
+  nombreSprint: "",
+  sprintsData: [],
+  statutCodage: "en attente",
+  statutTIF: "en attente",
+  lienIngridKickoff: "",
+  lienIngridPointsControleTIF: "",
+  lienIngridSignoff: "",
+  dateEffectiveLivraisonTIF: "",
+  motifsRetardTIF: "",
+  dateEffectiveLivraisonClient: "",
+  motifsRetardClient: "",
+  statutLivraisonClient: "en attente",
+});
+
 const getNouvelleDemandeInitialState = () => ({
   // Étape 1: Enregistrement de la demande
   dateEnregistrement: new Date().toISOString().split("T")[0],
@@ -272,8 +329,11 @@ const Demandes = () => {
   const [isModificationMode, setIsModificationMode] = useState(false);
   const [showSelectionCards, setShowSelectionCards] = useState(() => {
     try {
-      const saved = localStorage.getItem("julee_nouvelle_demande_wip");
-      return saved ? !JSON.parse(saved).open : true;
+      const nouv = localStorage.getItem("julee_nouvelle_demande_wip");
+      if (nouv && JSON.parse(nouv).open) return false;
+      if (localStorage.getItem(PROSPECTE_STORAGE_KEY)) return false;
+      if (localStorage.getItem(EVOLUTION_STORAGE_KEY)) return false;
+      return true;
     } catch { return true; }
   });
   const [showDemandesList, setShowDemandesList] = useState(true);
@@ -308,71 +368,31 @@ const Demandes = () => {
   });
 
   // États pour le formulaire multi-étapes "Demande prospecte"
-  const [showProspecteForm, setShowProspecteForm] = useState(false);
-  const [prospecteFormData, setProspecteFormData] = useState({
-    dateEnregistrement: new Date().toISOString().split("T")[0],
-    societesDemandeurs: [],
-    interlocuteur: "",
-    nomProjet: "",
-    descriptionPerimetre: "",
-    dateReception: "",
+  const [showProspecteForm, setShowProspecteForm] = useState(() => {
+    try { return !!localStorage.getItem(PROSPECTE_STORAGE_KEY); } catch { return false; }
+  });
+  const [prospecteFormData, setProspecteFormData] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PROSPECTE_STORAGE_KEY);
+      return saved ? { ...getProspecteInitialState(), ...JSON.parse(saved).formData } : getProspecteInitialState();
+    } catch { return getProspecteInitialState(); }
   });
 
   // États pour le formulaire multi-étapes "Demande d'évolution"
-  const [showEvolutionForm, setShowEvolutionForm] = useState(false);
-  const [evolutionStep, setEvolutionStep] = useState(1); // 1 à 9
-  const [evolutionFormData, setEvolutionFormData] = useState({
-    dateEnregistrement: new Date().toISOString().split("T")[0],
-    societesDemandeurs: [],
-    societesDemandeursNames: [],
-    interlocuteur: "",
-    nomProjet: "",
-    dateReception: "",
-    // Étape 1 - Info demande
-    dateDemandeMiseAJourDATFL: "",
-    dateReponseMiseAJourDATFL: "",
-    // Étape 2 - Charge & Planning
-    charge: "",
-    planningDateDebut: "",
-    planningDateFin: "",
-    // Étape 3 - Planning & SLT
-    dateDemandeDevolution: "",
-    dateReponseDevolution: "",
-    slt: "",
-    aleasNormeParJour: "",
-    // Étape 4 - Enregistrement (= nouvelle demande étape 1)
-    interlocuteurClient: "",
-    typeProjet: "",
-    demandeur: "",
-    descriptionProjet: "",
-    descriptionPerimetre: "",
-    statutDemande: "",
-    lienIngridCDC: "",
-    // Étape 5 - Clarification (= nouvelle demande étape 2)
-    dateTransmissionBacklog: "",
-    dateConfirmationValidation: "",
-    observations: "",
-    // Étape 6 - Planification (= nouvelle demande étape 3)
-    dateDemandePlanificationDev: "",
-    dateDemandePlanificationTif: "",
-    dateRetourEquipesDev: "",
-    dateRetourEquipesTif: "",
-    dateCommunicationPlanningClient: "",
-    nombreSprint: "",
-    sprintsData: [],
-    // Étape 7 - Réalisation (= nouvelle demande étape 4)
-    statutCodage: "en attente",
-    statutTIF: "en attente",
-    // Étape 8 - Documents (= nouvelle demande étape 5)
-    lienIngridKickoff: "",
-    lienIngridPointsControleTIF: "",
-    lienIngridSignoff: "",
-    // Étape 9 - Livraison (= nouvelle demande étape 6)
-    dateEffectiveLivraisonTIF: "",
-    motifsRetardTIF: "",
-    dateEffectiveLivraisonClient: "",
-    motifsRetardClient: "",
-    statutLivraisonClient: "en attente",
+  const [showEvolutionForm, setShowEvolutionForm] = useState(() => {
+    try { return !!localStorage.getItem(EVOLUTION_STORAGE_KEY); } catch { return false; }
+  });
+  const [evolutionStep, setEvolutionStep] = useState(() => {
+    try {
+      const saved = localStorage.getItem(EVOLUTION_STORAGE_KEY);
+      return saved ? (JSON.parse(saved).step || 1) : 1;
+    } catch { return 1; }
+  });
+  const [evolutionFormData, setEvolutionFormData] = useState(() => {
+    try {
+      const saved = localStorage.getItem(EVOLUTION_STORAGE_KEY);
+      return saved ? { ...getEvolutionInitialState(), ...JSON.parse(saved).formData } : getEvolutionInitialState();
+    } catch { return getEvolutionInitialState(); }
   });
 
   // Fonction pour formater une date en français (ex: "lundi 15 janvier 2025")
@@ -1122,6 +1142,7 @@ const Demandes = () => {
       }
 
       await chargerLesDemandes();
+      localStorage.removeItem(EVOLUTION_STORAGE_KEY);
       setShowEvolutionForm(false);
       setShowSelectionCards(true);
       setEvolutionStep(1);
@@ -1424,7 +1445,7 @@ const Demandes = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demandes]);
 
-  // Sauvegarder l'état du formulaire en cours dans localStorage
+  // Sauvegarder l'état des formulaires en cours dans localStorage
   useEffect(() => {
     if (showNouvelleDemandeForm) {
       localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify({
@@ -1435,10 +1456,24 @@ const Demandes = () => {
     }
   }, [showNouvelleDemandeForm, nouvelleDemandeStep, nouvelleDemandeFormData]);
 
+  useEffect(() => {
+    if (showProspecteForm) {
+      localStorage.setItem(PROSPECTE_STORAGE_KEY, JSON.stringify({ formData: prospecteFormData }));
+    }
+  }, [showProspecteForm, prospecteFormData]);
+
+  useEffect(() => {
+    if (showEvolutionForm) {
+      localStorage.setItem(EVOLUTION_STORAGE_KEY, JSON.stringify({ step: evolutionStep, formData: evolutionFormData }));
+    }
+  }, [showEvolutionForm, evolutionStep, evolutionFormData]);
+
   const handleCreateDemande = () => {
     setShowProspecteForm(false);
     setShowEvolutionForm(false);
     localStorage.removeItem(FORM_STORAGE_KEY);
+    localStorage.removeItem(PROSPECTE_STORAGE_KEY);
+    localStorage.removeItem(EVOLUTION_STORAGE_KEY);
     setNouvelleDemandeStep(1);
     setNouvelleDemandeFormData(getNouvelleDemandeInitialState());
     setDraftStepInfo(null);
@@ -1451,17 +1486,9 @@ const Demandes = () => {
   const handleCreateDemandeProspecte = () => {
     setShowNouvelleDemandeForm(false);
     setShowEvolutionForm(false);
-    setProspecteFormData({
-      dateEnregistrement: new Date().toISOString().split("T")[0],
-      societesDemandeurs: [],
-      interlocuteur: "",
-      nomProjet: "",
-      descriptionPerimetre: "",
-      dateReception: "",
-    });
-
-    // Plus de localStorage - tout vient de la base de données
-
+    localStorage.removeItem(FORM_STORAGE_KEY);
+    localStorage.removeItem(EVOLUTION_STORAGE_KEY);
+    setProspecteFormData(getProspecteInitialState());
     setShowProspecteForm(true);
     setShowSelectionCards(false);
   };
@@ -1478,6 +1505,7 @@ const Demandes = () => {
   };
 
   const handleProspecteCancel = () => {
+    localStorage.removeItem(PROSPECTE_STORAGE_KEY);
     setShowProspecteForm(false);
     setShowSelectionCards(true);
     setDemandeMessage({ type: "", text: "" });
@@ -1522,6 +1550,7 @@ const Demandes = () => {
         type: "success",
         text: "Demande prospecte créée avec succès !",
       });
+      localStorage.removeItem(PROSPECTE_STORAGE_KEY);
       chargerLesDemandes();
       setShowProspecteForm(false);
       setShowSelectionCards(true);
@@ -1535,53 +1564,10 @@ const Demandes = () => {
   const handleCreateDemandeEvolution = () => {
     setShowNouvelleDemandeForm(false);
     setShowProspecteForm(false);
-    setEvolutionFormData({
-      dateEnregistrement: new Date().toISOString().split("T")[0],
-      societesDemandeurs: [],
-      societesDemandeursNames: [],
-      interlocuteur: "",
-      nomProjet: "",
-      dateReception: "",
-      dateDemandeMiseAJourDATFL: "",
-      dateReponseMiseAJourDATFL: "",
-      charge: "",
-      planningDateDebut: "",
-      planningDateFin: "",
-      dateDemandeDevolution: "",
-      dateReponseDevolution: "",
-      slt: "",
-      aleasNormeParJour: "",
-      interlocuteurClient: "",
-      typeProjet: "",
-      demandeur: "",
-      descriptionProjet: "",
-      descriptionPerimetre: "",
-      statutDemande: "",
-      lienIngridCDC: "",
-      dateTransmissionBacklog: "",
-      dateConfirmationValidation: "",
-      observations: "",
-      dateDemandePlanificationDev: "",
-      dateDemandePlanificationTif: "",
-      dateRetourEquipesDev: "",
-      dateRetourEquipesTif: "",
-      dateCommunicationPlanningClient: "",
-      nombreSprint: "",
-      sprintsData: [],
-      statutCodage: "en attente",
-      statutTIF: "en attente",
-      lienIngridKickoff: "",
-      lienIngridPointsControleTIF: "",
-      lienIngridSignoff: "",
-      dateEffectiveLivraisonTIF: "",
-      motifsRetardTIF: "",
-      dateEffectiveLivraisonClient: "",
-      motifsRetardClient: "",
-      statutLivraisonClient: "en attente",
-    });
-
-    // Plus de localStorage - tout vient de la base de données
-
+    localStorage.removeItem(FORM_STORAGE_KEY);
+    localStorage.removeItem(PROSPECTE_STORAGE_KEY);
+    localStorage.removeItem(EVOLUTION_STORAGE_KEY);
+    setEvolutionFormData(getEvolutionInitialState());
     setEvolutionStep(1);
     setShowEvolutionForm(true);
     setShowSelectionCards(false);
@@ -1778,6 +1764,7 @@ const Demandes = () => {
   };
 
   const handleEvolutionCancel = () => {
+    localStorage.removeItem(EVOLUTION_STORAGE_KEY);
     setShowEvolutionForm(false);
     setShowSelectionCards(true);
     setEvolutionStep(1);
@@ -1878,6 +1865,8 @@ const Demandes = () => {
       }
 
       await chargerLesDemandes();
+      await chargerLesDemandes();
+      localStorage.removeItem(EVOLUTION_STORAGE_KEY);
       setVueLivrees(true);
       setShowDemandesList(true);
       setShowEvolutionForm(false);
