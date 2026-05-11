@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import "./PageStyles.css";
 import { apiFetch } from "../../utils/apiFetch";
 import {
-  creerDemande,
   chargerDemandes,
 } from "../../data/gestionDemandes";
 import { chargerSocietes } from "../../data/societes";
@@ -1165,72 +1164,6 @@ const Demandes = () => {
     }
   };
 
-  const sauvegarderProspecteBrouillon = async () => {
-    // Vérifier si on est en train d'éditer une demande existante
-    const currentDemandeId = prospecteFormData.id;
-
-    const payload = {
-      dateEnregistrement:
-        prospecteFormData.dateEnregistrement ||
-        new Date().toISOString().split("T")[0],
-      dateReception: prospecteFormData.dateReception || "",
-      societesDemandeurs: prospecteFormData.societesDemandeurs || [],
-      interlocuteur: prospecteFormData.interlocuteur || "",
-      typeProjet: "Prospecte",
-      nomProjet: prospecteFormData.nomProjet || "",
-      perimetre: prospecteFormData.perimetre || "",
-      isDraft: true,
-      draftStepLabel: "Info demande",
-      utilisateurId: user?.id,
-    };
-
-    try {
-      if (currentDemandeId) {
-        // Mettre à jour la demande existante
-        await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:3001"}/demandes/${currentDemandeId}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          },
-        );
-        console.log(
-          "🔄 Mise à jour du brouillon prospecte existant:",
-          currentDemandeId,
-        );
-      } else {
-        // Créer une nouvelle demande
-        const response = await creerDemande(payload);
-        console.log("Création d'une nouvelle demande prospecte");
-
-        // Récupérer l'ID pour les futures mises à jour
-        if (response && response.id) {
-          setProspecteFormData((prev) => ({
-            ...prev,
-            id: response.id,
-          }));
-          console.log(
-            "📝 ID de la nouvelle demande prospecte enregistré:",
-            response.id,
-          );
-        }
-      }
-
-      chargerLesDemandes();
-      setDemandeMessage({
-        type: "success",
-        text: currentDemandeId
-          ? "Brouillon prospecte mis à jour."
-          : "Brouillon prospecte enregistré.",
-      });
-    } catch (error) {
-      setDemandeMessage({
-        type: "error",
-        text: "Impossible d'enregistrer le brouillon. Vérifiez l'espace disponible.",
-      });
-    }
-  };
 
   const supprimerBrouillonNouvelleDemande = () => {
     setNouvelleDemandeFormData(getNouvelleDemandeInitialState());
@@ -1917,6 +1850,13 @@ const Demandes = () => {
     return null;
   };
 
+  // Convertit un nom/code de société en son ID (pour pré-sélectionner le select)
+  const getSocieteIdByName = (nom) => {
+    if (!nom) return null;
+    const found = societes.find(s => s.nom === nom || s.code === nom || s.id.toString() === nom);
+    return found ? found.id.toString() : nom;
+  };
+
   // Poursuivre un brouillon via le formulaire multi-étapes
   const handlePoursuivreDemande = (demande) => {
     // Fermer tout formulaire ouvert avant d'en ouvrir un autre
@@ -1931,7 +1871,7 @@ const Demandes = () => {
         id: demande.id,
         dateEnregistrement: demande.dateEnregistrement?.split?.("T")[0] || new Date().toISOString().split("T")[0],
         dateReception: demande.dateReception?.split?.("T")[0] || "",
-        societesDemandeurs: demande.societesDemandeurs ? [demande.societesDemandeurs] : (demande.societeDemandeur ? [demande.societeDemandeur] : []),
+        societesDemandeurs: (() => { const n = demande.societesDemandeurs || demande.societeDemandeur || ""; return n ? [getSocieteIdByName(n)] : []; })(),
         interlocuteur: demande.interlocuteur || demande.interlocuteurClient || "",
         nomProjet: demande.nomProjet || "",
         descriptionPerimetre: demande.descriptionPerimetre || "",
@@ -1950,8 +1890,8 @@ const Demandes = () => {
         id: demande.id,
         dateEnregistrement: demande.dateEnregistrement?.split?.("T")[0] || new Date().toISOString().split("T")[0],
         dateReception: demande.dateReception?.split?.("T")[0] || "",
-        societesDemandeurs: demande.societesDemandeurs ? [demande.societesDemandeurs] : (demande.societeDemandeur ? [demande.societeDemandeur] : []),
-        societesDemandeursNames: demande.societesDemandeurs ? [demande.societesDemandeurs] : (demande.societeDemandeur ? [demande.societeDemandeur] : []),
+        societesDemandeurs: (() => { const n = demande.societesDemandeurs || demande.societeDemandeur || ""; return n ? [getSocieteIdByName(n)] : []; })(),
+        societesDemandeursNames: (() => { const n = demande.societesDemandeurs || demande.societeDemandeur || ""; return n ? [n] : []; })(),
         interlocuteur: demande.interlocuteur || "",
         interlocuteurClient: demande.interlocuteurClient || "",
         nomProjet: demande.nomProjet || "",
