@@ -934,7 +934,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
       motDePasse: "",
 
-      profilId: profils.length > 0 ? profils[0].id.toString() : "",
+      profilId: profils.find(p => p.actif !== false)?.id.toString() || "",
     });
 
     setShowUserForm(true);
@@ -1599,21 +1599,28 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
             </div>
           )}
 
-          <div className="table-container" style={{ marginTop: "24px" }}>
+          <div className="table-container" style={{ marginTop: "119px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-              <h3 style={{ margin: 0 }}>Liste des profils</h3>
+              {profils.length > 0 && <h3 style={{ margin: 0 }}>Liste des profils</h3>}
+              {profils.length >= 5 && (
               <div style={{ position: "relative" }}>
                 <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
                 <input type="text" placeholder="Rechercher..." value={rechercheProfils}
                   onChange={e => { setRechercheProfils(e.target.value); setPageProfils(1); }}
                   style={{ padding: "7px 10px 7px 30px", borderRadius: "8px", border: "1px solid #D1D5DB", fontSize: "13px", width: "200px", outline: "none" }} />
               </div>
+              )}
             </div>
 
             {profilsFiltres.length === 0 ? (
-              <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                Aucun profil créé pour le moment.
-              </p>
+              profils.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "48px 0" }}>
+                  <i className="fa-solid fa-id-card" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
+                  <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun profil créé pour le moment.</p>
+                </div>
+              ) : (
+                <p style={{ color: "#6b7280", marginTop: "16px", textAlign: "center" }}>Aucun résultat pour cette recherche.</p>
+              )
             ) : (
               <table className="data-table">
                 <thead>
@@ -2482,6 +2489,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                         backgroundColor: profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false ? "#F3F4F6" : "",
                       }}
                     >
+                      <option value="">-- Sélectionner un profil --</option>
                       {[...profils].sort((a, b) => (a.actif === false ? 1 : 0) - (b.actif === false ? 1 : 0)).map((profil) => (
                         <option
                           key={profil.id}
@@ -2538,21 +2546,28 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
             </div>
           )}
 
-          <div className="table-container" style={{ marginTop: "24px" }}>
+          <div className="table-container" style={{ marginTop: "119px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-              <h3 style={{ margin: 0 }}>Liste des utilisateurs</h3>
+              {utilisateurs.length > 0 && <h3 style={{ margin: 0 }}>Liste des utilisateurs</h3>}
+              {utilisateurs.length >= 5 && (
               <div style={{ position: "relative" }}>
                 <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
                 <input type="text" placeholder="Rechercher..." value={rechercheUtilisateurs}
                   onChange={e => { setRechercheUtilisateurs(e.target.value); setPageUtilisateurs(1); }}
                   style={{ padding: "7px 10px 7px 30px", borderRadius: "8px", border: "1px solid #D1D5DB", fontSize: "13px", width: "200px", outline: "none" }} />
               </div>
+              )}
             </div>
 
             {utilisateursFiltres.length === 0 ? (
-              <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                Aucun utilisateur créé pour le moment.
-              </p>
+              utilisateurs.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "48px 0" }}>
+                  <i className="fa-solid fa-users" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px" }} />
+                  <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun utilisateur créé pour le moment.</p>
+                </div>
+              ) : (
+                <p style={{ color: "#6b7280", marginTop: "16px", textAlign: "center" }}>Aucun résultat pour cette recherche.</p>
+              )
             ) : (
               <table className="data-table">
                 <thead>
@@ -2660,7 +2675,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
         )}
       </div>
 
-      {subPages[activeSubPage].content}
+      <div className="page-content">{subPages[activeSubPage].content}</div>
 
       {/* Modal pour consulter les permissions du profil */}
 

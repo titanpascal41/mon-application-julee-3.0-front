@@ -1718,7 +1718,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
           <div className="table-container" style={{ marginTop: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
-              <h3 style={{ margin: 0 }}>Liste des sociétés</h3>
+              {(!loading && societes.length > 0) && <h3 style={{ margin: 0 }}>Liste des sociétés</h3>}
+              {societes.length >= 5 && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <div style={{ position: "relative" }}>
                   <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
@@ -1732,6 +1733,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   <option value="inactif">Désactivés</option>
                 </select>
               </div>
+              )}
             </div>
 
             {loading ? (
@@ -1739,15 +1741,16 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }} />
               </div>
             ) : societesFiltrees.length === 0 ? (
-              <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                {societes.length === 0
-                  ? "Aucune société créée pour le moment."
-                  : filtreStatutSocietes === "actif"
-                  ? "Aucune société active."
-                  : filtreStatutSocietes === "inactif"
-                  ? "Aucune société désactivée."
-                  : "Aucun résultat pour cette recherche."}
-              </p>
+              societes.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "48px 0" }}>
+                  <i className="fa-solid fa-building" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
+                  <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucune société créée pour le moment.</p>
+                </div>
+              ) : (
+                <p style={{ color: "#6b7280", marginTop: "16px", textAlign: "center" }}>
+                  {filtreStatutSocietes === "actif" ? "Aucune société active." : filtreStatutSocietes === "inactif" ? "Aucune société désactivée." : "Aucun résultat pour cette recherche."}
+                </p>
+              )
             ) : (
               <table className="data-table">
                 <thead>
@@ -2102,7 +2105,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
           <div className="table-container" style={{ marginTop: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
-              <h3 style={{ margin: 0 }}>Liste des unités organisationnelles</h3>
+              {(!loading && uoList.length > 0) && <h3 style={{ margin: 0 }}>Liste des unités organisationnelles</h3>}
+              {uoList.length >= 5 && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <div style={{ position: "relative" }}>
                   <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
@@ -2116,6 +2120,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   <option value="inactif">Désactivés</option>
                 </select>
               </div>
+              )}
             </div>
 
             {loading ? (
@@ -2123,15 +2128,16 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }} />
               </div>
             ) : uoFiltrees.length === 0 ? (
-              <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                {uoList.length === 0
-                  ? "Aucune unité organisationnelle créée pour le moment."
-                  : filtreStatutUO === "actif"
-                  ? "Aucune unité organisationnelle active."
-                  : filtreStatutUO === "inactif"
-                  ? "Aucune unité organisationnelle désactivée."
-                  : "Aucun résultat pour cette recherche."}
-              </p>
+              uoList.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "48px 0" }}>
+                  <i className="fa-solid fa-sitemap" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
+                  <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucune unité organisationnelle créée pour le moment.</p>
+                </div>
+              ) : (
+                <p style={{ color: "#6b7280", marginTop: "16px", textAlign: "center" }}>
+                  {filtreStatutUO === "actif" ? "Aucune unité active." : filtreStatutUO === "inactif" ? "Aucune unité désactivée." : "Aucun résultat pour cette recherche."}
+                </p>
+              )
             ) : (
               <table className="data-table">
                 <thead>
@@ -2382,7 +2388,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
           <div className="table-container" style={{ marginTop: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
-              <h3 style={{ margin: 0 }}>Liste des statuts</h3>
+              {(!loading && statuts.length > 0) && <h3 style={{ margin: 0 }}>Liste des statuts</h3>}
+              {statuts.length >= 5 && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <div style={{ position: "relative" }}>
                   <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
@@ -2396,6 +2403,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   <option value="inactif">Désactivés</option>
                 </select>
               </div>
+              )}
             </div>
 
             {loading ? (
@@ -2403,15 +2411,16 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }} />
               </div>
             ) : statutsFiltrees.length === 0 ? (
-              <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                {statuts.length === 0
-                  ? "Aucun statut créé pour le moment."
-                  : filtreStatutStatuts === "actif"
-                  ? "Aucun statut actif."
-                  : filtreStatutStatuts === "inactif"
-                  ? "Aucun statut désactivé."
-                  : "Aucun résultat pour cette recherche."}
-              </p>
+              statuts.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "48px 0" }}>
+                  <i className="fa-solid fa-tags" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
+                  <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun statut créé pour le moment.</p>
+                </div>
+              ) : (
+                <p style={{ color: "#6b7280", marginTop: "16px", textAlign: "center" }}>
+                  {filtreStatutStatuts === "actif" ? "Aucun statut actif." : filtreStatutStatuts === "inactif" ? "Aucun statut désactivé." : "Aucun résultat pour cette recherche."}
+                </p>
+              )
             ) : (
               <table className="data-table">
                 <thead>
@@ -2667,7 +2676,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
             <div className="table-container" style={{ marginTop: "24px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
-                <h3 style={{ margin: 0 }}>Liste des interlocuteurs</h3>
+                {(!loading && interlocuteurs.length > 0) && <h3 style={{ margin: 0 }}>Liste des interlocuteurs</h3>}
+                {interlocuteurs.length >= 5 && (
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <div style={{ position: "relative" }}>
                     <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
@@ -2681,6 +2691,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                     <option value="inactif">Désactivés</option>
                   </select>
                 </div>
+                )}
               </div>
 
               {loading ? (
@@ -2688,15 +2699,16 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }} />
                 </div>
               ) : interlocuteursFiltrees.length === 0 ? (
-                <p style={{ color: "#6b7280", marginTop: "16px" }}>
-                  {interlocuteurs.length === 0
-                    ? "Aucun interlocuteur créé pour le moment."
-                    : filtreStatutInterlocuteurs === "actif"
-                    ? "Aucun interlocuteur actif."
-                    : filtreStatutInterlocuteurs === "inactif"
-                    ? "Aucun interlocuteur désactivé."
-                    : "Aucun résultat pour cette recherche."}
-                </p>
+                interlocuteurs.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "48px 0" }}>
+                    <i className="fa-solid fa-address-book" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
+                    <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun interlocuteur créé pour le moment.</p>
+                  </div>
+                ) : (
+                  <p style={{ color: "#6b7280", marginTop: "16px", textAlign: "center" }}>
+                    {filtreStatutInterlocuteurs === "actif" ? "Aucun interlocuteur actif." : filtreStatutInterlocuteurs === "inactif" ? "Aucun interlocuteur désactivé." : "Aucun résultat pour cette recherche."}
+                  </p>
+                )
               ) : (
                 <table className="data-table">
                   <thead>

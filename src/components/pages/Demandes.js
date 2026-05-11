@@ -952,24 +952,20 @@ const Demandes = () => {
         throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
       }
 
-      // Plus de sauvegarde localStorage - tout vient de la base de données
-
-      // Mettre à jour l'affichage (adapté de votre approche)
-      await chargerLesDemandes(); // Recharge la liste depuis le backend
-      setDraftStepInfo(stepToStore);
-
-      // Si c'était une nouvelle demande, récupérer l'ID pour les futures mises à jour
+      // Si c'était une nouvelle demande, récupérer l'ID AVANT de recharger les demandes
+      // (évite le bug de timing où demandes contient le projet mais id est encore null)
       if (!currentDemandeId && response.ok) {
         const createdDemande = await response.json();
         setNouvelleDemandeFormData((prev) => ({
           ...prev,
           id: createdDemande.id,
         }));
-        console.log(
-          "📝 ID de la nouvelle demande enregistré:",
-          createdDemande.id,
-        );
+        console.log("📝 ID de la nouvelle demande enregistré:", createdDemande.id);
       }
+
+      // Recharger la liste depuis le backend (après avoir défini l'ID)
+      await chargerLesDemandes();
+      setDraftStepInfo(stepToStore);
 
       // Fermer le formulaire et afficher les cartes de sélection
       setShowNouvelleDemandeForm(false);
@@ -1386,20 +1382,21 @@ const Demandes = () => {
   }, [showNouvelleDemandeForm, nouvelleDemandeStep, nouvelleDemandeFormData]);
 
   const handleCreateDemande = () => {
+    setShowProspecteForm(false);
+    setShowEvolutionForm(false);
     localStorage.removeItem(FORM_STORAGE_KEY);
     setNouvelleDemandeStep(1);
     setNouvelleDemandeFormData(getNouvelleDemandeInitialState());
     setDraftStepInfo(null);
     setDemandeMessage({ type: "", text: "" });
-
-    // Plus de localStorage - tout vient de la base de données
-
     setShowNouvelleDemandeForm(true);
     setShowSelectionCards(false);
   };
 
   // Création d'une demande prospecte avec formulaire multi-étapes
   const handleCreateDemandeProspecte = () => {
+    setShowNouvelleDemandeForm(false);
+    setShowEvolutionForm(false);
     setProspecteFormData({
       dateEnregistrement: new Date().toISOString().split("T")[0],
       societesDemandeurs: [],
@@ -1482,6 +1479,8 @@ const Demandes = () => {
 
   // Création d'une demande d'évolution avec formulaire multi-étapes
   const handleCreateDemandeEvolution = () => {
+    setShowNouvelleDemandeForm(false);
+    setShowProspecteForm(false);
     setEvolutionFormData({
       dateEnregistrement: new Date().toISOString().split("T")[0],
       societesDemandeurs:
@@ -1671,6 +1670,60 @@ const Demandes = () => {
 
   // Poursuivre un brouillon via le formulaire multi-étapes
   const handlePoursuivreDemande = (demande) => {
+    // Fermer tout formulaire ouvert avant d'en ouvrir un autre
+    setShowNouvelleDemandeForm(false);
+    setShowProspecteForm(false);
+    setShowEvolutionForm(false);
+
+    // Rediriger vers le bon formulaire selon le type
+    if (demande.typeProjet === "Prospecte") {
+      setProspecteFormData((prev) => ({
+        ...prev,
+        id: demande.id,
+        dateEnregistrement: demande.dateEnregistrement?.split?.("T")[0] || new Date().toISOString().split("T")[0],
+        dateReception: demande.dateReception?.split?.("T")[0] || "",
+        societesDemandeurs: demande.societesDemandeurs ? [demande.societesDemandeurs] : (demande.societeDemandeur ? [demande.societeDemandeur] : []),
+        interlocuteur: demande.interlocuteur || demande.interlocuteurClient || "",
+        nomProjet: demande.nomProjet || "",
+        descriptionPerimetre: demande.descriptionPerimetre || "",
+      }));
+      setShowSelectionCards(false);
+      setShowProspecteForm(true);
+      setDemandeMessage({ type: "", text: "" });
+      setIsModificationMode(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (demande.typeProjet === "Evolution") {
+      setEvolutionFormData((prev) => ({
+        ...prev,
+        id: demande.id,
+        dateEnregistrement: demande.dateEnregistrement?.split?.("T")[0] || new Date().toISOString().split("T")[0],
+        dateReception: demande.dateReception?.split?.("T")[0] || "",
+        societesDemandeurs: demande.societesDemandeurs ? [demande.societesDemandeurs] : (demande.societeDemandeur ? [demande.societeDemandeur] : []),
+        interlocuteur: demande.interlocuteur || demande.interlocuteurClient || "",
+        nomProjet: demande.nomProjet || "",
+        dateDemandeMiseAJourDATFL: demande.dateDemandeMiseAJourDATFL?.split?.("T")[0] || "",
+        dateReponseMiseAJourDATFL: demande.dateReponseMiseAJourDATFL?.split?.("T")[0] || "",
+        planningDateDebut: demande.planningDateDebut?.split?.("T")[0] || "",
+        planningDateFin: demande.planningDateFin?.split?.("T")[0] || "",
+        dateDemandeDevolution: demande.dateDemandeDevolution?.split?.("T")[0] || "",
+        dateReponseDevolution: demande.dateReponseDevolution?.split?.("T")[0] || "",
+        slt: demande.slt || "",
+        aleasNormeParJour: demande.aleasNormeParJour || "",
+        charge: demande.charge || "",
+      }));
+      const savedStep = Number(demande.draftStep) || 1;
+      setEvolutionStep(Math.min(Math.max(savedStep, 1), 3));
+      setShowSelectionCards(false);
+      setShowEvolutionForm(true);
+      setDemandeMessage({ type: "", text: "" });
+      setIsModificationMode(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     const fallbackLabel = demande.draftStep
       ? getStepLabel(demande.draftStep)
       : null;
@@ -3201,19 +3254,13 @@ const Demandes = () => {
                     <label>
                       Périmètre
                     </label>
-                    <select
+                    <input
+                      type="text"
                       name="descriptionPerimetre"
                       value={prospecteFormData.descriptionPerimetre}
                       onChange={handleProspecteInputChange}
-                      required
-                    >
-                      <option value="">-- Sélectionnez un périmètre --</option>
-                      {(perimetreOptions || []).map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="Décrivez le périmètre..."
+                    />
                   </div>
                 </div>
               </div>
@@ -3235,13 +3282,6 @@ const Demandes = () => {
                   onClick={handleProspecteCancel}
                 >
                   ← Retour à la page principale
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => sauvegarderProspecteBrouillon()}
-                >
-                  Enregistrer le brouillon
                 </button>
                 <button
                   type="submit"
