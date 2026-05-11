@@ -480,6 +480,8 @@ const TableauDeBord = () => {
       {(() => {
         const projets = demandes
           .filter(d => {
+            if (d.isDraft === false) return false;
+            if (d.statutLivraison === "livré au client" || d.statutLivraisonClient === "livré au client") return false;
             if (!d.sprintsData) return false;
             try {
               const s = typeof d.sprintsData === "string" ? JSON.parse(d.sprintsData) : d.sprintsData;
