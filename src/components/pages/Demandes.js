@@ -1511,7 +1511,7 @@ const Demandes = () => {
     setDemandeMessage({ type: "", text: "" });
   };
 
-  const handleProspecteSubmit = (e) => {
+  const handleProspecteSubmit = async (e) => {
     e.preventDefault();
     setDemandeMessage({ type: "", text: "" });
 
@@ -1537,26 +1537,45 @@ const Demandes = () => {
       scrollToFormTop(); return;
     }
 
-    const dataToSave = {
-      ...prospecteFormData,
-      typeProjet: "Prospecte",
-      perimetre: "",
-    };
+    try {
+      setDemandeMessage({ type: "info", text: "Création en cours..." });
+      const currentId = prospecteFormData.id;
 
-    const resultat = creerDemande(dataToSave);
+      const societe = societes.find(s => s.id.toString() === prospecteFormData.societesDemandeurs?.[0]);
+      const societyName = societe?.nom || prospecteFormData.societesDemandeurs?.[0] || "";
 
-    if (resultat.succes) {
-      setDemandeMessage({
-        type: "success",
-        text: "Demande prospecte créée avec succès !",
-      });
+      const payload = {
+        typeProjet: "Prospecte",
+        nomProjet: prospecteFormData.nomProjet,
+        dateEnregistrement: prospecteFormData.dateEnregistrement,
+        dateReception: prospecteFormData.dateReception,
+        societesDemandeurs: societyName,
+        societeDemandeur: societyName,
+        interlocuteur: prospecteFormData.interlocuteur,
+        descriptionPerimetre: prospecteFormData.descriptionPerimetre || "",
+        isDraft: false,
+        draftStep: 1,
+        draftStepLabel: "Info demande",
+        utilisateurId: user?.id || 1,
+      };
+
+      if (currentId) {
+        const resp = await apiFetch(`/demandes/${currentId}`, { method: "PUT", body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error(`Erreur HTTP ${resp.status}`);
+      } else {
+        const resp = await apiFetch(`/demandes`, { method: "POST", body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error(`Erreur HTTP ${resp.status}`);
+      }
+
+      await chargerLesDemandes();
       localStorage.removeItem(PROSPECTE_STORAGE_KEY);
-      chargerLesDemandes();
       setShowProspecteForm(false);
       setShowSelectionCards(true);
+      setIsModificationMode(false);
+      setDemandeMessage({ type: "success", text: "Demande prospecte créée avec succès !" });
       setTimeout(() => setDemandeMessage({ type: "", text: "" }), 3000);
-    } else {
-      setDemandeMessage({ type: "error", text: resultat.message });
+    } catch (error) {
+      setDemandeMessage({ type: "error", text: `Impossible de créer la demande. ${error?.message || "Vérifiez la connexion."}` });
     }
   };
 
