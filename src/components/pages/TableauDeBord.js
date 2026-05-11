@@ -87,19 +87,25 @@ const TableauDeBord = () => {
 
   // 1. Répartition par type
   const TYPE_COLORS = {
-    nouvelle:  "#4A90E2",
-    evolution: "#10B981",
-    prospecte: "#FF6B35",
-    brouillon: "#9CA3AF",
+    "Nouvelle demande": "#4A90E2",
+    "Evolution":        "#10B981",
+    "Prospecte":        "#FF6B35",
+  };
+  const normalizeType = (t) => {
+    const s = (t || "").toLowerCase().trim();
+    if (s === "evolution") return "Evolution";
+    if (s === "prospecte") return "Prospecte";
+    if (!s || s === "brouillon") return null; // ignorer
+    return "Nouvelle demande"; // agile, classique, tout le reste
   };
   const typeMap = {};
   demandes.forEach(d => {
-    const t = (d.typeProjet || "").toLowerCase();
-    if (!t || t === "brouillon" || t === "autre") return;
-    typeMap[t] = (typeMap[t] || 0) + 1;
+    const key = normalizeType(d.typeProjet);
+    if (!key) return;
+    typeMap[key] = (typeMap[key] || 0) + 1;
   });
   const dataType = Object.entries(typeMap).map(([name, value]) => ({
-    name: name.charAt(0).toUpperCase() + name.slice(1),
+    name,
     value,
     color: TYPE_COLORS[name] || "#6B7280",
   }));
