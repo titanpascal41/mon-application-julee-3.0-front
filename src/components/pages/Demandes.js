@@ -4721,28 +4721,11 @@ const Demandes = () => {
                                 letterSpacing: "2px",
                               }}>—</span>
                             )}
-                            {peutModifierDemande && (
+                            {peutModifierDemande && normalizeTypeProjet(demande.typeProjet) !== "prospecte" && (
                               <button
                                 className="btn-secondary"
-                                onClick={() =>
-                                  handleEditStatus(
-                                    demande.statutInfo || {
-                                      id: demande.statutId,
-                                      nom: demande.statutDemande,
-                                    },
-                                    demande.id,
-                                  )
-                                }
-                                style={{
-                                  padding: "4px 8px",
-                                  fontSize: "11px",
-                                  borderRadius: "4px",
-                                  border: "1px solid #d1d5db",
-                                  backgroundColor: "white",
-                                  color: "#374151",
-                                  cursor: "pointer",
-                                  whiteSpace: "nowrap",
-                                }}
+                                onClick={() => handleEditStatus(demande.statutInfo || { id: demande.statutId, nom: demande.statutDemande }, demande.id)}
+                                style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "4px", border: "1px solid #d1d5db", backgroundColor: "white", color: "#374151", cursor: "pointer", whiteSpace: "nowrap" }}
                                 title="Modifier le statut"
                               >
                                 Modifier statut
