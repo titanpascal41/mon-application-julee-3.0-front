@@ -380,7 +380,6 @@ const Sidebar = ({ collapsed }) => {
                           <Link
                             key={submenu.key}
                             to={`/${submenu.path}`}
-                            replace
                             className={`submenu-item ${
                               activePage === submenu.path &&
                               clickedMainMenu !== item.key
@@ -413,7 +412,6 @@ const Sidebar = ({ collapsed }) => {
               ) : (
                 <Link
                   to={`/${item.path}`}
-                  replace
                   className={`nav-item ${
                     activePage === item.path ? "active" : ""
                   }`}
