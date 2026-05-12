@@ -5158,6 +5158,9 @@ const Demandes = () => {
                   <InfoField label="Date transmission backlog" value={formatDateForDisplay(selectedDemandeDetail.dateTransmissionBacklog)} />
                   <InfoField label="Date confirmation validation" value={formatDateForDisplay(selectedDemandeDetail.dateConfirmationValidation)} />
                   <InfoField label="Lien Ingrid CDC" value={selectedDemandeDetail.lienIngridCDC} full />
+                  {selectedDemandeDetail.observations && (
+                    <InfoField label="Observations / Commentaires" value={selectedDemandeDetail.observations} full />
+                  )}
                 </Section>
               )}
 

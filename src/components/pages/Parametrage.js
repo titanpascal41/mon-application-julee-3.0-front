@@ -2745,9 +2745,11 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                                   {uo.nom}
                                 </span>
                               ) : (
-                                "—"
+                                interlocuteur.structureUO || "—"
                               );
                             })()
+                          ) : interlocuteur.structureUO ? (
+                            <span style={{ fontSize: "13px" }}>{interlocuteur.structureUO}</span>
                           ) : (
                             <span style={{ color: "#9ca3af" }}>—</span>
                           )}
