@@ -89,7 +89,7 @@ const Dashboard = () => {
   // Fonction de déconnexion
   const deconnecter = () => {
     logout();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   // Déterminer la page active depuis l'URL
