@@ -5128,7 +5128,7 @@ const Demandes = () => {
                     <InfoField label="Description" value={selectedDemandeDetail.descriptionProjet} full />
                   )}
                   {selectedDemandeDetail.typeProjet === "Prospecte" && (
-                    <InfoField label="Périmètre" value={selectedDemandeDetail.perimetre} full />
+                    <InfoField label="Périmètre" value={selectedDemandeDetail.descriptionPerimetre || selectedDemandeDetail.perimetre} full />
                   )}
                 </Section>
 
