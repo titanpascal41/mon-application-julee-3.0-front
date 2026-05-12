@@ -34,20 +34,13 @@ const Authentification = () => {
         console.log(" Première route accessible:", firstRoute);
 
         if (firstRoute) {
-          navigate(`/${firstRoute}`);
+          navigate(`/${firstRoute}`, { replace: true });
           console.log(` Redirection vers /${firstRoute}`);
         } else {
-          // Fallback pour l'admin : si aucune route trouvée mais c'est un admin, rediriger vers administration-profils
           if (permissionService.isAdmin()) {
-            navigate("/tableau-de-bord");
-            console.log(
-              " Admin détecté, redirection vers /administration-profils",
-            );
+            navigate("/tableau-de-bord", { replace: true });
           } else {
-            navigate("/no-access");
-            console.log(
-              " Aucune route accessible, redirection vers /no-access",
-            );
+            navigate("/no-access", { replace: true });
           }
         }
       }, 1000); // Attendre que les permissions soient chargées
