@@ -5132,6 +5132,26 @@ const Demandes = () => {
                   )}
                 </Section>
 
+              {/* Section spécifique Évolution */}
+              {selectedDemandeDetail.typeProjet === "Evolution" && (
+                <Section icon="fa-solid fa-arrow-up" title="Informations Évolution" color="#10B981">
+                  <InfoField label="Interlocuteur (interne)" value={selectedDemandeDetail.interlocuteur} />
+                  <InfoField label="Date demande DATFL" value={formatDateForDisplay(selectedDemandeDetail.dateDemandeMiseAJourDATFL)} />
+                  <InfoField label="Date réponse DATFL" value={formatDateForDisplay(selectedDemandeDetail.dateReponseMiseAJourDATFL)} />
+                  <InfoField label="Charge (j/h)" value={selectedDemandeDetail.charge} />
+                  <InfoField label="Date début planning" value={formatDateForDisplay(selectedDemandeDetail.planningDateDebut)} />
+                  <InfoField label="Date fin planning" value={formatDateForDisplay(selectedDemandeDetail.planningDateFin)} />
+                  <InfoField label="Date demande dévolution" value={formatDateForDisplay(selectedDemandeDetail.dateDemandeDevolution)} />
+                  <InfoField label="Date réponse dévolution" value={formatDateForDisplay(selectedDemandeDetail.dateReponseDevolution)} />
+                  {selectedDemandeDetail.aleasNormeParJour && (
+                    <InfoField label="Aléas norme par jour" value={selectedDemandeDetail.aleasNormeParJour} />
+                  )}
+                  {selectedDemandeDetail.slt && (
+                    <InfoField label="SLT" value={selectedDemandeDetail.slt} full />
+                  )}
+                </Section>
+              )}
+
               {/* Clarification */}
               {selectedDemandeDetail.typeProjet !== "Prospecte" && (
                 <Section icon="fa-solid fa-magnifying-glass" title="Clarification" color={typeColor}>
