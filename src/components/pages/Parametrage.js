@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
-
 import "./PageStyles.css";
 
 import {
@@ -39,6 +38,20 @@ import {
 } from "../../data/gestionInterlocuteurs";
 
 import { PermissionGuard, usePermissions } from "../PermissionGuard";
+
+const DEPARTEMENTS_PAR_CODE = {
+  GS2E: [
+    "DDI SAPHIR V3",
+    "Département Audit Interne",
+    "Département Budget Contrôle de Gestion",
+    "Département de Développements Informatiques",
+    "Département des Ressources Humaines",
+    "Département Etudes Economiques",
+    "Département Qualité Sécurité Environnement",
+    "SMART ENERGY",
+    "Système Management Environnemental et Social",
+  ],
+};
 
 const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const { hasPermission } = usePermissions();
@@ -92,19 +105,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     "SODECI",
   ];
 
-  const DEPARTEMENTS_PAR_CODE = {
-    GS2E: [
-      "DDI SAPHIR V3",
-      "Département Audit Interne",
-      "Département Budget Contrôle de Gestion",
-      "Département de Développements Informatiques",
-      "Département des Ressources Humaines",
-      "Département Etudes Economiques",
-      "Département Qualité Sécurité Environnement",
-      "SMART ENERGY",
-      "Système Management Environnemental et Social",
-    ],
-  };
 
   const [showSocieteDeleteConfirm, setShowSocieteDeleteConfirm] =
     useState(false);
@@ -1523,17 +1523,11 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         />
                       </div>
                     )}
-                    {/* Département — select dynamique (DB + prédéfinis) ou texte libre */}
-                    {selectedExistingSociete && (() => {
-                      const departementsDB = [...new Set(
-                        toutesSocietes
-                          .filter(s => s.code?.toUpperCase() === selectedExistingSociete.toUpperCase() && s.departement)
-                          .map(s => s.departement)
-                      )];
-                      const predefined = DEPARTEMENTS_PAR_CODE[selectedExistingSociete] || [];
-                      const tousDeparts = [...new Set([...predefined, ...departementsDB])].filter(Boolean).sort();
-
-                      return tousDeparts.length > 0 ? (
+                    {/* Département — select dynamique ou texte libre */}
+                    {selectedExistingSociete && (
+                      (DEPARTEMENTS_PAR_CODE[selectedExistingSociete]?.length > 0 ||
+                        toutesSocietes.some(s => s.code?.toUpperCase() === selectedExistingSociete.toUpperCase() && s.departement))
+                      ? (
                         <div className="form-group">
                           <label htmlFor="departementExistant">
                             Département <span className="required">*</span>
@@ -1544,9 +1538,16 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             onChange={(e) => setSelectedExistingDepartement(e.target.value)}
                           >
                             <option value="">-- Choisir un département --</option>
-                            {tousDeparts.map(dep => (
-                              <option key={dep} value={dep}>{dep}</option>
-                            ))}
+                            {[
+                              ...(DEPARTEMENTS_PAR_CODE[selectedExistingSociete] || []),
+                              ...toutesSocietes
+                                .filter(s => s.code?.toUpperCase() === selectedExistingSociete.toUpperCase() && s.departement)
+                                .map(s => s.departement)
+                            ]
+                              .filter((v, i, arr) => arr.indexOf(v) === i && v)
+                              .sort()
+                              .map(dep => <option key={dep} value={dep}>{dep}</option>)
+                            }
                           </select>
                         </div>
                       ) : (
@@ -1560,8 +1561,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             placeholder="À saisir manuellement (optionnel)"
                           />
                         </div>
-                      );
-                    })()}
+                      )
+                    )}
                     {selectedExistingSociete &&
                       (() => {
                         const s = toutesSocietes.find(
