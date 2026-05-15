@@ -224,7 +224,7 @@ const Header = ({ user, deconnecter }) => {
             <div style={{
               position: "absolute", top: "calc(100% + 10px)", right: 0,
               width: "360px", background: "#fff", borderRadius: "14px",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.14)", zIndex: 1000,
+              zIndex: 1000,
               overflow: "hidden", border: "1px solid #E5E7EB",
             }}>
               {/* Header */}
