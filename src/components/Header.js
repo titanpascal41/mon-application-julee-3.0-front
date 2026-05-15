@@ -123,19 +123,6 @@ const genererNotifications = (demandes) => {
       });
     }
 
-    // 7. Demande sans statut assigné depuis plus de 2 jours
-    if (!d.statutId) {
-      const j = diffJours(d.dateEnregistrement);
-      if (j !== null && j <= -2) {
-        notifs.push({
-          id: `sans-statut-${d.id}`,
-          type: "info",
-          title: "Aucun statut assigné",
-          details: nom,
-          lien: "demandes-gestion",
-        });
-      }
-    }
 
     // 8. Planification non faite depuis plus de 5 jours
     if (!d.nombreSprint) {
