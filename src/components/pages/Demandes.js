@@ -738,15 +738,9 @@ const Demandes = () => {
     return value;
   };
 
-  const shouldUppercase = (name, type) => {
-    if (type === "date" || type === "number" || type === "select-one" || type === "select-multiple" || type === "checkbox") return false;
-    if ((name || "").toLowerCase().startsWith("lien")) return false;
-    return true;
-  };
-
   const handleNouvelleDemandeInputChange = (e) => {
     const { name, value, type } = e.target;
-    const finalValue = type === "date" ? sanitizeDate(value) : shouldUppercase(name, type) ? value.toUpperCase() : value;
+    const finalValue = type === "date" ? sanitizeDate(value) : value;
     setNouvelleDemandeFormData((prev) => ({
       ...prev,
       [name]: finalValue,
@@ -757,8 +751,7 @@ const Demandes = () => {
   };
   const handleSprintDataChange = (index, field, value) => {
     const isDateField = ["datePrevTIF", "dateEffTIF", "datePrevClient", "dateEffClient"].includes(field);
-    const isNumField = ["charges", "nbFonctionnalites", "avancement"].includes(field);
-    const finalValue = isDateField ? sanitizeDate(value) : isNumField ? value : value.toUpperCase();
+    const finalValue = isDateField ? sanitizeDate(value) : value;
     setNouvelleDemandeFormData((prev) => {
       const updatedSprints = [...(prev.sprintsData || [])];
       if (!updatedSprints[index]) updatedSprints[index] = {};
@@ -769,8 +762,7 @@ const Demandes = () => {
 
   const handleEvolutionSprintDataChange = (index, field, value) => {
     const isDateField = ["datePrevTIF", "dateEffTIF", "datePrevClient", "dateEffClient"].includes(field);
-    const isNumField = ["charges", "nbFonctionnalites", "avancement"].includes(field);
-    const finalValue = isDateField ? sanitizeDate(value) : isNumField ? value : value.toUpperCase();
+    const finalValue = isDateField ? sanitizeDate(value) : value;
     setEvolutionFormData((prev) => {
       const updatedSprints = [...(prev.sprintsData || [])];
       if (!updatedSprints[index]) updatedSprints[index] = {};
@@ -1443,11 +1435,10 @@ const Demandes = () => {
   };
 
   const handleProspecteInputChange = (e) => {
-    const { name, value, type } = e.target;
-    const finalValue = shouldUppercase(name, type) ? value.toUpperCase() : value;
+    const { name, value } = e.target;
     setProspecteFormData((prev) => ({
       ...prev,
-      [name]: finalValue,
+      [name]: value,
     }));
     if (demandeMessage.text) {
       setDemandeMessage({ type: "", text: "" });
@@ -1546,7 +1537,7 @@ const Demandes = () => {
 
   const handleEvolutionInputChange = (e) => {
     const { name, value, type } = e.target;
-    const finalValue = type === "date" ? sanitizeDate(value) : shouldUppercase(name, type) ? value.toUpperCase() : value;
+    const finalValue = type === "date" ? sanitizeDate(value) : value;
     setEvolutionFormData((prev) => ({
       ...prev,
       [name]: finalValue,
