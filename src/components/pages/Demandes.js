@@ -3442,24 +3442,16 @@ const Demandes = () => {
             </h2>
 
             <form autoComplete="off" onSubmit={handleProspecteSubmit}>
-              {demandeMessage.text && (
+              {demandeMessage.text && demandeMessage.type !== "error" && (
                 <div
-                  className={`info-box ${
-                    demandeMessage.type === "error"
-                      ? "error-box"
-                      : "success-box"
-                  }`}
+                  className="info-box success-box"
                   style={{
                     marginBottom: "24px",
                     padding: "12px",
                     borderRadius: "6px",
-                    backgroundColor:
-                      demandeMessage.type === "error" ? "#fee2e2" : "#d1fae5",
-                    border: `1px solid ${
-                      demandeMessage.type === "error" ? "#fecaca" : "#a7f3d0"
-                    }`,
-                    color:
-                      demandeMessage.type === "error" ? "#991b1b" : "#065f46",
+                    backgroundColor: demandeMessage.type === "info" ? "#dbeafe" : "#d1fae5",
+                    border: `1px solid ${demandeMessage.type === "info" ? "#bfdbfe" : "#a7f3d0"}`,
+                    color: demandeMessage.type === "info" ? "#1e40af" : "#065f46",
                   }}
                 >
                   <p style={{ margin: 0 }}>{demandeMessage.text}</p>
@@ -3489,11 +3481,8 @@ const Demandes = () => {
                     <input
                       type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={new Date().toISOString().split("T")[0]}
                       name="dateEnregistrement"
-                      value={formatDateForInput(
-                        prospecteFormData.dateEnregistrement,
-                      )}
+                      value={formatDateForInput(prospecteFormData.dateEnregistrement)}
                       onChange={handleProspecteInputChange}
-                      required
                     />
                   </div>
                   <div className="form-group">
@@ -3503,19 +3492,16 @@ const Demandes = () => {
                     <input
                       type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={formatDateForInput(prospecteFormData.dateEnregistrement) || `${new Date().getFullYear() + 15}-12-31`}
                       name="dateReception"
-                      value={formatDateForInput(
-                        prospecteFormData.dateReception,
-                      )}
+                      value={formatDateForInput(prospecteFormData.dateReception)}
                       onChange={handleProspecteInputChange}
                       data-field-error={errorsProspecte.dateReception ? "true" : undefined}
                       style={{ borderColor: errorsProspecte.dateReception ? "#EF4444" : undefined }}
-                      required
                     />
                     {errorsProspecte.dateReception && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsProspecte.dateReception}</span>}
                   </div>
                   <div className="form-group">
                     <label>
-                      Société demandeur
+                      Société demandeur <span className="required">*</span>
                     </label>
                     <select
                       name="societesDemandeurs"
@@ -3525,18 +3511,11 @@ const Demandes = () => {
                       onChange={(e) => {
                         setProspecteFormData((prev) => ({
                           ...prev,
-                          societesDemandeurs: e.target.value
-                            ? [e.target.value]
-                            : [],
+                          societesDemandeurs: e.target.value ? [e.target.value] : [],
                         }));
-                        if (errorsProspecte.societesDemandeurs) {
-                          setErrorsProspecte((prev) => ({ ...prev, societesDemandeurs: "" }));
-                        }
-                        if (demandeMessage.text) {
-                          setDemandeMessage({ type: "", text: "" });
-                        }
+                        if (errorsProspecte.societesDemandeurs) setErrorsProspecte((prev) => ({ ...prev, societesDemandeurs: "" }));
+                        if (demandeMessage.text) setDemandeMessage({ type: "", text: "" });
                       }}
-                      required
                     >
                       <option value="">-- Sélectionner une société --</option>
                       {societes.length === 0 && (
@@ -3563,7 +3542,6 @@ const Demandes = () => {
                       onChange={handleProspecteInputChange}
                       data-field-error={errorsProspecte.interlocuteur ? "true" : undefined}
                       style={{ borderColor: errorsProspecte.interlocuteur ? "#EF4444" : undefined }}
-                      required
                     >
                       <option value="">
                         -- Sélectionner un interlocuteur --
@@ -3591,7 +3569,6 @@ const Demandes = () => {
                       style={{ borderColor: errorsProspecte.nomProjet ? "#EF4444" : undefined }}
                       onChange={handleProspecteInputChange}
                       placeholder="Nom du projet"
-                      required
                     />
                     {errorsProspecte.nomProjet && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsProspecte.nomProjet}</span>}
                   </div>
