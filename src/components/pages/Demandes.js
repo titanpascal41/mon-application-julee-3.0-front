@@ -1319,6 +1319,9 @@ const Demandes = () => {
     setSocietes(societesChargees);
   }, []);
 
+  // Déduplique les sociétés par nom pour les sélecteurs (le département ne doit pas créer de doublons)
+  const societesSelectOptions = [...new Map((societes || []).map(s => [s.nom, s])).values()];
+
   const chargerLesCollaborateurs = useCallback(async () => {
     const collaborateursCharges = await chargerCollaborateurs();
     setCollaborateurs(collaborateursCharges);
@@ -2483,7 +2486,7 @@ const Demandes = () => {
                               Paramétrage)
                             </option>
                           )}
-                          {(societes || []).map((societe) => (
+                          {societesSelectOptions.map((societe) => (
                             <option
                               key={societe.id}
                               value={societe.id.toString()}
@@ -3424,7 +3427,7 @@ const Demandes = () => {
                           Paramétrage)
                         </option>
                       )}
-                      {(societes || []).map((societe) => (
+                      {societesSelectOptions.map((societe) => (
                         <option key={societe.id} value={societe.id.toString()}>
                           {societe.code || societe.nom}
                         </option>
@@ -3774,7 +3777,7 @@ const Demandes = () => {
                               Paramétrage)
                             </option>
                           )}
-                          {(societes || []).map((societe) => (
+                          {societesSelectOptions.map((societe) => (
                             <option
                               key={societe.id}
                               value={societe.id.toString()}
@@ -4052,7 +4055,7 @@ const Demandes = () => {
                           }}
                         >
                           <option value="">-- Sélectionner une société --</option>
-                          {(societes || []).map(s => <option key={s.id} value={s.id.toString()}>{s.code || s.nom}</option>)}
+                          {societesSelectOptions.map(s => <option key={s.id} value={s.id.toString()}>{s.code || s.nom}</option>)}
                         </select>
                       </div>
                       <div className="form-group">
