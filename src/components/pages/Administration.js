@@ -2657,7 +2657,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
   return (
     <div className="page-container">
-      <Tooltip id="admin-tooltip" place="top" style={{ backgroundColor: "#1F2937", color: "#fff", borderRadius: "6px", fontSize: "12px", fontWeight: "500", padding: "5px 10px", zIndex: 9999 }} />
+      <Tooltip id="admin-tooltip" place="top" style={{ backgroundColor: "#1F2937", color: "#fff", borderRadius: "5px", fontSize: "11px", fontWeight: "500", padding: "3px 7px", zIndex: 9999 }} />
       <div className="page-header">
         <h1>{subPages[activeSubPage].title}</h1>
         {subPages[activeSubPage].description && (
