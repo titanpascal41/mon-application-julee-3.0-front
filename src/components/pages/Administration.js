@@ -1796,7 +1796,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                                 title="Attribuer des permissions"
                                 style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif === false ? "#F3F4F6" : "#EDE9FE", color: profil.actif === false ? "#D1D5DB" : "#6D28D9", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
-                                <i className="fa-solid fa-shield-halved"></i>
+                                <i className="fa-solid fa-key"></i>
                               </button>
                             )}
                             {peutSupprimerProfil && (
