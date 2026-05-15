@@ -5072,6 +5072,125 @@ const Demandes = () => {
           </div>
         );
 
+        const telechargerDetailPDF = () => {
+          const d = selectedDemandeDetail;
+          const fmtD = (v) => formatDateForDisplay(v) || "—";
+          const fmtI = (v) => v && d.dateEnregistrement ? formatDateForInput(v) : "";
+          const row = (label, val) => val && val !== "-" && val !== "—"
+            ? `<tr><td class="lbl">${label}</td><td class="val">${val}</td></tr>` : "";
+          const section = (title, rows) => rows
+            ? `<div class="section"><h3>${title}</h3><table>${rows}</table></div>` : "";
+          const isProspecte = (d.typeProjet || "").toLowerCase() === "prospecte";
+          const isEvolution = d.typeProjet === "Evolution";
+
+          const identRows =
+            row("Société demandeur", societe) +
+            row("Interlocuteur", interlocuteur) +
+            row("Type de projet", d.typeProjet) +
+            row("Nom du projet", d.nomProjet) +
+            (isProspecte ? row("Périmètre", d.descriptionPerimetre || d.perimetre) : row("Description", d.descriptionProjet));
+
+          const evoRows = isEvolution ? (
+            row("Interlocuteur interne", d.interlocuteur) +
+            row("Date demande DATFL", fmtD(d.dateDemandeMiseAJourDATFL)) +
+            row("Date réponse DATFL", fmtD(d.dateReponseMiseAJourDATFL)) +
+            row("Charge (j/h)", d.charge) +
+            row("Date début planning", fmtD(d.planningDateDebut)) +
+            row("Date fin planning", fmtD(d.planningDateFin)) +
+            row("Date demande dévolution", fmtD(d.dateDemandeDevolution)) +
+            row("Date réponse dévolution", fmtD(d.dateReponseDevolution)) +
+            row("Aléas norme par jour", d.aleasNormeParJour) +
+            row("SLT", d.slt)
+          ) : "";
+
+          const clarRows = !isProspecte ? (
+            row("Date transmission backlog", fmtD(d.dateTransmissionBacklog)) +
+            row("Date confirmation validation", fmtD(d.dateConfirmationValidation)) +
+            row("Lien Ingrid CDC", d.lienIngridCDC) +
+            row("Observations", d.observations)
+          ) : "";
+
+          const planRows = !isProspecte ? (
+            row("Date demande planification DEV", fmtD(d.dateDemandePlanificationDev)) +
+            row("Date demande planification TIF", fmtD(d.dateDemandePlanificationTif)) +
+            row("Date retour équipes DEV", fmtD(d.dateRetourEquipesDev)) +
+            row("Date retour équipes TIF", fmtD(d.dateRetourEquipesTif)) +
+            row("Date communication planning client", fmtD(d.dateCommunicationPlanningClient)) +
+            row("Nombre de sprints", d.nombreSprint)
+          ) : "";
+
+          let sprintTable = "";
+          if (!isProspecte && d.sprintsData && d.sprintsData.length > 0) {
+            const sprintRows = d.sprintsData.map((s, i) =>
+              `<tr>
+                <td>Sprint ${i + 1}</td><td>${s.chantier || "—"}</td>
+                <td>${fmtD(s.datePrevTIF)}</td><td>${fmtD(s.dateEffTIF)}</td>
+                <td>${s.motifRetardTIF || "—"}</td>
+                <td>${fmtD(s.datePrevClient)}</td><td>${fmtD(s.dateEffClient)}</td>
+                <td>${s.motifRetardClient || "—"}</td>
+                <td>${s.charges || "—"}</td><td>${s.nbFonctionnalites || "—"}</td>
+              </tr>`
+            ).join("");
+            sprintTable = `<div class="section"><h3>Planification par sprint</h3>
+              <table class="sprint-table">
+                <thead><tr>
+                  <th>Sprint</th><th>Chantier</th><th>Prév. TIF</th><th>Eff. TIF</th>
+                  <th>Motif retard TIF</th><th>Prév. Client</th><th>Eff. Client</th>
+                  <th>Motif retard Client</th><th>Charges</th><th>Nb Fonct.</th>
+                </tr></thead>
+                <tbody>${sprintRows}</tbody>
+              </table></div>`;
+          }
+
+          const realRows = !isProspecte && !isEvolution ? (
+            row("Statut de codage", d.statutCodage) +
+            row("Statut TIF", d.statutTIF)
+          ) : "";
+
+          const docsRows = !isProspecte && !isEvolution ? (
+            row("Lien Ingrid Kickoff", d.lienIngridKickoff) +
+            row("Lien Ingrid Points contrôle TIF", d.lienIngridPointsControleTIF) +
+            row("Lien Ingrid Signoff", d.lienIngridSignoff)
+          ) : "";
+
+          const livrRows = !isProspecte && !isEvolution ? (
+            row("Statut livraison client", d.statutLivraisonClient) +
+            row("Date effective livraison client", fmtD(d.dateEffectiveLivraisonClient)) +
+            row("Motifs de retard client", d.motifsRetardClient)
+          ) : "";
+
+          const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+            <title>${d.nomProjet || "Demande"}</title>
+            <style>
+              body { font-family: Arial, sans-serif; color: #1F2937; padding: 30px; font-size: 13px; }
+              h1 { font-size: 20px; margin: 0 0 4px; }
+              .meta { color: #6B7280; font-size: 12px; margin-bottom: 24px; }
+              .section { margin-bottom: 20px; }
+              .section h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: ${typeColor}; border-bottom: 2px solid ${typeColor}40; padding-bottom: 5px; margin-bottom: 8px; }
+              table { width: 100%; border-collapse: collapse; }
+              .lbl { font-size: 11px; font-weight: 600; color: #6B7280; text-transform: uppercase; padding: 4px 8px 4px 0; width: 220px; vertical-align: top; }
+              .val { font-size: 13px; color: #1F2937; padding: 4px 0; }
+              .sprint-table th, .sprint-table td { border: 1px solid #E5E7EB; padding: 5px 8px; font-size: 11px; }
+              .sprint-table th { background: #F9FAFB; font-weight: 600; color: #6B7280; }
+              @media print { @page { margin: 15mm; } }
+            </style></head><body>
+            <h1>${d.nomProjet || "Sans nom"}</h1>
+            <div class="meta">${d.typeProjet || ""} — Enregistré le ${fmtI(d.dateEnregistrement)}</div>
+            ${section(isProspecte ? "" : "Identification", identRows)}
+            ${isEvolution ? section("Informations Évolution", evoRows) : ""}
+            ${!isProspecte ? section("Clarification", clarRows) : ""}
+            ${!isProspecte ? section("Planification", planRows) : ""}
+            ${sprintTable}
+            ${!isProspecte && !isEvolution ? section("Réalisation", realRows) : ""}
+            ${!isProspecte && !isEvolution ? section("Documents", docsRows) : ""}
+            ${!isProspecte && !isEvolution ? section("Livraison", livrRows) : ""}
+            <script>window.onload = function(){ window.print(); }</script>
+            </body></html>`;
+
+          const win = window.open("", "_blank");
+          if (win) { win.document.write(html); win.document.close(); }
+        };
+
         return (
           <div className="modal-overlay" onClick={closeDetailModal}>
             <div
@@ -5284,7 +5403,13 @@ const Demandes = () => {
               </div>
 
               {/* Footer */}
-              <div style={{ padding: "16px 28px", borderTop: "1px solid #E5E7EB", display: "flex", justifyContent: "center" }}>
+              <div style={{ padding: "16px 28px", borderTop: "1px solid #E5E7EB", display: "flex", justifyContent: "center", gap: "10px" }}>
+                <button
+                  onClick={telechargerDetailPDF}
+                  style={{ background: typeColor, border: "none", borderRadius: "8px", padding: "10px 20px", fontSize: "14px", fontWeight: "600", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <i className="fa-solid fa-file-pdf"></i> Télécharger PDF
+                </button>
                 <button
                   onClick={closeDetailModal}
                   style={{ background: "#F3F4F6", border: "none", borderRadius: "8px", padding: "10px 32px", fontSize: "14px", fontWeight: "600", color: "#374151", cursor: "pointer" }}
