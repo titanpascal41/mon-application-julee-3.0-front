@@ -455,20 +455,26 @@ const Demandes = () => {
 
       // ── ÉTAPE 1 ──────────────────────────────────────────────────────────
       if (nouvelleDemandeStep === 1) {
+        const newErrors = {};
+        if (!nouvelleDemandeFormData.societesDemandeurs || nouvelleDemandeFormData.societesDemandeurs.length === 0 || !nouvelleDemandeFormData.societesDemandeurs[0]) {
+          newErrors.societesDemandeurs = "Veuillez sélectionner une société.";
+        }
+        if (!nouvelleDemandeFormData.interlocuteurClient) {
+          newErrors.interlocuteurClient = "Veuillez sélectionner un interlocuteur.";
+        }
         if (!nouvelleDemandeFormData.nomProjet?.trim()) {
-          setDemandeMessage({ type: "error", text: "Le nom du projet est obligatoire." });
-          scrollToFormTop(); return;
+          newErrors.nomProjet = "Le nom du projet est obligatoire.";
+        }
+        if (Object.keys(newErrors).length > 0) {
+          setErrorsNouvelle(newErrors);
+          setTimeout(() => {
+            const el = document.querySelector('[data-field-error="true"]');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 50);
+          return;
         }
         if (nomProjetEstDuplique(nouvelleDemandeFormData.nomProjet, nouvelleDemandeFormData.id)) {
           setDemandeMessage({ type: "error", text: `Un projet nommé "${nouvelleDemandeFormData.nomProjet.trim()}" existe déjà. Veuillez choisir un autre nom.` });
-          scrollToFormTop(); return;
-        }
-        if (!nouvelleDemandeFormData.societesDemandeurs) {
-          setDemandeMessage({ type: "error", text: "La société demandeuse est obligatoire." });
-          scrollToFormTop(); return;
-        }
-        if (!nouvelleDemandeFormData.interlocuteurClient) {
-          setDemandeMessage({ type: "error", text: "L'interlocuteur client est obligatoire." });
           scrollToFormTop(); return;
         }
         if (!nouvelleDemandeFormData.typeProjet) {
@@ -480,6 +486,7 @@ const Demandes = () => {
           setDemandeMessage({ type: "error", text: "La date de réception ne peut pas dépasser la date d'enregistrement." });
           scrollToFormTop(); return;
         }
+        setErrorsNouvelle({});
         scrollToFormTop();
       }
 
@@ -578,6 +585,7 @@ const Demandes = () => {
     if (nouvelleDemandeStep > 1) {
       setNouvelleDemandeStep(nouvelleDemandeStep - 1);
       setDemandeMessage({ type: "", text: "" });
+      setErrorsNouvelle({});
     }
   };
 
@@ -587,6 +595,7 @@ const Demandes = () => {
     setShowSelectionCards(true);
     setNouvelleDemandeStep(1);
     setDemandeMessage({ type: "", text: "" });
+    setErrorsNouvelle({});
     setIsModificationMode(false);
   };
 
@@ -745,6 +754,9 @@ const Demandes = () => {
       ...prev,
       [name]: finalValue,
     }));
+    if (errorsNouvelle[name]) {
+      setErrorsNouvelle((prev) => ({ ...prev, [name]: "" }));
+    }
     if (demandeMessage.text) {
       setDemandeMessage({ type: "", text: "" });
     }
@@ -788,6 +800,9 @@ const Demandes = () => {
   ];
 
   const [demandeMessage, setDemandeMessage] = useState({ type: "", text: "" });
+  const [errorsProspecte, setErrorsProspecte] = useState({});
+  const [errorsNouvelle, setErrorsNouvelle] = useState({});
+  const [errorsEvolution, setErrorsEvolution] = useState({});
   const [showDemandeDeleteConfirm, setShowDemandeDeleteConfirm] = useState(false);
   const [demandeToDelete, setDemandeToDelete] = useState(null);
   const [showSupprimerTermineeConfirm, setShowSupprimerTermineeConfirm] = useState(false);
@@ -1419,6 +1434,7 @@ const Demandes = () => {
     setNouvelleDemandeFormData(getNouvelleDemandeInitialState());
     setDraftStepInfo(null);
     setDemandeMessage({ type: "", text: "" });
+    setErrorsNouvelle({});
     setShowNouvelleDemandeForm(true);
     setShowSelectionCards(false);
   };
@@ -1430,6 +1446,7 @@ const Demandes = () => {
     localStorage.removeItem(FORM_STORAGE_KEY);
     localStorage.removeItem(EVOLUTION_STORAGE_KEY);
     setProspecteFormData(getProspecteInitialState());
+    setErrorsProspecte({});
     setShowProspecteForm(true);
     setShowSelectionCards(false);
   };
@@ -1440,6 +1457,9 @@ const Demandes = () => {
       ...prev,
       [name]: value,
     }));
+    if (errorsProspecte[name]) {
+      setErrorsProspecte((prev) => ({ ...prev, [name]: "" }));
+    }
     if (demandeMessage.text) {
       setDemandeMessage({ type: "", text: "" });
     }
@@ -1450,6 +1470,7 @@ const Demandes = () => {
     setShowProspecteForm(false);
     setShowSelectionCards(true);
     setDemandeMessage({ type: "", text: "" });
+    setErrorsProspecte({});
     setIsModificationMode(false);
   };
 
@@ -1457,20 +1478,28 @@ const Demandes = () => {
     e.preventDefault();
     setDemandeMessage({ type: "", text: "" });
 
+    const newErrors = {};
+    if (!prospecteFormData.societesDemandeurs?.[0]) {
+      newErrors.societesDemandeurs = "Veuillez sélectionner une société.";
+    }
+    if (!prospecteFormData.nomProjet?.trim()) {
+      newErrors.nomProjet = "Le nom du projet est obligatoire.";
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrorsProspecte(newErrors);
+      setTimeout(() => {
+        const el = document.querySelector('[data-field-error="true"]');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
+
     if (!prospecteFormData.dateReception) {
       setDemandeMessage({ type: "error", text: "La date de réception est obligatoire." });
       scrollToFormTop(); return;
     }
-    if (!prospecteFormData.societesDemandeurs?.[0]) {
-      setDemandeMessage({ type: "error", text: "La société demandeuse est obligatoire." });
-      scrollToFormTop(); return;
-    }
     if (!prospecteFormData.interlocuteur) {
       setDemandeMessage({ type: "error", text: "L'interlocuteur est obligatoire." });
-      scrollToFormTop(); return;
-    }
-    if (!prospecteFormData.nomProjet?.trim()) {
-      setDemandeMessage({ type: "error", text: "Le nom du projet est obligatoire." });
       scrollToFormTop(); return;
     }
     if (prospecteFormData.dateReception && prospecteFormData.dateEnregistrement &&
@@ -1530,6 +1559,7 @@ const Demandes = () => {
     localStorage.removeItem(EVOLUTION_STORAGE_KEY);
     setEvolutionFormData(getEvolutionInitialState());
     setEvolutionStep(1);
+    setErrorsEvolution({});
     setShowEvolutionForm(true);
     setShowSelectionCards(false);
     setDemandeMessage({ type: "", text: "" });
@@ -1542,6 +1572,9 @@ const Demandes = () => {
       ...prev,
       [name]: finalValue,
     }));
+    if (errorsEvolution[name]) {
+      setErrorsEvolution((prev) => ({ ...prev, [name]: "" }));
+    }
     if (demandeMessage.text) {
       setDemandeMessage({ type: "", text: "" });
     }
@@ -1552,20 +1585,26 @@ const Demandes = () => {
       setDemandeMessage({ type: "", text: "" });
 
       if (evolutionStep === 1) {
-        if (!evolutionFormData.dateReception) {
-          setDemandeMessage({ type: "error", text: "La date de réception est obligatoire." });
-          scrollToFormTop(); return;
-        }
+        const newErrors = {};
         if (!evolutionFormData.societesDemandeurs?.[0]) {
-          setDemandeMessage({ type: "error", text: "La société demandeuse est obligatoire." });
-          scrollToFormTop(); return;
+          newErrors.societesDemandeurs = "Veuillez sélectionner une société.";
         }
         if (!evolutionFormData.interlocuteur) {
-          setDemandeMessage({ type: "error", text: "L'interlocuteur est obligatoire." });
-          scrollToFormTop(); return;
+          newErrors.interlocuteur = "Veuillez sélectionner un interlocuteur.";
         }
         if (!evolutionFormData.nomProjet?.trim()) {
-          setDemandeMessage({ type: "error", text: "Le nom du projet est obligatoire." });
+          newErrors.nomProjet = "Le nom du projet est obligatoire.";
+        }
+        if (Object.keys(newErrors).length > 0) {
+          setErrorsEvolution(newErrors);
+          setTimeout(() => {
+            const el = document.querySelector('[data-field-error="true"]');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 50);
+          return;
+        }
+        if (!evolutionFormData.dateReception) {
+          setDemandeMessage({ type: "error", text: "La date de réception est obligatoire." });
           scrollToFormTop(); return;
         }
         if (evolutionFormData.dateReception && evolutionFormData.dateEnregistrement &&
@@ -1573,6 +1612,7 @@ const Demandes = () => {
           setDemandeMessage({ type: "error", text: "La date de réception ne peut pas dépasser la date d'enregistrement." });
           scrollToFormTop(); return;
         }
+        setErrorsEvolution({});
       }
 
       if (evolutionStep === 2) {
@@ -1720,6 +1760,7 @@ const Demandes = () => {
     if (evolutionStep > 1) {
       setEvolutionStep(evolutionStep - 1);
       setDemandeMessage({ type: "", text: "" });
+      setErrorsEvolution({});
       scrollToFormTop();
     }
   };
@@ -1730,6 +1771,7 @@ const Demandes = () => {
     setShowSelectionCards(true);
     setEvolutionStep(1);
     setDemandeMessage({ type: "", text: "" });
+    setErrorsEvolution({});
     setIsModificationMode(false);
   };
 
@@ -1882,6 +1924,7 @@ const Demandes = () => {
       setShowSelectionCards(false);
       setShowProspecteForm(true);
       setDemandeMessage({ type: "", text: "" });
+      setErrorsProspecte({});
       setIsModificationMode(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -1939,6 +1982,7 @@ const Demandes = () => {
       setShowSelectionCards(false);
       setShowEvolutionForm(true);
       setDemandeMessage({ type: "", text: "" });
+      setErrorsEvolution({});
       setIsModificationMode(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -1959,6 +2003,7 @@ const Demandes = () => {
     setShowNouvelleDemandeForm(true);
     setNouvelleDemandeStep(step);
     setDemandeMessage({ type: "", text: "" });
+    setErrorsNouvelle({});
     setIsModificationMode(true);
 
     setNouvelleDemandeFormData((prev) => {
@@ -2457,6 +2502,8 @@ const Demandes = () => {
                             nouvelleDemandeFormData.societesDemandeurs?.[0] ||
                             ""
                           }
+                          data-field-error={errorsNouvelle.societesDemandeurs ? "true" : undefined}
+                          style={{ borderColor: errorsNouvelle.societesDemandeurs ? "#EF4444" : undefined }}
                           onChange={(e) => {
                             const selectedSociete = societes.find(
                               (s) => s.id.toString() === e.target.value,
@@ -2471,6 +2518,9 @@ const Demandes = () => {
                                   ? [selectedSociete.nom]
                                   : [],
                             }));
+                            if (errorsNouvelle.societesDemandeurs) {
+                              setErrorsNouvelle((prev) => ({ ...prev, societesDemandeurs: "" }));
+                            }
                             if (demandeMessage.text) {
                               setDemandeMessage({ type: "", text: "" });
                             }
@@ -2495,6 +2545,7 @@ const Demandes = () => {
                             </option>
                           ))}
                         </select>
+                        {errorsNouvelle.societesDemandeurs && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.societesDemandeurs}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -2503,6 +2554,8 @@ const Demandes = () => {
                         <select
                           name="interlocuteurClient"
                           value={nouvelleDemandeFormData.interlocuteurClient}
+                          data-field-error={errorsNouvelle.interlocuteurClient ? "true" : undefined}
+                          style={{ borderColor: errorsNouvelle.interlocuteurClient ? "#EF4444" : undefined }}
                           onChange={handleNouvelleDemandeInputChange}
                           required
                         >
@@ -2513,6 +2566,7 @@ const Demandes = () => {
                             </option>
                           ))}
                         </select>
+                        {errorsNouvelle.interlocuteurClient && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.interlocuteurClient}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -2540,6 +2594,8 @@ const Demandes = () => {
                           type="text"
                           name="nomProjet"
                           value={nouvelleDemandeFormData.nomProjet}
+                          data-field-error={errorsNouvelle.nomProjet ? "true" : undefined}
+                          style={{ borderColor: errorsNouvelle.nomProjet ? "#EF4444" : undefined }}
                           onChange={handleNouvelleDemandeInputChange}
                           onBlur={() => {
                             if (nomProjetEstDuplique(nouvelleDemandeFormData.nomProjet, nouvelleDemandeFormData.id)) {
@@ -2553,6 +2609,7 @@ const Demandes = () => {
                           placeholder="Nom du projet"
                           required
                         />
+                        {errorsNouvelle.nomProjet && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.nomProjet}</span>}
                       </div>
                       <div
                         className="form-group"
@@ -3407,6 +3464,8 @@ const Demandes = () => {
                     <select
                       name="societesDemandeurs"
                       value={prospecteFormData.societesDemandeurs?.[0] || ""}
+                      data-field-error={errorsProspecte.societesDemandeurs ? "true" : undefined}
+                      style={{ borderColor: errorsProspecte.societesDemandeurs ? "#EF4444" : undefined }}
                       onChange={(e) => {
                         setProspecteFormData((prev) => ({
                           ...prev,
@@ -3414,6 +3473,9 @@ const Demandes = () => {
                             ? [e.target.value]
                             : [],
                         }));
+                        if (errorsProspecte.societesDemandeurs) {
+                          setErrorsProspecte((prev) => ({ ...prev, societesDemandeurs: "" }));
+                        }
                         if (demandeMessage.text) {
                           setDemandeMessage({ type: "", text: "" });
                         }
@@ -3433,6 +3495,7 @@ const Demandes = () => {
                         </option>
                       ))}
                     </select>
+                    {errorsProspecte.societesDemandeurs && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsProspecte.societesDemandeurs}</span>}
                   </div>
                   <div className="form-group">
                     <label>
@@ -3465,10 +3528,13 @@ const Demandes = () => {
                       type="text"
                       name="nomProjet"
                       value={prospecteFormData.nomProjet}
+                      data-field-error={errorsProspecte.nomProjet ? "true" : undefined}
+                      style={{ borderColor: errorsProspecte.nomProjet ? "#EF4444" : undefined }}
                       onChange={handleProspecteInputChange}
                       placeholder="Nom du projet"
                       required
                     />
+                    {errorsProspecte.nomProjet && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsProspecte.nomProjet}</span>}
                   </div>
                   <div className="form-group">
                     <label>
@@ -3755,6 +3821,8 @@ const Demandes = () => {
                           value={
                             evolutionFormData.societesDemandeurs?.[0] || ""
                           }
+                          data-field-error={errorsEvolution.societesDemandeurs ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.societesDemandeurs ? "#EF4444" : undefined }}
                           onChange={(e) => {
                             setEvolutionFormData((prev) => ({
                               ...prev,
@@ -3762,6 +3830,9 @@ const Demandes = () => {
                                 ? [e.target.value]
                                 : [],
                             }));
+                            if (errorsEvolution.societesDemandeurs) {
+                              setErrorsEvolution((prev) => ({ ...prev, societesDemandeurs: "" }));
+                            }
                             if (demandeMessage.text) {
                               setDemandeMessage({ type: "", text: "" });
                             }
@@ -3786,6 +3857,7 @@ const Demandes = () => {
                             </option>
                           ))}
                         </select>
+                        {errorsEvolution.societesDemandeurs && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.societesDemandeurs}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3794,6 +3866,8 @@ const Demandes = () => {
                         <select
                           name="interlocuteur"
                           value={evolutionFormData.interlocuteur}
+                          data-field-error={errorsEvolution.interlocuteur ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.interlocuteur ? "#EF4444" : undefined }}
                           onChange={handleEvolutionInputChange}
                           required
                         >
@@ -3809,6 +3883,7 @@ const Demandes = () => {
                             </option>
                           ))}
                         </select>
+                        {errorsEvolution.interlocuteur && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.interlocuteur}</span>}
                       </div>
                       <div
                         className="form-group"
@@ -3821,10 +3896,13 @@ const Demandes = () => {
                           type="text"
                           name="nomProjet"
                           value={evolutionFormData.nomProjet}
+                          data-field-error={errorsEvolution.nomProjet ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.nomProjet ? "#EF4444" : undefined }}
                           onChange={handleEvolutionInputChange}
                           placeholder="Nom du projet"
                           required
                         />
+                        {errorsEvolution.nomProjet && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.nomProjet}</span>}
                       </div>
                     </div>
                   </div>
