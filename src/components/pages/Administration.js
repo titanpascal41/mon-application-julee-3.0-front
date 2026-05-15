@@ -2603,7 +2603,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
             {utilisateursFiltres.length === 0 ? (
               utilisateurs.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <i className="fa-solid fa-users" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px" }} />
+                  <i className="fa-solid fa-users" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
                   <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun utilisateur créé pour le moment.</p>
                 </div>
               ) : (
