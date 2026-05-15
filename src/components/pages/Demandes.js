@@ -5060,12 +5060,14 @@ const Demandes = () => {
 
         const Section = ({ icon, title, color, children }) => (
           <div style={{ marginBottom: "24px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px", paddingBottom: "10px", borderBottom: `2px solid ${color}20` }}>
-              <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <i className={icon} style={{ color, fontSize: "13px" }}></i>
+            {title && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px", paddingBottom: "10px", borderBottom: `2px solid ${color}20` }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <i className={icon} style={{ color, fontSize: "13px" }}></i>
+                </div>
+                <span style={{ fontSize: "13px", fontWeight: "700", color, textTransform: "uppercase", letterSpacing: "0.05em" }}>{title}</span>
               </div>
-              <span style={{ fontSize: "13px", fontWeight: "700", color, textTransform: "uppercase", letterSpacing: "0.05em" }}>{title}</span>
-            </div>
+            )}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>{children}</div>
           </div>
         );
@@ -5100,7 +5102,7 @@ const Demandes = () => {
                           {selectedDemandeDetail.typeProjet}
                         </span>
                       )}
-                      {selectedDemandeDetail.isDraft && (
+                      {selectedDemandeDetail.isDraft && (selectedDemandeDetail.typeProjet || "").toLowerCase() !== "prospecte" && (
                         <span style={{ background: "rgba(0,0,0,0.2)", color: "#fff", fontSize: "12px", fontWeight: "600", padding: "3px 10px", borderRadius: "20px" }}>
                           Brouillon — Étape {selectedDemandeDetail.draftStep}
                         </span>
@@ -5122,7 +5124,7 @@ const Demandes = () => {
               <div style={{ overflowY: "auto", padding: "24px 28px", flex: 1 }}>
 
                 {/* Section Identification */}
-                <Section icon="fa-solid fa-circle-info" title="Identification" color={typeColor}>
+                <Section icon="fa-solid fa-circle-info" title={(selectedDemandeDetail.typeProjet || "").toLowerCase() === "prospecte" ? "" : "Identification"} color={typeColor}>
                   <InfoField label="Société demandeur" value={societe} />
                   <InfoField label="Interlocuteur" value={interlocuteur} />
                   <InfoField label="Type de projet" value={selectedDemandeDetail.typeProjet} />
