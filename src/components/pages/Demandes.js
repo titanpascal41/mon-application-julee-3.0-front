@@ -5106,7 +5106,6 @@ const Demandes = () => {
           const clarRows = !isProspecte ? (
             row("Date transmission backlog", fmtD(d.dateTransmissionBacklog)) +
             row("Date confirmation validation", fmtD(d.dateConfirmationValidation)) +
-            row("Lien Ingrid CDC", d.lienIngridCDC) +
             row("Observations", d.observations)
           ) : "";
 
@@ -5148,9 +5147,7 @@ const Demandes = () => {
           ) : "";
 
           const docsRows = !isProspecte && !isEvolution ? (
-            row("Lien Ingrid Kickoff", d.lienIngridKickoff) +
-            row("Lien Ingrid Points contrôle TIF", d.lienIngridPointsControleTIF) +
-            row("Lien Ingrid Signoff", d.lienIngridSignoff)
+            ""
           ) : "";
 
           const livrRows = !isProspecte && !isEvolution ? (
