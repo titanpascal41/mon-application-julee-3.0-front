@@ -153,6 +153,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
   const [userToDelete, setUserToDelete] = useState(null);
 
+  const [showAucunProfilModal, setShowAucunProfilModal] = useState(false);
+
   useEffect(() => {
     if (activeSubPageProp) {
       if (activeSubPageProp.includes("profils")) setActiveSubPage("profils");
@@ -923,6 +925,12 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
   };
 
   const handleCreateUser = () => {
+    const profilsDisponibles = profils.filter(p => p.actif !== false && p.id !== 1);
+    if (profilsDisponibles.length === 0) {
+      setShowAucunProfilModal(true);
+      return;
+    }
+
     setEditingUser(null);
 
     setUserFormData({
@@ -934,7 +942,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
       motDePasse: "",
 
-      profilId: profils.find(p => p.actif !== false)?.id.toString() || "",
+      profilId: profilsDisponibles[0]?.id.toString() || "",
     });
 
     setShowUserForm(true);
@@ -2303,6 +2311,32 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
               Ajouter un utilisateur
             </button>
           </div>
+
+          {showAucunProfilModal && (
+            <div className="modal-overlay" onClick={() => setShowAucunProfilModal(false)}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "440px", width: "90%" }}>
+                <div className="modal-header">
+                  <h3 style={{ margin: 0 }}>Profil requis</h3>
+                </div>
+                <div style={{ padding: "24px 32px" }}>
+                  <div style={{
+                    display: "flex", alignItems: "flex-start", gap: "14px",
+                    backgroundColor: "#FEF3C7", border: "1px solid #FCD34D",
+                    borderRadius: "10px", padding: "16px",
+                  }}>
+                    <i className="fa-solid fa-triangle-exclamation" style={{ color: "#F59E0B", fontSize: "20px", flexShrink: 0, marginTop: "2px" }}></i>
+                    <p style={{ margin: 0, fontSize: "14px", color: "#92400E", lineHeight: "1.6" }}>
+                      Aucun profil actif n'est disponible.<br />
+                      Vous devez d'abord créer un profil dans <strong>Gestion des Profils</strong> avant de pouvoir ajouter un utilisateur.
+                    </p>
+                  </div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", padding: "16px 32px 24px", borderTop: "1px solid #E5E7EB" }}>
+                  <button className="btn-secondary" onClick={() => setShowAucunProfilModal(false)}>Fermer</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {showUserForm && (
             <div className="modal-overlay" onClick={handleCancelUser}>
