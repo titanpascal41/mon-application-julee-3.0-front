@@ -5240,7 +5240,7 @@ const Demandes = () => {
               <div style={{ overflowY: "auto", padding: "24px 28px", flex: 1 }}>
 
                 {/* Section Identification */}
-                <Section icon="fa-solid fa-circle-info" title={(selectedDemandeDetail.typeProjet || "").toLowerCase() === "prospecte" ? "" : "Identification"} color={typeColor}>
+                <Section icon="fa-solid fa-circle-info" title="Identification" color={typeColor}>
                   <InfoField label="Société demandeur" value={societe} />
                   <InfoField label="Interlocuteur" value={interlocuteur} />
                   <InfoField label="Type de projet" value={selectedDemandeDetail.typeProjet} />
