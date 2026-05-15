@@ -1523,26 +1523,17 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         />
                       </div>
                     )}
-                    {/* Champ département texte libre — si pas de liste prédéfinie */}
-                    {selectedExistingSociete &&
-                      !DEPARTEMENTS_PAR_CODE[selectedExistingSociete] && (
-                        <div className="form-group">
-                          <label htmlFor="departementLibreExistant">
-                            Département
-                          </label>
-                          <input
-                            type="text"
-                            id="departementLibreExistant"
-                            value={selectedExistingDepartement}
-                            onChange={(e) =>
-                              setSelectedExistingDepartement(e.target.value)
-                            }
-                            placeholder="À saisir manuellement (optionnel)"
-                          />
-                        </div>
-                      )}
-                    {selectedExistingSociete &&
-                      DEPARTEMENTS_PAR_CODE[selectedExistingSociete] && (
+                    {/* Département — select dynamique (DB + prédéfinis) ou texte libre */}
+                    {selectedExistingSociete && (() => {
+                      const departementsDB = [...new Set(
+                        toutesSocietes
+                          .filter(s => s.code?.toUpperCase() === selectedExistingSociete.toUpperCase() && s.departement)
+                          .map(s => s.departement)
+                      )];
+                      const predefined = DEPARTEMENTS_PAR_CODE[selectedExistingSociete] || [];
+                      const tousDeparts = [...new Set([...predefined, ...departementsDB])].filter(Boolean).sort();
+
+                      return tousDeparts.length > 0 ? (
                         <div className="form-group">
                           <label htmlFor="departementExistant">
                             Département <span className="required">*</span>
@@ -1550,23 +1541,27 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           <select
                             id="departementExistant"
                             value={selectedExistingDepartement}
-                            onChange={(e) =>
-                              setSelectedExistingDepartement(e.target.value)
-                            }
+                            onChange={(e) => setSelectedExistingDepartement(e.target.value)}
                           >
-                            <option value="">
-                              -- Choisir un département --
-                            </option>
-                            {DEPARTEMENTS_PAR_CODE[selectedExistingSociete].map(
-                              (dep) => (
-                                <option key={dep} value={dep}>
-                                  {dep}
-                                </option>
-                              ),
-                            )}
+                            <option value="">-- Choisir un département --</option>
+                            {tousDeparts.map(dep => (
+                              <option key={dep} value={dep}>{dep}</option>
+                            ))}
                           </select>
                         </div>
-                      )}
+                      ) : (
+                        <div className="form-group">
+                          <label htmlFor="departementLibreExistant">Département</label>
+                          <input
+                            type="text"
+                            id="departementLibreExistant"
+                            value={selectedExistingDepartement}
+                            onChange={(e) => setSelectedExistingDepartement(e.target.value)}
+                            placeholder="À saisir manuellement (optionnel)"
+                          />
+                        </div>
+                      );
+                    })()}
                     {selectedExistingSociete &&
                       (() => {
                         const s = toutesSocietes.find(
