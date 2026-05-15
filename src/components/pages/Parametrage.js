@@ -1244,6 +1244,9 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     if (!interlocuteurFormData.nom.trim()) {
       newErrors.nom = "Le nom est obligatoire.";
     }
+    if (!interlocuteurFormData.email.trim()) {
+      newErrors.email = "L'email est obligatoire.";
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrorsInterlocuteur(newErrors);
@@ -2571,32 +2574,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
               </PermissionGuard>
             </div>
 
-            {interlocuteurMessage.text && (
-              <div
-                className={`info-box ${
-                  interlocuteurMessage.type === "error"
-                    ? "error-box"
-                    : "success-box"
-                }`}
-                style={{
-                  margin: "16px 0",
-
-                  backgroundColor:
-                    interlocuteurMessage.type === "error"
-                      ? "#fee2e2"
-                      : "#d1fae5",
-
-                  borderColor:
-                    interlocuteurMessage.type === "error"
-                      ? "#fecaca"
-                      : "#a7f3d0",
-
-                  color:
-                    interlocuteurMessage.type === "error"
-                      ? "#991b1b"
-                      : "#065f46",
-                }}
-              >
+            {interlocuteurMessage.text && interlocuteurMessage.type === "success" && (
+              <div className="info-box success-box" style={{ margin: "16px 0", backgroundColor: "#d1fae5", borderColor: "#a7f3d0", color: "#065f46" }}>
                 <p style={{ margin: 0 }}>{interlocuteurMessage.text}</p>
               </div>
             )}
@@ -2625,7 +2604,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                       <label htmlFor="collabNom">
                         Nom et prenoms <span className="required">*</span>
                       </label>
-
                       <input
                         type="text"
                         id="collabNom"
@@ -2646,15 +2624,20 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                       <label htmlFor="collabEmail">
                         Email <span className="required">*</span>
                       </label>
-
                       <input
                         type="email"
                         id="collabEmail"
                         name="email"
                         value={interlocuteurFormData.email}
                         onChange={handleInterlocuteurInputChange}
-                        required
+                        data-field-error={errorsInterlocuteur.email ? "true" : undefined}
+                        style={{ borderColor: errorsInterlocuteur.email ? "#EF4444" : undefined }}
                       />
+                      {errorsInterlocuteur.email && (
+                        <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                          {errorsInterlocuteur.email}
+                        </span>
+                      )}
                     </div>
 
                     <div className="form-group">
