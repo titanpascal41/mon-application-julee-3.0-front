@@ -221,57 +221,77 @@ const Header = ({ user, deconnecter }) => {
           </button>
 
           {showNotifications && (
-            <div className="notification-dropdown">
-              <div className="notification-header">
-                <h4>Boîte de réception</h4>
-                <div className="notification-header-right">
+            <div style={{
+              position: "absolute", top: "calc(100% + 10px)", right: 0,
+              width: "360px", background: "#fff", borderRadius: "14px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.14)", zIndex: 1000,
+              overflow: "hidden", border: "1px solid #E5E7EB",
+            }}>
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px 12px", borderBottom: "1px solid #F3F4F6" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <i className="fa-solid fa-bell" style={{ color: "#4A90E2", fontSize: "14px" }}></i>
+                  <span style={{ fontWeight: "700", fontSize: "15px", color: "#111827" }}>Notifications</span>
                   {nonVues.length > 0 && (
-                    <span className="notification-count">{nonVues.length} nouvelle{nonVues.length > 1 ? "s" : ""}</span>
-                  )}
-                  {notifications.length > 0 && (
-                    <button className="btn-link" style={{ fontSize: "12px", whiteSpace: "nowrap" }} onClick={marquerToutesVues}>
-                      Tout marquer lu
-                    </button>
+                    <span style={{ background: "#4A90E2", color: "#fff", borderRadius: "20px", padding: "2px 8px", fontSize: "11px", fontWeight: "700" }}>
+                      {nonVues.length}
+                    </span>
                   )}
                 </div>
-              </div>
-
-              <div className="notification-content">
-                {notifications.length === 0 ? (
-                  <div className="notification-item empty">
-                    <i style={{ color: "#000000", marginRight: "8px" }}></i>
-                    aucune notification   
-                  </div>
-                ) : (
-                  notifications.map((notif) => (
-                    <div
-                      key={notif.id}
-                      className={`notification-item clickable ${notif.type === "urgent" ? "urgent" : ""}`}
-                      style={{
-                        borderLeft: `4px solid ${couleurType(notif.type)}`,
-                        opacity: vues.has(notif.id) ? 0.5 : 1,
-                      }}
-                      onClick={() => {
-                        setVues((prev) => new Set([...prev, notif.id]));
-                        setShowNotifications(false);
-                        navigate(`/${notif.lien}`);
-                      }}
-                    >
-                      <div className="notification-text">
-                        <p className="notification-title">{notif.title}</p>
-                        <p className="notification-details">{notif.details}</p>
-                      </div>
-                      <span className="notification-arrow">›</span>
-                    </div>
-                  ))
+                {notifications.length > 0 && (
+                  <button onClick={marquerToutesVues} style={{ background: "none", border: "none", fontSize: "12px", color: "#6B7280", cursor: "pointer", fontWeight: "500" }}>
+                    Tout lire
+                  </button>
                 )}
               </div>
 
-              <div className="notification-footer">
-                <button
-                  className="btn-link"
-                  onClick={() => { setShowNotifications(false); navigate("/demandes-gestion"); }}
-                >
+              {/* Liste */}
+              <div style={{ maxHeight: "380px", overflowY: "auto" }}>
+                {notifications.length === 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "36px 20px", gap: "10px", color: "#9CA3AF" }}>
+                    <i className="fa-regular fa-bell-slash" style={{ fontSize: "28px" }}></i>
+                    <span style={{ fontSize: "13px" }}>Aucune notification pour le moment</span>
+                  </div>
+                ) : (
+                  notifications.map((notif) => {
+                    const isVue = vues.has(notif.id);
+                    const iconMap = { urgent: "fa-circle-exclamation", warning: "fa-triangle-exclamation", info: "fa-circle-info" };
+                    const icon = iconMap[notif.type] || "fa-circle-info";
+                    const color = couleurType(notif.type);
+                    return (
+                      <div
+                        key={notif.id}
+                        onClick={() => { setVues((prev) => new Set([...prev, notif.id])); setShowNotifications(false); navigate(`/${notif.lien}`); }}
+                        style={{
+                          display: "flex", alignItems: "flex-start", gap: "12px",
+                          padding: "12px 18px", cursor: "pointer", transition: "background 0.15s",
+                          background: isVue ? "#fff" : "#F8FAFF",
+                          borderBottom: "1px solid #F3F4F6",
+                          opacity: isVue ? 0.6 : 1,
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = "#F1F5F9"}
+                        onMouseLeave={e => e.currentTarget.style.background = isVue ? "#fff" : "#F8FAFF"}
+                      >
+                        <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px" }}>
+                          <i className={`fa-solid ${icon}`} style={{ color, fontSize: "13px" }}></i>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: "600", fontSize: "13px", color: "#111827", marginBottom: "2px" }}>{notif.title}</div>
+                          <div style={{ fontSize: "12px", color: "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{notif.details}</div>
+                        </div>
+                        {!isVue && (
+                          <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: color, flexShrink: 0, marginTop: "6px" }}></div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding: "10px 18px", borderTop: "1px solid #F3F4F6", textAlign: "center" }}>
+                <button onClick={() => { setShowNotifications(false); navigate("/demandes-gestion"); }}
+                  style={{ background: "none", border: "none", fontSize: "12px", color: "#4A90E2", cursor: "pointer", fontWeight: "600" }}>
                   Voir toutes les demandes →
                 </button>
               </div>
