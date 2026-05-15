@@ -5124,9 +5124,9 @@ const Demandes = () => {
               `<tr>
                 <td>Sprint ${i + 1}</td><td>${s.chantier || "—"}</td>
                 <td>${fmtD(s.datePrevTIF)}</td><td>${fmtD(s.dateEffTIF)}</td>
-                <td>${s.motifRetardTIF || "—"}</td>
+                <td>${s.motifRetardTIF || "Aucun"}</td>
                 <td>${fmtD(s.datePrevClient)}</td><td>${fmtD(s.dateEffClient)}</td>
-                <td>${s.motifRetardClient || "—"}</td>
+                <td>${s.motifRetardClient || "Aucun"}</td>
                 <td>${s.charges || "—"}</td><td>${s.nbFonctionnalites || "—"}</td>
               </tr>`
             ).join("");
