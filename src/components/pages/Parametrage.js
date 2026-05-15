@@ -1788,45 +1788,23 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         )}
                       </td>
                       {aActionsSocietes && (
-                        <td>
-                          <PermissionGuard
-                            module="parametrage"
-                            submodule="societes"
-                            action="update"
-                          >
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          <PermissionGuard module="parametrage" submodule="societes" action="update">
                             <button
-                              className="btn-secondary"
                               onClick={() => handleEditSociete(societe)}
-                              style={{ marginRight: "5px" }}
+                              title="Modifier"
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#DBEAFE", color: "#1E40AF", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
-                              Modifier
+                              <i className="fa-solid fa-pen"></i>
                             </button>
                           </PermissionGuard>
-
                           <PermissionGuard module="parametrage" submodule="societes" action="delete">
                             <button
-                              className="btn-secondary"
                               onClick={() => handleToggleActivationSociete(societe)}
-                              style={{
-                                width: "100px",
-                                display: "inline-flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                backgroundColor: societe.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                                color: societe.actif !== false ? "#92400E" : "#065F46",
-                                borderColor: societe.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                                transition: "background-color 0.15s",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = societe.actif !== false ? "#FDE68A" : "#A7F3D0";
-                                e.currentTarget.style.borderColor = societe.actif !== false ? "#FDE68A" : "#A7F3D0";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = societe.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                                e.currentTarget.style.borderColor = societe.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                              }}
+                              title={societe.actif !== false ? "Désactiver" : "Activer"}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: societe.actif !== false ? "#FEF3C7" : "#D1FAE5", color: societe.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
-                              {societe.actif !== false ? "Désactiver" : "Activer"}
+                              <i className={societe.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                             </button>
                           </PermissionGuard>
                         </td>
@@ -2209,46 +2187,24 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         )}
                       </td>
                       {aActionsUO && (
-                        <td>
-                          <PermissionGuard
-                            module="parametrage"
-                            submodule="uo"
-                            action="update"
-                          >
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          <PermissionGuard module="parametrage" submodule="uo" action="update">
                             <button
-                              className="btn-secondary"
                               onClick={() => handleEditUO(uo)}
                               disabled={uo.actif === false}
-                              style={{ marginRight: "5px", opacity: uo.actif === false ? 0.4 : 1, cursor: uo.actif === false ? "not-allowed" : "pointer" }}
+                              title="Modifier"
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: uo.actif === false ? "#F3F4F6" : "#DBEAFE", color: uo.actif === false ? "#D1D5DB" : "#1E40AF", cursor: uo.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
-                              Modifier
+                              <i className="fa-solid fa-pen"></i>
                             </button>
                           </PermissionGuard>
-
                           <PermissionGuard module="parametrage" submodule="uo" action="delete">
                             <button
-                              className="btn-secondary"
                               onClick={() => handleToggleActivationUO(uo)}
-                              style={{
-                                width: "100px",
-                                display: "inline-flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                backgroundColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                                color: uo.actif !== false ? "#92400E" : "#065F46",
-                                borderColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                                transition: "background-color 0.15s, border-color 0.15s",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = uo.actif !== false ? "#FDE68A" : "#A7F3D0";
-                                e.currentTarget.style.borderColor = uo.actif !== false ? "#FDE68A" : "#A7F3D0";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = uo.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                                e.currentTarget.style.borderColor = uo.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                              }}
+                              title={uo.actif !== false ? "Désactiver" : "Activer"}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5", color: uo.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
-                              {uo.actif !== false ? "Désactiver" : "Activer"}
+                              <i className={uo.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                             </button>
                           </PermissionGuard>
                         </td>
@@ -2478,31 +2434,23 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                       </td>
 
                       {aActionsStatuts && (
-                        <td>
-                          <PermissionGuard
-                            module="parametrage"
-                            submodule="statuts"
-                            action="update"
-                          >
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          <PermissionGuard module="parametrage" submodule="statuts" action="update">
                             <button
-                              className="btn-secondary"
                               onClick={() => handleEditStatut(statut)}
-                              style={{ marginRight: "5px" }}
+                              title="Modifier"
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#DBEAFE", color: "#1E40AF", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
-                              Modifier
+                              <i className="fa-solid fa-pen"></i>
                             </button>
                           </PermissionGuard>
-
-                          <PermissionGuard
-                            module="parametrage"
-                            submodule="statuts"
-                            action="delete"
-                          >
+                          <PermissionGuard module="parametrage" submodule="statuts" action="delete">
                             <button
-                              className="btn-danger"
                               onClick={() => handleDeleteStatut(statut)}
+                              title="Supprimer"
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#FEE2E2", color: "#991B1B", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
-                              Supprimer
+                              <i className="fa-solid fa-trash"></i>
                             </button>
                           </PermissionGuard>
                         </td>
@@ -2755,48 +2703,24 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           )}
                         </td>
                         {aActionsInterlocuteurs && (
-                          <td>
-                            <PermissionGuard
-                              module="parametrage"
-                              submodule="interlocuteurs"
-                              action="update"
-                            >
+                          <td style={{ whiteSpace: "nowrap" }}>
+                            <PermissionGuard module="parametrage" submodule="interlocuteurs" action="update">
                               <button
-                                className="btn-secondary"
-                                onClick={() =>
-                                  handleEditInterlocuteur(interlocuteur)
-                                }
+                                onClick={() => handleEditInterlocuteur(interlocuteur)}
                                 disabled={interlocuteur.actif === false}
-                                style={{ marginRight: "5px", opacity: interlocuteur.actif === false ? 0.4 : 1, cursor: interlocuteur.actif === false ? "not-allowed" : "pointer" }}
+                                title="Modifier"
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: interlocuteur.actif === false ? "#F3F4F6" : "#DBEAFE", color: interlocuteur.actif === false ? "#D1D5DB" : "#1E40AF", cursor: interlocuteur.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
-                                Modifier
+                                <i className="fa-solid fa-pen"></i>
                               </button>
                             </PermissionGuard>
-
                             <PermissionGuard module="parametrage" submodule="interlocuteurs" action="delete">
                               <button
-                                className="btn-secondary"
                                 onClick={() => handleToggleActivationInterlocuteur(interlocuteur)}
-                                style={{
-                                  width: "100px",
-                                  display: "inline-flex",
-                                  justifyContent: "center",
-                                  alignItems: "center",
-                                  backgroundColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                                  color: interlocuteur.actif !== false ? "#92400E" : "#065F46",
-                                  borderColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5",
-                                  transition: "background-color 0.15s, border-color 0.15s",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = interlocuteur.actif !== false ? "#FDE68A" : "#A7F3D0";
-                                  e.currentTarget.style.borderColor = interlocuteur.actif !== false ? "#FDE68A" : "#A7F3D0";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                                  e.currentTarget.style.borderColor = interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5";
-                                }}
+                                title={interlocuteur.actif !== false ? "Désactiver" : "Activer"}
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5", color: interlocuteur.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                               >
-                                {interlocuteur.actif !== false ? "Désactiver" : "Activer"}
+                                <i className={interlocuteur.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                               </button>
                             </PermissionGuard>
                           </td>

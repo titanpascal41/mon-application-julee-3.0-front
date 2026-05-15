@@ -1778,96 +1778,41 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                         </td>
 
                         {peutVoirActionsProfils && (
-                          <td>
+                          <td style={{ whiteSpace: "nowrap" }}>
                             {peutModifierProfil && (
                               <button
-                                className="btn-secondary"
                                 onClick={() => handleEdit(profil)}
                                 disabled={profil.actif === false}
-                                style={{
-                                  marginRight: "5px",
-                                  opacity: profil.actif === false ? 0.4 : 1,
-                                  cursor:
-                                    profil.actif === false
-                                      ? "not-allowed"
-                                      : "pointer",
-                                }}
+                                title="Modifier"
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif === false ? "#F3F4F6" : "#DBEAFE", color: profil.actif === false ? "#D1D5DB" : "#1E40AF", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
-                                Modifier
+                                <i className="fa-solid fa-pen"></i>
                               </button>
                             )}
                             {peutModifierProfil && (
                               <button
-                                className="btn-primary"
                                 onClick={() => handleManagePermissions(profil)}
                                 disabled={profil.actif === false}
-                                style={{
-                                  marginRight: "5px",
-                                  opacity: profil.actif === false ? 0.4 : 1,
-                                  cursor:
-                                    profil.actif === false
-                                      ? "not-allowed"
-                                      : "pointer",
-                                }}
+                                title="Attribuer des permissions"
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif === false ? "#F3F4F6" : "#EDE9FE", color: profil.actif === false ? "#D1D5DB" : "#6D28D9", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
-                                Attribuer des permissions
+                                <i className="fa-solid fa-shield-halved"></i>
                               </button>
                             )}
                             {peutSupprimerProfil && (
                               <>
                                 <button
-                                  className="btn-secondary"
                                   onClick={() => handleToggleActivation(profil)}
-                                  style={{
-                                    width: "100px",
-                                    display: "inline-flex",
-                                    justifyContent: "center",
-                                    alignItems: "center",
-                                    backgroundColor:
-                                      profil.actif !== false
-                                        ? "#FEF3C7"
-                                        : "#D1FAE5",
-                                    color:
-                                      profil.actif !== false
-                                        ? "#92400E"
-                                        : "#065F46",
-                                    borderColor:
-                                      profil.actif !== false
-                                        ? "#FEF3C7"
-                                        : "#D1FAE5",
-                                    transition:
-                                      "background-color 0.15s, border-color 0.15s",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor =
-                                      profil.actif !== false
-                                        ? "#FDE68A"
-                                        : "#A7F3D0";
-                                    e.currentTarget.style.borderColor =
-                                      profil.actif !== false
-                                        ? "#FDE68A"
-                                        : "#A7F3D0";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor =
-                                      profil.actif !== false
-                                        ? "#FEF3C7"
-                                        : "#D1FAE5";
-                                    e.currentTarget.style.borderColor =
-                                      profil.actif !== false
-                                        ? "#FEF3C7"
-                                        : "#D1FAE5";
-                                  }}
+                                  title={profil.actif !== false ? "Désactiver" : "Activer"}
+                                  style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif !== false ? "#FEF3C7" : "#D1FAE5", color: profil.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                                 >
-                                  {profil.actif !== false
-                                    ? "Désactiver"
-                                    : "Activer"}
+                                  <i className={profil.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                                 </button>
                                 {profil.actif === false && profil.motifDesactivation && (
                                   <i
                                     className="fa-solid fa-circle-info"
                                     onClick={() => setMotifTooltipProfilId(profil)}
-                                    style={{ color: "#F59E0B", fontSize: "16px", cursor: "pointer", marginLeft: "15px" }}
+                                    style={{ color: "#F59E0B", fontSize: "16px", cursor: "pointer", marginLeft: "4px" }}
                                   />
                                 )}
                               </>
@@ -2637,22 +2582,23 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                       <td>{getProfilName(user.profilId)}</td>
 
                       {peutVoirActionsUtilisateurs && (
-                        <td>
+                        <td style={{ whiteSpace: "nowrap" }}>
                           {peutModifierUtilisateur && (
                             <button
-                              className="btn-secondary"
                               onClick={() => handleEditUser(user)}
-                              style={{ marginRight: "5px" }}
+                              title="Modifier"
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#DBEAFE", color: "#1E40AF", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
-                              Modifier
+                              <i className="fa-solid fa-pen"></i>
                             </button>
                           )}
                           {peutSupprimerUtilisateur && (
                             <button
-                              className="btn-danger"
                               onClick={() => handleDeleteUser(user)}
+                              title="Supprimer"
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#FEE2E2", color: "#991B1B", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
-                              Supprimer
+                              <i className="fa-solid fa-trash"></i>
                             </button>
                           )}
                         </td>
