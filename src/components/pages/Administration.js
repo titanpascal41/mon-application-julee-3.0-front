@@ -77,6 +77,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
   const [message, setMessage] = useState({ type: "", text: "" });
 
+  const [errorsProfil, setErrorsProfil] = useState({});
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [profilToDelete, setProfilToDelete] = useState(null);
@@ -151,6 +153,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
   const [userMessage, setUserMessage] = useState({ type: "", text: "" });
 
+  const [errorsUser, setErrorsUser] = useState({});
+
   const [showUserDeleteConfirm, setShowUserDeleteConfirm] = useState(false);
 
   const [userToDelete, setUserToDelete] = useState(null);
@@ -215,6 +219,10 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     if (message.text) {
       setMessage({ type: "", text: "" });
     }
+
+    if (errorsProfil[name]) {
+      setErrorsProfil((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleCreate = () => {
@@ -227,6 +235,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     setShowPermissionsInMainForm(false);
 
     setMessage({ type: "", text: "" });
+
+    setErrorsProfil({});
   };
 
   const handleEdit = (profil) => {
@@ -248,6 +258,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     setShowForm(true);
 
     setMessage({ type: "", text: "" });
+
+    setErrorsProfil({});
   };
 
   const confirmDelete = async () => {
@@ -345,9 +357,18 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
   };
 
   const validateProfilForm = () => {
-    if (!formData.nom.trim()) {
-      setMessage({ type: "error", text: "Le nom du profil est obligatoire." });
+    const newErrors = {};
 
+    if (!formData.nom.trim()) {
+      newErrors.nom = "Le libellé est obligatoire.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrorsProfil(newErrors);
+      setTimeout(() => {
+        const el = document.querySelector('[data-field-error="true"]');
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
       return false;
     }
 
@@ -358,6 +379,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     e.preventDefault();
 
     setMessage({ type: "", text: "" });
+
+    setErrorsProfil({});
 
     if (!validateProfilForm()) return;
 
@@ -404,6 +427,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     setEditingProfil(null);
 
     setMessage({ type: "", text: "" });
+
+    setErrorsProfil({});
   };
 
   // Fonctions pour la gestion des permissions
@@ -924,6 +949,10 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     if (userMessage.text) {
       setUserMessage({ type: "", text: "" });
     }
+
+    if (errorsUser[name]) {
+      setErrorsUser((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleCreateUser = () => {
@@ -950,6 +979,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     setShowUserForm(true);
 
     setUserMessage({ type: "", text: "" });
+
+    setErrorsUser({});
   };
 
   const handleEditUser = (user) => {
@@ -970,6 +1001,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     setShowUserForm(true);
 
     setUserMessage({ type: "", text: "" });
+
+    setErrorsUser({});
   };
 
   const handleDeleteUser = (user) => {
@@ -1051,41 +1084,42 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
   };
 
   const validateUserForm = () => {
-    if (!userFormData.nom.trim()) {
-      setUserMessage({ type: "error", text: "Le nom est obligatoire." });
-
-      return false;
-    }
+    const newErrors = {};
 
     if (!userFormData.prenom.trim()) {
-      setUserMessage({ type: "error", text: "Le prénom est obligatoire." });
+      newErrors.prenom = "Le prénom est obligatoire.";
+    }
 
-      return false;
+    if (!userFormData.nom.trim()) {
+      newErrors.nom = "Le nom est obligatoire.";
     }
 
     if (!userFormData.email.trim()) {
-      setUserMessage({ type: "error", text: "L'email est obligatoire." });
-
-      return false;
+      newErrors.email = "L'email est obligatoire.";
     }
 
     if (!editingUser && !userFormData.motDePasse) {
-      setUserMessage({
-        type: "error",
-        text: "Le mot de passe est obligatoire.",
-      });
-
-      return false;
+      newErrors.motDePasse = "Le mot de passe est obligatoire.";
     }
 
     if (userFormData.motDePasse) {
       const check = validatePassword(userFormData.motDePasse);
-
       if (!check.valide) {
-        setUserMessage({ type: "error", text: check.message });
-
-        return false;
+        newErrors.motDePasse = check.message;
       }
+    }
+
+    if (!userFormData.profilId) {
+      newErrors.profilId = "Veuillez sélectionner un profil.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrorsUser(newErrors);
+      setTimeout(() => {
+        const el = document.querySelector('[data-field-error="true"]');
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+      return false;
     }
 
     return true;
@@ -1095,6 +1129,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     e.preventDefault();
 
     setUserMessage({ type: "", text: "" });
+
+    setErrorsUser({});
 
     if (!validateUserForm()) return;
 
@@ -1189,6 +1225,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     setEditingUser(null);
 
     setUserMessage({ type: "", text: "" });
+
+    setErrorsUser({});
   };
 
   const getProfilName = (profilId) => {
@@ -1354,8 +1392,14 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                           name="nom"
                           value={formData.nom}
                           onChange={handleInputChange}
-                          required
+                          data-field-error={errorsProfil.nom ? "true" : undefined}
+                          style={{ borderColor: errorsProfil.nom ? "#EF4444" : undefined }}
                         />
+                        {errorsProfil.nom && (
+                          <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                            {errorsProfil.nom}
+                          </span>
+                        )}
                       </div>
 
                       <div
@@ -2321,8 +2365,14 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                       name="prenom"
                       value={userFormData.prenom}
                       onChange={handleUserInputChange}
-                      required
+                      data-field-error={errorsUser.prenom ? "true" : undefined}
+                      style={{ borderColor: errorsUser.prenom ? "#EF4444" : undefined }}
                     />
+                    {errorsUser.prenom && (
+                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                        {errorsUser.prenom}
+                      </span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -2336,8 +2386,14 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                       name="nom"
                       value={userFormData.nom}
                       onChange={handleUserInputChange}
-                      required
+                      data-field-error={errorsUser.nom ? "true" : undefined}
+                      style={{ borderColor: errorsUser.nom ? "#EF4444" : undefined }}
                     />
+                    {errorsUser.nom && (
+                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                        {errorsUser.nom}
+                      </span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -2351,8 +2407,14 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                       name="email"
                       value={userFormData.email}
                       onChange={handleUserInputChange}
-                      required
+                      data-field-error={errorsUser.email ? "true" : undefined}
+                      style={{ borderColor: errorsUser.email ? "#EF4444" : undefined }}
                     />
+                    {errorsUser.email && (
+                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                        {errorsUser.email}
+                      </span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -2377,11 +2439,12 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                         placeholder={
                           editingUser ? "Laisser vide pour ne pas modifier" : ""
                         }
-                        required={!editingUser}
+                        data-field-error={errorsUser.motDePasse ? "true" : undefined}
                         style={{
                           width: "100%",
                           paddingRight: "40px",
                           boxSizing: "border-box",
+                          borderColor: errorsUser.motDePasse ? "#EF4444" : undefined,
                         }}
                       />
                       <button
@@ -2410,6 +2473,12 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                         ></i>
                       </button>
                     </div>
+
+                    {errorsUser.motDePasse && (
+                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                        {errorsUser.motDePasse}
+                      </span>
+                    )}
 
                     {userFormData.motDePasse &&
                       (() => {
@@ -2469,12 +2538,13 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                       name="profilId"
                       value={userFormData.profilId}
                       onChange={handleUserInputChange}
-                      required
                       disabled={profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false}
+                      data-field-error={errorsUser.profilId ? "true" : undefined}
                       style={{
                         opacity: profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false ? 0.5 : 1,
                         cursor: profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false ? "not-allowed" : "pointer",
                         backgroundColor: profils.find(p => String(p.id) === String(userFormData.profilId))?.actif === false ? "#F3F4F6" : "",
+                        borderColor: errorsUser.profilId ? "#EF4444" : undefined,
                       }}
                     >
                       <option value="">-- Sélectionner un profil --</option>
@@ -2489,6 +2559,11 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                         </option>
                       ))}
                     </select>
+                    {errorsUser.profilId && (
+                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                        {errorsUser.profilId}
+                      </span>
+                    )}
                     {(() => {
                       const profilSelectionne = profils.find(p => String(p.id) === String(userFormData.profilId));
                       return profilSelectionne?.actif === false ? (

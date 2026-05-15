@@ -78,6 +78,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
   const [societeMessage, setSocieteMessage] = useState({ type: "", text: "" });
 
+  const [errorsSociete, setErrorsSociete] = useState({});
+
   // Mode du popup société : null | "choice" | "create" | "existing" | "delete"
   const [societePopupMode, setSocietePopupMode] = useState(null);
   const [selectedExistingSociete, setSelectedExistingSociete] = useState("");
@@ -137,6 +139,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const [uoSelectedCode, setUoSelectedCode] = useState("");
   const [uoMessage, setUOMessage] = useState({ type: "", text: "" });
 
+  const [errorsUO, setErrorsUO] = useState({});
+
   const [showUODeleteConfirm, setShowUODeleteConfirm] = useState(false);
 
   const [uoToDelete, setUOToDelete] = useState(null);
@@ -161,6 +165,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   });
 
   const [statutMessage, setStatutMessage] = useState({ type: "", text: "" });
+
+  const [errorsStatut, setErrorsStatut] = useState({});
 
   const [showStatutDeleteConfirm, setShowStatutDeleteConfirm] = useState(false);
 
@@ -210,6 +216,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
     text: "",
   });
+
+  const [errorsInterlocuteur, setErrorsInterlocuteur] = useState({});
 
   const [showInterlocuteurDeleteConfirm, setShowInterlocuteurDeleteConfirm] =
     useState(false);
@@ -385,12 +393,17 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     if (societeMessage.text && name !== "telephone") {
       setSocieteMessage({ type: "", text: "" });
     }
+
+    if (errorsSociete[name]) {
+      setErrorsSociete((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleCreateSociete = () => {
     setEditingSociete(null);
     setSocieteFormData({ code: "", nom: "", departement: "" });
     setSocieteMessage({ type: "", text: "" });
+    setErrorsSociete({});
     setSelectedExistingSociete("");
     setSocietePopupMode("choice");
     setShowSocieteForm(true);
@@ -456,6 +469,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setShowSocieteForm(true);
 
     setSocieteMessage({ type: "", text: "" });
+
+    setErrorsSociete({});
   };
 
   const handleToggleActivationSociete = async (societe) => {
@@ -515,19 +530,22 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   };
 
   const validateSocieteForm = () => {
+    const newErrors = {};
+
     if (!societeFormData.code.trim()) {
-      setSocieteMessage({
-        type: "error",
-        text: "Le code de la société est obligatoire.",
-      });
-      return false;
+      newErrors.code = "Le code est obligatoire.";
     }
 
     if (!societeFormData.nom.trim()) {
-      setSocieteMessage({
-        type: "error",
-        text: "Le libellé de la société est obligatoire.",
-      });
+      newErrors.nom = "Le libellé est obligatoire.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrorsSociete(newErrors);
+      setTimeout(() => {
+        const el = document.querySelector('[data-field-error="true"]');
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
       return false;
     }
 
@@ -556,6 +574,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     e.preventDefault();
 
     setSocieteMessage({ type: "", text: "" });
+
+    setErrorsSociete({});
 
     // Validation personnalisée
 
@@ -626,6 +646,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setSocieteFormData({ code: "", nom: "", departement: "" });
     setEditingSociete(null);
     setSocieteMessage({ type: "", text: "" });
+    setErrorsSociete({});
     setSelectedExistingSociete("");
     setSelectedExistingDepartement("");
     setSelectedExistingLibelle("");
@@ -666,6 +687,10 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     if (uoMessage.text) {
       setUOMessage({ type: "", text: "" });
     }
+
+    if (errorsUO[name]) {
+      setErrorsUO((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleCreateUO = () => {
@@ -684,6 +709,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setShowUOForm(true);
 
     setUOMessage({ type: "", text: "" });
+
+    setErrorsUO({});
   };
 
   const handleEditUO = (uo) => {
@@ -703,6 +730,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setShowUOForm(true);
 
     setUOMessage({ type: "", text: "" });
+
+    setErrorsUO({});
   };
 
   const handleToggleActivationUO = (uo) => {
@@ -765,16 +794,24 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   };
 
   const validateUOForm = () => {
-    if (!uoFormData.societeId) {
-      setUOMessage({ type: "error", text: "La société est obligatoire." });
+    const newErrors = {};
+
+    if (!uoFormData.nom.trim()) {
+      newErrors.nom = "Le libellé est obligatoire.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrorsUO(newErrors);
+      setTimeout(() => {
+        const el = document.querySelector('[data-field-error="true"]');
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
       return false;
     }
 
-    if (!uoFormData.nom.trim()) {
-      setUOMessage({
-        type: "error",
-        text: "Le libellé du service est obligatoire.",
-      });
+    // Keep societeId check as a top-level message (not a field we can mark inline easily)
+    if (!uoFormData.societeId) {
+      setUOMessage({ type: "error", text: "La société est obligatoire." });
       return false;
     }
 
@@ -785,6 +822,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     e.preventDefault();
 
     setUOMessage({ type: "", text: "" });
+
+    setErrorsUO({});
 
     // Validation personnalisée
 
@@ -850,6 +889,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setEditingUO(null);
 
     setUOMessage({ type: "", text: "" });
+
+    setErrorsUO({});
   };
 
   // Fonction pour obtenir le nom de la société
@@ -882,6 +923,10 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     if (statutMessage.text) {
       setStatutMessage({ type: "", text: "" });
     }
+
+    if (errorsStatut[name]) {
+      setErrorsStatut((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleCreateStatut = () => {
@@ -898,6 +943,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setShowStatutForm(true);
 
     setStatutMessage({ type: "", text: "" });
+
+    setErrorsStatut({});
   };
 
   const handleEditStatut = (statut) => {
@@ -914,6 +961,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setShowStatutForm(true);
 
     setStatutMessage({ type: "", text: "" });
+
+    setErrorsStatut({});
   };
 
   const handleToggleActivationStatut = async (statut) => {
@@ -995,12 +1044,26 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setEditingStatut(null);
 
     setStatutMessage({ type: "", text: "" });
+
+    setErrorsStatut({});
   };
 
   const handleStatutSubmit = async (e) => {
     e.preventDefault();
 
     setStatutMessage({ type: "", text: "" });
+
+    setErrorsStatut({});
+
+    // Validation inline
+    if (!statutFormData.nom.trim()) {
+      setErrorsStatut({ nom: "Le nom du statut est obligatoire." });
+      setTimeout(() => {
+        const el = document.querySelector('[data-field-error="true"]');
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+      return;
+    }
 
     let resultat;
 
@@ -1077,6 +1140,10 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     if (interlocuteurMessage.text) {
       setInterlocuteurMessage({ type: "", text: "" });
     }
+
+    if (errorsInterlocuteur[name]) {
+      setErrorsInterlocuteur((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleCreateInterlocuteur = () => {
@@ -1097,6 +1164,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setShowInterlocuteurForm(true);
 
     setInterlocuteurMessage({ type: "", text: "" });
+
+    setErrorsInterlocuteur({});
   };
 
   const handleEditInterlocuteur = (interlocuteur) => {
@@ -1114,6 +1183,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setShowInterlocuteurForm(true);
 
     setInterlocuteurMessage({ type: "", text: "" });
+
+    setErrorsInterlocuteur({});
   };
 
   const handleToggleActivationInterlocuteur = (interlocuteur) => {
@@ -1168,37 +1239,18 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   };
 
   const validateInterlocuteurForm = () => {
+    const newErrors = {};
+
     if (!interlocuteurFormData.nom.trim()) {
-      setInterlocuteurMessage({
-        type: "error",
-
-        text: "Le nom de l'interlocuteur est obligatoire.",
-      });
-
-      return false;
+      newErrors.nom = "Le nom est obligatoire.";
     }
 
-    if (!interlocuteurFormData.email.trim()) {
-      setInterlocuteurMessage({
-        type: "error",
-
-        text: "L'email de l'interlocuteur est obligatoire.",
-      });
-
-      return false;
-    }
-
-    // Validation email simple
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(interlocuteurFormData.email.trim())) {
-      setInterlocuteurMessage({
-        type: "error",
-
-        text: "L'email n'est pas valide.",
-      });
-
+    if (Object.keys(newErrors).length > 0) {
+      setErrorsInterlocuteur(newErrors);
+      setTimeout(() => {
+        const el = document.querySelector('[data-field-error="true"]');
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
       return false;
     }
 
@@ -1209,6 +1261,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     e.preventDefault();
 
     setInterlocuteurMessage({ type: "", text: "" });
+
+    setErrorsInterlocuteur({});
 
     if (!validateInterlocuteurForm()) return;
 
@@ -1269,6 +1323,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setEditingInterlocuteur(null);
 
     setInterlocuteurMessage({ type: "", text: "" });
+
+    setErrorsInterlocuteur({});
   };
 
   const renderPagination = (total, page, setPage) => {
@@ -1421,8 +1477,14 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         value={societeFormData.code}
                         onChange={handleSocieteInputChange}
                         placeholder="Ex: SAPHIR V3"
-                        style={{ textTransform: "uppercase" }}
+                        data-field-error={errorsSociete.code ? "true" : undefined}
+                        style={{ textTransform: "uppercase", borderColor: errorsSociete.code ? "#EF4444" : undefined }}
                       />
+                      {errorsSociete.code && (
+                        <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                          {errorsSociete.code}
+                        </span>
+                      )}
                     </div>
                     <div className="form-group">
                       <label htmlFor="societeNom">
@@ -1435,7 +1497,14 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         value={societeFormData.nom}
                         onChange={handleSocieteInputChange}
                         placeholder="Ex: DDI SAPHIR V3"
+                        data-field-error={errorsSociete.nom ? "true" : undefined}
+                        style={{ borderColor: errorsSociete.nom ? "#EF4444" : undefined }}
                       />
+                      {errorsSociete.nom && (
+                        <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                          {errorsSociete.nom}
+                        </span>
+                      )}
                     </div>
                     <div className="form-group">
                       <label htmlFor="societeDepartement">Département</label>
@@ -2006,6 +2075,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         name="nom"
                         value={uoFormData.nom}
                         onChange={handleUOInputChange}
+                        data-field-error={errorsUO.nom ? "true" : undefined}
+                        style={{ borderColor: errorsUO.nom ? "#EF4444" : undefined }}
                       >
                         <option value="">-- Choisir un service --</option>
                         {[
@@ -2048,7 +2119,14 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         onChange={handleUOInputChange}
                         placeholder="Nom complet du service"
                         maxLength={100}
+                        data-field-error={errorsUO.nom ? "true" : undefined}
+                        style={{ borderColor: errorsUO.nom ? "#EF4444" : undefined }}
                       />
+                    )}
+                    {errorsUO.nom && (
+                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                        {errorsUO.nom}
+                      </span>
                     )}
                   </div>
 
@@ -2308,8 +2386,14 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                       name="nom"
                       value={statutFormData.nom}
                       onChange={handleStatutInputChange}
-                      required
+                      data-field-error={errorsStatut.nom ? "true" : undefined}
+                      style={{ borderColor: errorsStatut.nom ? "#EF4444" : undefined }}
                     />
+                    {errorsStatut.nom && (
+                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                        {errorsStatut.nom}
+                      </span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -2548,8 +2632,14 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         name="nom"
                         value={interlocuteurFormData.nom}
                         onChange={handleInterlocuteurInputChange}
-                        required
+                        data-field-error={errorsInterlocuteur.nom ? "true" : undefined}
+                        style={{ borderColor: errorsInterlocuteur.nom ? "#EF4444" : undefined }}
                       />
+                      {errorsInterlocuteur.nom && (
+                        <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                          {errorsInterlocuteur.nom}
+                        </span>
+                      )}
                     </div>
 
                     <div className="form-group">
