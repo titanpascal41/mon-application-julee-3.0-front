@@ -673,6 +673,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
       };
     });
     if (uoMessage.text) setUOMessage({ type: "", text: "" });
+    if (errorsUO.societeId) setErrorsUO((prev) => ({ ...prev, societeId: "" }));
   };
 
   const handleUOInputChange = (e) => {
@@ -800,18 +801,16 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
       newErrors.nom = "Le libellé est obligatoire.";
     }
 
+    if (!uoFormData.societeId) {
+      newErrors.societeId = "La société est obligatoire.";
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrorsUO(newErrors);
       setTimeout(() => {
         const el = document.querySelector('[data-field-error="true"]');
         if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 50);
-      return false;
-    }
-
-    // Keep societeId check as a top-level message (not a field we can mark inline easily)
-    if (!uoFormData.societeId) {
-      setUOMessage({ type: "error", text: "La société est obligatoire." });
       return false;
     }
 
@@ -1994,7 +1993,11 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         }
                         if (uoMessage.text)
                           setUOMessage({ type: "", text: "" });
+                        if (errorsUO.societeId)
+                          setErrorsUO((prev) => ({ ...prev, societeId: "" }));
                       }}
+                      data-field-error={errorsUO.societeId ? "true" : undefined}
+                      style={{ borderColor: errorsUO.societeId ? "#EF4444" : undefined }}
                     >
                       <option value="">-- Choisir une société --</option>
                       {[...new Set(toutesSocietes.filter((s) => s.actif).map((s) => s.code))]
@@ -2005,6 +2008,11 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           </option>
                         ))}
                     </select>
+                    {errorsUO.societeId && (
+                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                        {errorsUO.societeId}
+                      </span>
+                    )}
                   </div>
 
                   {/* Département : toujours visible quand une société est sélectionnée */}

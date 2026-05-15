@@ -478,8 +478,9 @@ const Demandes = () => {
           scrollToFormTop(); return;
         }
         if (!nouvelleDemandeFormData.typeProjet) {
-          setDemandeMessage({ type: "error", text: "Le type de projet est obligatoire." });
-          scrollToFormTop(); return;
+          setErrorsNouvelle(prev => ({ ...prev, typeProjet: "Le type de projet est obligatoire." }));
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
         if (nouvelleDemandeFormData.dateReception && nouvelleDemandeFormData.dateEnregistrement &&
             nouvelleDemandeFormData.dateReception > nouvelleDemandeFormData.dateEnregistrement) {
@@ -492,34 +493,38 @@ const Demandes = () => {
 
       // ── ÉTAPE 2 ──────────────────────────────────────────────────────────
       if (nouvelleDemandeStep === 2) {
+        const newErrors2 = {};
         if (!nouvelleDemandeFormData.dateTransmissionBacklog) {
-          setDemandeMessage({ type: "error", text: "La date de transmission du backlog est obligatoire." });
-          scrollToFormTop(); return;
-        }
-        if (nouvelleDemandeFormData.dateReception && nouvelleDemandeFormData.dateTransmissionBacklog < nouvelleDemandeFormData.dateReception) {
-          setDemandeMessage({ type: "error", text: "La date de transmission du backlog ne peut pas être avant la date de réception." });
-          scrollToFormTop(); return;
+          newErrors2.dateTransmissionBacklog = "La date de transmission du backlog est obligatoire.";
+        } else if (nouvelleDemandeFormData.dateReception && nouvelleDemandeFormData.dateTransmissionBacklog < nouvelleDemandeFormData.dateReception) {
+          newErrors2.dateTransmissionBacklog = "Ne peut pas être avant la date de réception.";
         }
         if (!nouvelleDemandeFormData.dateConfirmationValidation) {
-          setDemandeMessage({ type: "error", text: "La date de confirmation/validation est obligatoire." });
-          scrollToFormTop(); return;
+          newErrors2.dateConfirmationValidation = "La date de confirmation/validation est obligatoire.";
+        } else if (nouvelleDemandeFormData.dateTransmissionBacklog && nouvelleDemandeFormData.dateConfirmationValidation < nouvelleDemandeFormData.dateTransmissionBacklog) {
+          newErrors2.dateConfirmationValidation = "Ne peut pas être avant la date de transmission du backlog.";
         }
-        if (nouvelleDemandeFormData.dateConfirmationValidation < nouvelleDemandeFormData.dateTransmissionBacklog) {
-          setDemandeMessage({ type: "error", text: "La date de confirmation/validation ne peut pas être avant la date de transmission du backlog." });
-          scrollToFormTop(); return;
+        if (Object.keys(newErrors2).length > 0) {
+          setErrorsNouvelle(newErrors2);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
       }
 
       // ── ÉTAPE 3 ──────────────────────────────────────────────────────────
       if (nouvelleDemandeStep === 3) {
+        const newErrors3 = {};
         if (!nouvelleDemandeFormData.dateCommunicationPlanningClient) {
-          setDemandeMessage({ type: "error", text: "La date de communication du planning client est obligatoire." });
-          scrollToFormTop(); return;
+          newErrors3.dateCommunicationPlanningClient = "La date de communication du planning client est obligatoire.";
         }
         const nb = parseInt(nouvelleDemandeFormData.nombreSprint) || 0;
         if (nb < 1) {
-          setDemandeMessage({ type: "error", text: "Le nombre de sprints doit être d'au moins 1." });
-          scrollToFormTop(); return;
+          newErrors3.nombreSprint = "Le nombre de sprints doit être d'au moins 1.";
+        }
+        if (Object.keys(newErrors3).length > 0) {
+          setErrorsNouvelle(newErrors3);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
         const sprints = nouvelleDemandeFormData.sprintsData || [];
         const manquants = Array.from({ length: nb }, (_, i) => i + 1).filter(
@@ -533,29 +538,36 @@ const Demandes = () => {
 
       // ── ÉTAPE 4 ──────────────────────────────────────────────────────────
       if (nouvelleDemandeStep === 4) {
+        const newErrors4 = {};
         if (!nouvelleDemandeFormData.statutCodage) {
-          setDemandeMessage({ type: "error", text: "Le statut du codage est obligatoire." });
-          scrollToFormTop(); return;
+          newErrors4.statutCodage = "Le statut du codage est obligatoire.";
         }
         if (!nouvelleDemandeFormData.statutTIF) {
-          setDemandeMessage({ type: "error", text: "Le statut TIF est obligatoire." });
-          scrollToFormTop(); return;
+          newErrors4.statutTIF = "Le statut TIF est obligatoire.";
+        }
+        if (Object.keys(newErrors4).length > 0) {
+          setErrorsNouvelle(newErrors4);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
       }
 
       // ── ÉTAPE 5 ──────────────────────────────────────────────────────────
       if (nouvelleDemandeStep === 5) {
+        const newErrors5 = {};
         if (!nouvelleDemandeFormData.lienIngridKickoff?.trim()) {
-          setDemandeMessage({ type: "error", text: "Le lien du document Kickoff est obligatoire." });
-          scrollToFormTop(); return;
+          newErrors5.lienIngridKickoff = "Le lien du document Kickoff est obligatoire.";
         }
         if (!nouvelleDemandeFormData.lienIngridPointsControleTIF?.trim()) {
-          setDemandeMessage({ type: "error", text: "Le lien des points de contrôle TIF est obligatoire." });
-          scrollToFormTop(); return;
+          newErrors5.lienIngridPointsControleTIF = "Le lien des points de contrôle TIF est obligatoire.";
         }
         if (!nouvelleDemandeFormData.lienIngridSignoff?.trim()) {
-          setDemandeMessage({ type: "error", text: "Le lien du document Signoff est obligatoire." });
-          scrollToFormTop(); return;
+          newErrors5.lienIngridSignoff = "Le lien du document Signoff est obligatoire.";
+        }
+        if (Object.keys(newErrors5).length > 0) {
+          setErrorsNouvelle(newErrors5);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
       }
 
@@ -576,6 +588,7 @@ const Demandes = () => {
         }
       }
 
+      setErrorsNouvelle({});
       setNouvelleDemandeStep(nouvelleDemandeStep + 1);
       setDemandeMessage({ type: "", text: "" });
     }
@@ -1485,6 +1498,14 @@ const Demandes = () => {
     if (!prospecteFormData.nomProjet?.trim()) {
       newErrors.nomProjet = "Le nom du projet est obligatoire.";
     }
+    if (!prospecteFormData.dateReception) {
+      newErrors.dateReception = "La date de réception est obligatoire.";
+    } else if (prospecteFormData.dateEnregistrement && prospecteFormData.dateReception > prospecteFormData.dateEnregistrement) {
+      newErrors.dateReception = "La date de réception ne peut pas dépasser la date d'enregistrement.";
+    }
+    if (!prospecteFormData.interlocuteur) {
+      newErrors.interlocuteur = "L'interlocuteur est obligatoire.";
+    }
     if (Object.keys(newErrors).length > 0) {
       setErrorsProspecte(newErrors);
       setTimeout(() => {
@@ -1492,20 +1513,6 @@ const Demandes = () => {
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 50);
       return;
-    }
-
-    if (!prospecteFormData.dateReception) {
-      setDemandeMessage({ type: "error", text: "La date de réception est obligatoire." });
-      scrollToFormTop(); return;
-    }
-    if (!prospecteFormData.interlocuteur) {
-      setDemandeMessage({ type: "error", text: "L'interlocuteur est obligatoire." });
-      scrollToFormTop(); return;
-    }
-    if (prospecteFormData.dateReception && prospecteFormData.dateEnregistrement &&
-        prospecteFormData.dateReception > prospecteFormData.dateEnregistrement) {
-      setDemandeMessage({ type: "error", text: "La date de réception ne peut pas dépasser la date d'enregistrement." });
-      scrollToFormTop(); return;
     }
 
     try {
@@ -1604,52 +1611,54 @@ const Demandes = () => {
           return;
         }
         if (!evolutionFormData.dateReception) {
-          setDemandeMessage({ type: "error", text: "La date de réception est obligatoire." });
-          scrollToFormTop(); return;
+          newErrors.dateReception = "La date de réception est obligatoire.";
+        } else if (evolutionFormData.dateEnregistrement && evolutionFormData.dateReception > evolutionFormData.dateEnregistrement) {
+          newErrors.dateReception = "La date de réception ne peut pas dépasser la date d'enregistrement.";
         }
-        if (evolutionFormData.dateReception && evolutionFormData.dateEnregistrement &&
-            evolutionFormData.dateReception > evolutionFormData.dateEnregistrement) {
-          setDemandeMessage({ type: "error", text: "La date de réception ne peut pas dépasser la date d'enregistrement." });
-          scrollToFormTop(); return;
+        if (Object.keys(newErrors).length > 0) {
+          setErrorsEvolution(newErrors);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
         setErrorsEvolution({});
       }
 
       if (evolutionStep === 2) {
+        const newErrEv2 = {};
         if (!evolutionFormData.dateDemandeMiseAJourDATFL) {
-          setDemandeMessage({ type: "error", text: "La date de demande de mise à jour du DATFL est obligatoire." });
-          scrollToFormTop(); return;
-        }
-        if (evolutionFormData.dateReception && evolutionFormData.dateDemandeMiseAJourDATFL < evolutionFormData.dateReception) {
-          setDemandeMessage({ type: "error", text: "La date de demande DATFL ne peut pas être avant la date de réception." });
-          scrollToFormTop(); return;
+          newErrEv2.dateDemandeMiseAJourDATFL = "La date de demande de mise à jour du DATFL est obligatoire.";
+        } else if (evolutionFormData.dateReception && evolutionFormData.dateDemandeMiseAJourDATFL < evolutionFormData.dateReception) {
+          newErrEv2.dateDemandeMiseAJourDATFL = "Ne peut pas être avant la date de réception.";
         }
         if (!evolutionFormData.dateReponseMiseAJourDATFL) {
-          setDemandeMessage({ type: "error", text: "La date de réponse de mise à jour du DATFL est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv2.dateReponseMiseAJourDATFL = "La date de réponse de mise à jour du DATFL est obligatoire.";
+        } else if (evolutionFormData.dateDemandeMiseAJourDATFL && evolutionFormData.dateReponseMiseAJourDATFL < evolutionFormData.dateDemandeMiseAJourDATFL) {
+          newErrEv2.dateReponseMiseAJourDATFL = "Ne peut pas être avant la date de demande DATFL.";
         }
-        if (evolutionFormData.dateReponseMiseAJourDATFL < evolutionFormData.dateDemandeMiseAJourDATFL) {
-          setDemandeMessage({ type: "error", text: "La date de réponse DATFL ne peut pas être avant la date de demande DATFL." });
-          scrollToFormTop(); return;
+        if (Object.keys(newErrEv2).length > 0) {
+          setErrorsEvolution(newErrEv2);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
       }
 
       if (evolutionStep === 3) {
+        const newErrEv3 = {};
         if (!evolutionFormData.charge) {
-          setDemandeMessage({ type: "error", text: "La charge est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv3.charge = "La charge est obligatoire.";
         }
         if (!evolutionFormData.planningDateDebut) {
-          setDemandeMessage({ type: "error", text: "La date de début du planning est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv3.planningDateDebut = "La date de début du planning est obligatoire.";
         }
         if (!evolutionFormData.planningDateFin) {
-          setDemandeMessage({ type: "error", text: "La date de fin du planning est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv3.planningDateFin = "La date de fin du planning est obligatoire.";
+        } else if (evolutionFormData.planningDateDebut && evolutionFormData.planningDateFin < evolutionFormData.planningDateDebut) {
+          newErrEv3.planningDateFin = "Ne peut pas être avant la date de début.";
         }
-        if (evolutionFormData.planningDateFin < evolutionFormData.planningDateDebut) {
-          setDemandeMessage({ type: "error", text: "La date de fin du planning ne peut pas être avant la date de début." });
-          scrollToFormTop(); return;
+        if (Object.keys(newErrEv3).length > 0) {
+          setErrorsEvolution(newErrEv3);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
         if (evolutionFormData.dateDemandeDevolution && evolutionFormData.dateReponseDevolution &&
             evolutionFormData.dateReponseDevolution < evolutionFormData.dateDemandeDevolution) {
@@ -1659,51 +1668,59 @@ const Demandes = () => {
       }
 
       if (evolutionStep === 4) {
-        if (!evolutionFormData.nomProjet?.trim()) {
-          setDemandeMessage({ type: "error", text: "Le nom du projet est obligatoire." });
-          scrollToFormTop(); return;
-        }
+        const newErrEv4 = {};
         if (!evolutionFormData.societesDemandeurs?.[0]) {
-          setDemandeMessage({ type: "error", text: "La société demandeuse est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv4.societesDemandeurs = "La société demandeuse est obligatoire.";
         }
         if (!evolutionFormData.interlocuteurClient) {
-          setDemandeMessage({ type: "error", text: "L'interlocuteur client est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv4.interlocuteurClient = "L'interlocuteur client est obligatoire.";
         }
         if (!evolutionFormData.methodologie) {
-          setDemandeMessage({ type: "error", text: "La méthodologie est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv4.methodologie = "La méthodologie est obligatoire.";
+        }
+        if (!evolutionFormData.nomProjet?.trim()) {
+          newErrEv4.nomProjet = "Le nom du projet est obligatoire.";
+        }
+        if (Object.keys(newErrEv4).length > 0) {
+          setErrorsEvolution(newErrEv4);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
       }
 
       if (evolutionStep === 5) {
+        const newErrEv5 = {};
         if (!evolutionFormData.dateTransmissionBacklog) {
-          setDemandeMessage({ type: "error", text: "La date de transmission du backlog est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv5.dateTransmissionBacklog = "La date de transmission du backlog est obligatoire.";
         }
         if (!evolutionFormData.dateConfirmationValidation) {
-          setDemandeMessage({ type: "error", text: "La date de confirmation/validation est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv5.dateConfirmationValidation = "La date de confirmation/validation est obligatoire.";
+        } else if (evolutionFormData.dateTransmissionBacklog && evolutionFormData.dateConfirmationValidation < evolutionFormData.dateTransmissionBacklog) {
+          newErrEv5.dateConfirmationValidation = "Ne peut pas être avant la date de transmission.";
         }
-        if (evolutionFormData.dateConfirmationValidation < evolutionFormData.dateTransmissionBacklog) {
-          setDemandeMessage({ type: "error", text: "La date de confirmation/validation ne peut pas être avant la date de transmission." });
-          scrollToFormTop(); return;
+        if (Object.keys(newErrEv5).length > 0) {
+          setErrorsEvolution(newErrEv5);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
       }
 
       if (evolutionStep === 6) {
+        const newErrEv6 = {};
         if (!evolutionFormData.dateCommunicationPlanningClient) {
-          setDemandeMessage({ type: "error", text: "La date de communication du planning client est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv6.dateCommunicationPlanningClient = "La date de communication du planning client est obligatoire.";
         }
-        const nb = parseInt(evolutionFormData.nombreSprint) || 0;
-        if (nb < 1) {
-          setDemandeMessage({ type: "error", text: "Le nombre de sprints doit être d'au moins 1." });
-          scrollToFormTop(); return;
+        const nbEv6 = parseInt(evolutionFormData.nombreSprint) || 0;
+        if (nbEv6 < 1) {
+          newErrEv6.nombreSprint = "Le nombre de sprints doit être d'au moins 1.";
+        }
+        if (Object.keys(newErrEv6).length > 0) {
+          setErrorsEvolution(newErrEv6);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
         const sprints = evolutionFormData.sprintsData || [];
-        const manquants = Array.from({ length: nb }, (_, i) => i + 1).filter(
+        const manquants = Array.from({ length: nbEv6 }, (_, i) => i + 1).filter(
           (i) => !sprints[i - 1]?.chantier?.trim()
         );
         if (manquants.length > 0) {
@@ -1713,28 +1730,35 @@ const Demandes = () => {
       }
 
       if (evolutionStep === 7) {
+        const newErrEv7 = {};
         if (!evolutionFormData.statutCodage) {
-          setDemandeMessage({ type: "error", text: "Le statut du codage est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv7.statutCodage = "Le statut du codage est obligatoire.";
         }
         if (!evolutionFormData.statutTIF) {
-          setDemandeMessage({ type: "error", text: "Le statut TIF est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv7.statutTIF = "Le statut TIF est obligatoire.";
+        }
+        if (Object.keys(newErrEv7).length > 0) {
+          setErrorsEvolution(newErrEv7);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
       }
 
       if (evolutionStep === 8) {
+        const newErrEv8 = {};
         if (!evolutionFormData.lienIngridKickoff?.trim()) {
-          setDemandeMessage({ type: "error", text: "Le lien du document Kickoff est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv8.lienIngridKickoff = "Le lien du document Kickoff est obligatoire.";
         }
         if (!evolutionFormData.lienIngridPointsControleTIF?.trim()) {
-          setDemandeMessage({ type: "error", text: "Le lien des points de contrôle TIF est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv8.lienIngridPointsControleTIF = "Le lien des points de contrôle TIF est obligatoire.";
         }
         if (!evolutionFormData.lienIngridSignoff?.trim()) {
-          setDemandeMessage({ type: "error", text: "Le lien du document Signoff est obligatoire." });
-          scrollToFormTop(); return;
+          newErrEv8.lienIngridSignoff = "Le lien du document Signoff est obligatoire.";
+        }
+        if (Object.keys(newErrEv8).length > 0) {
+          setErrorsEvolution(newErrEv8);
+          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+          return;
         }
         const nb = parseInt(evolutionFormData.nombreSprint) || 0;
         if (nb > 0) {
@@ -1751,6 +1775,7 @@ const Demandes = () => {
         }
       }
 
+      setErrorsEvolution({});
       setEvolutionStep(evolutionStep + 1);
       scrollToFormTop();
     }
@@ -2576,12 +2601,15 @@ const Demandes = () => {
                           name="typeProjet"
                           value={nouvelleDemandeFormData.typeProjet}
                           onChange={handleNouvelleDemandeInputChange}
+                          data-field-error={errorsNouvelle.typeProjet ? "true" : undefined}
+                          style={{ borderColor: errorsNouvelle.typeProjet ? "#EF4444" : undefined }}
                           required
                         >
                           <option value="">-- Choisir un type --</option>
                           <option value="Agile">Agile</option>
                           <option value="Classique">Classique</option>
                         </select>
+                        {errorsNouvelle.typeProjet && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.typeProjet}</span>}
                       </div>
                       <div
                         className="form-group"
@@ -2719,9 +2747,11 @@ const Demandes = () => {
                           name="dateTransmissionBacklog"
                           value={nouvelleDemandeFormData.dateTransmissionBacklog}
                           onChange={handleNouvelleDemandeInputChange}
+                          data-field-error={errorsNouvelle.dateTransmissionBacklog ? "true" : undefined}
                           required
-                          style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }}
+                          style={{ width: "100%", padding: "10px", border: `1px solid ${errorsNouvelle.dateTransmissionBacklog ? "#EF4444" : "#d1d5db"}`, borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }}
                         />
+                        {errorsNouvelle.dateTransmissionBacklog && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.dateTransmissionBacklog}</span>}
                       </div>
                       <div className="form-group" style={{ margin: 0 }}>
                         <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>
@@ -2732,9 +2762,11 @@ const Demandes = () => {
                           name="dateConfirmationValidation"
                           value={nouvelleDemandeFormData.dateConfirmationValidation}
                           onChange={handleNouvelleDemandeInputChange}
+                          data-field-error={errorsNouvelle.dateConfirmationValidation ? "true" : undefined}
                           required
-                          style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }}
+                          style={{ width: "100%", padding: "10px", border: `1px solid ${errorsNouvelle.dateConfirmationValidation ? "#EF4444" : "#d1d5db"}`, borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }}
                         />
+                        {errorsNouvelle.dateConfirmationValidation && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.dateConfirmationValidation}</span>}
                       </div>
                     </div>
 
@@ -2835,9 +2867,12 @@ const Demandes = () => {
                               <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={[nouvelleDemandeFormData.dateRetourEquipesDev, nouvelleDemandeFormData.dateRetourEquipesTif, nouvelleDemandeFormData.dateConfirmationValidation].filter(Boolean).sort().pop() || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`} name="dateCommunicationPlanningClient"
                                 value={nouvelleDemandeFormData.dateCommunicationPlanningClient}
                                 onChange={handleNouvelleDemandeInputChange}
+                                data-field-error={errorsNouvelle.dateCommunicationPlanningClient ? "true" : undefined}
                                 required
                                 className={retard(nouvelleDemandeFormData.dateCommunicationPlanningClient) ? flashClass : ""}
+                                style={{ borderColor: errorsNouvelle.dateCommunicationPlanningClient ? "#EF4444" : undefined }}
                               />
+                              {errorsNouvelle.dateCommunicationPlanningClient && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.dateCommunicationPlanningClient}</span>}
                             </div>
                           </>
                         );
@@ -2853,8 +2888,11 @@ const Demandes = () => {
                           onChange={handleNouvelleDemandeInputChange}
                           min="1"
                           placeholder="Ex: 3"
+                          data-field-error={errorsNouvelle.nombreSprint ? "true" : undefined}
+                          style={{ borderColor: errorsNouvelle.nombreSprint ? "#EF4444" : undefined }}
                           required
                         />
+                        {errorsNouvelle.nombreSprint && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.nombreSprint}</span>}
                       </div>
                     </div>
 
@@ -3030,11 +3068,14 @@ const Demandes = () => {
                           name="statutCodage"
                           value={nouvelleDemandeFormData.statutCodage}
                           onChange={handleNouvelleDemandeInputChange}
+                          data-field-error={errorsNouvelle.statutCodage ? "true" : undefined}
+                          style={{ borderColor: errorsNouvelle.statutCodage ? "#EF4444" : undefined }}
                         >
                           <option value="en attente">En attente</option>
                           <option value="en cours">En cours</option>
                           <option value="terminé">Terminé</option>
                         </select>
+                        {errorsNouvelle.statutCodage && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.statutCodage}</span>}
                       </div>
                       <div className="form-group">
                         <label>Statut TIF <span className="required">*</span></label>
@@ -3042,11 +3083,14 @@ const Demandes = () => {
                           name="statutTIF"
                           value={nouvelleDemandeFormData.statutTIF}
                           onChange={handleNouvelleDemandeInputChange}
+                          data-field-error={errorsNouvelle.statutTIF ? "true" : undefined}
+                          style={{ borderColor: errorsNouvelle.statutTIF ? "#EF4444" : undefined }}
                         >
                           <option value="en attente">En attente</option>
                           <option value="en cours">En cours</option>
                           <option value="terminé">Terminé</option>
                         </select>
+                        {errorsNouvelle.statutTIF && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.statutTIF}</span>}
                       </div>
                     </div>
 
@@ -3197,8 +3241,11 @@ const Demandes = () => {
                           value={nouvelleDemandeFormData.lienIngridKickoff}
                           onChange={handleNouvelleDemandeInputChange}
                           placeholder="https://ingrid.example.com/..."
+                          data-field-error={errorsNouvelle.lienIngridKickoff ? "true" : undefined}
+                          style={{ borderColor: errorsNouvelle.lienIngridKickoff ? "#EF4444" : undefined }}
                           required
                         />
+                        {errorsNouvelle.lienIngridKickoff && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.lienIngridKickoff}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3212,8 +3259,11 @@ const Demandes = () => {
                           }
                           onChange={handleNouvelleDemandeInputChange}
                           placeholder="https://ingrid.example.com/..."
+                          data-field-error={errorsNouvelle.lienIngridPointsControleTIF ? "true" : undefined}
+                          style={{ borderColor: errorsNouvelle.lienIngridPointsControleTIF ? "#EF4444" : undefined }}
                           required
                         />
+                        {errorsNouvelle.lienIngridPointsControleTIF && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.lienIngridPointsControleTIF}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3225,8 +3275,11 @@ const Demandes = () => {
                           value={nouvelleDemandeFormData.lienIngridSignoff}
                           onChange={handleNouvelleDemandeInputChange}
                           placeholder="https://ingrid.example.com/..."
+                          data-field-error={errorsNouvelle.lienIngridSignoff ? "true" : undefined}
+                          style={{ borderColor: errorsNouvelle.lienIngridSignoff ? "#EF4444" : undefined }}
                           required
                         />
+                        {errorsNouvelle.lienIngridSignoff && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.lienIngridSignoff}</span>}
                       </div>
                     </div>
                   </div>
@@ -3454,8 +3507,11 @@ const Demandes = () => {
                         prospecteFormData.dateReception,
                       )}
                       onChange={handleProspecteInputChange}
+                      data-field-error={errorsProspecte.dateReception ? "true" : undefined}
+                      style={{ borderColor: errorsProspecte.dateReception ? "#EF4444" : undefined }}
                       required
                     />
+                    {errorsProspecte.dateReception && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsProspecte.dateReception}</span>}
                   </div>
                   <div className="form-group">
                     <label>
@@ -3505,6 +3561,8 @@ const Demandes = () => {
                       name="interlocuteur"
                       value={prospecteFormData.interlocuteur}
                       onChange={handleProspecteInputChange}
+                      data-field-error={errorsProspecte.interlocuteur ? "true" : undefined}
+                      style={{ borderColor: errorsProspecte.interlocuteur ? "#EF4444" : undefined }}
                       required
                     >
                       <option value="">
@@ -3519,6 +3577,7 @@ const Demandes = () => {
                         </option>
                       ))}
                     </select>
+                    {errorsProspecte.interlocuteur && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsProspecte.interlocuteur}</span>}
                   </div>
                   <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                     <label>
@@ -3809,8 +3868,11 @@ const Demandes = () => {
                             evolutionFormData.dateReception,
                           )}
                           onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.dateReception ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.dateReception ? "#EF4444" : undefined }}
                           required
                         />
+                        {errorsEvolution.dateReception && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateReception}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3938,8 +4000,11 @@ const Demandes = () => {
                           name="dateDemandeMiseAJourDATFL"
                           value={evolutionFormData.dateDemandeMiseAJourDATFL}
                           onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.dateDemandeMiseAJourDATFL ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.dateDemandeMiseAJourDATFL ? "#EF4444" : undefined }}
                           required
                         />
+                        {errorsEvolution.dateDemandeMiseAJourDATFL && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateDemandeMiseAJourDATFL}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3951,8 +4016,11 @@ const Demandes = () => {
                           name="dateReponseMiseAJourDATFL"
                           value={evolutionFormData.dateReponseMiseAJourDATFL}
                           onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.dateReponseMiseAJourDATFL ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.dateReponseMiseAJourDATFL ? "#EF4444" : undefined }}
                           required
                         />
+                        {errorsEvolution.dateReponseMiseAJourDATFL && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateReponseMiseAJourDATFL}</span>}
                       </div>
                     </div>
                   </div>
@@ -3990,8 +4058,11 @@ const Demandes = () => {
                           onChange={handleEvolutionInputChange}
                           placeholder="Ex: 5"
                           min="0"
+                          data-field-error={errorsEvolution.charge ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.charge ? "#EF4444" : undefined }}
                           required
                         />
+                        {errorsEvolution.charge && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.charge}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -4003,8 +4074,11 @@ const Demandes = () => {
                           name="planningDateDebut"
                           value={evolutionFormData.planningDateDebut}
                           onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.planningDateDebut ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.planningDateDebut ? "#EF4444" : undefined }}
                           required
                         />
+                        {errorsEvolution.planningDateDebut && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.planningDateDebut}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -4016,8 +4090,11 @@ const Demandes = () => {
                           name="planningDateFin"
                           value={evolutionFormData.planningDateFin}
                           onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.planningDateFin ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.planningDateFin ? "#EF4444" : undefined }}
                           required
                         />
+                        {errorsEvolution.planningDateFin && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.planningDateFin}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -4130,30 +4207,43 @@ const Demandes = () => {
                               societesDemandeurs: e.target.value ? [e.target.value] : [],
                               societesDemandeursNames: e.target.value && sel ? [sel.nom] : [],
                             }));
+                            if (errorsEvolution.societesDemandeurs) setErrorsEvolution(prev => ({ ...prev, societesDemandeurs: "" }));
                           }}
+                          data-field-error={errorsEvolution.societesDemandeurs ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.societesDemandeurs ? "#EF4444" : undefined }}
                         >
                           <option value="">-- Sélectionner une société --</option>
                           {societesSelectOptions.map(s => <option key={s.id} value={s.id.toString()}>{s.code || s.nom}</option>)}
                         </select>
+                        {errorsEvolution.societesDemandeurs && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.societesDemandeurs}</span>}
                       </div>
                       <div className="form-group">
                         <label>Interlocuteur client <span className="required">*</span></label>
-                        <select name="interlocuteurClient" value={evolutionFormData.interlocuteurClient} onChange={handleEvolutionInputChange}>
+                        <select name="interlocuteurClient" value={evolutionFormData.interlocuteurClient} onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.interlocuteurClient ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.interlocuteurClient ? "#EF4444" : undefined }}>
                           <option value="">Sélectionner un interlocuteur</option>
                           {interlocuteurs.map(i => <option key={i.id} value={i.nom}>{i.nom}</option>)}
                         </select>
+                        {errorsEvolution.interlocuteurClient && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.interlocuteurClient}</span>}
                       </div>
                       <div className="form-group">
                         <label>Méthodologie <span className="required">*</span></label>
-                        <select name="methodologie" value={evolutionFormData.methodologie || ""} onChange={handleEvolutionInputChange}>
+                        <select name="methodologie" value={evolutionFormData.methodologie || ""} onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.methodologie ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.methodologie ? "#EF4444" : undefined }}>
                           <option value="">-- Choisir une méthodologie --</option>
                           <option value="Agile">Agile</option>
                           <option value="Classique">Classique</option>
                         </select>
+                        {errorsEvolution.methodologie && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.methodologie}</span>}
                       </div>
                       <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                         <label>Nom du projet <span className="required">*</span></label>
-                        <input type="text" name="nomProjet" value={evolutionFormData.nomProjet} onChange={handleEvolutionInputChange} placeholder="Nom du projet" />
+                        <input type="text" name="nomProjet" value={evolutionFormData.nomProjet} onChange={handleEvolutionInputChange} placeholder="Nom du projet"
+                          data-field-error={errorsEvolution.nomProjet ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.nomProjet ? "#EF4444" : undefined }} />
+                        {errorsEvolution.nomProjet && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.nomProjet}</span>}
                       </div>
                       <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                         <label>Description du projet</label>
@@ -4189,13 +4279,17 @@ const Demandes = () => {
                         <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Date de transmission du backlog <span style={{ color: "#ef4444" }}>*</span></label>
                         <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateReception || formatDateForInput(evolutionFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateTransmissionBacklog" value={evolutionFormData.dateTransmissionBacklog} onChange={handleEvolutionInputChange}
-                          style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
+                          data-field-error={errorsEvolution.dateTransmissionBacklog ? "true" : undefined}
+                          style={{ width: "100%", padding: "10px", border: `1px solid ${errorsEvolution.dateTransmissionBacklog ? "#EF4444" : "#d1d5db"}`, borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
+                        {errorsEvolution.dateTransmissionBacklog && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateTransmissionBacklog}</span>}
                       </div>
                       <div className="form-group" style={{ margin: 0 }}>
                         <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Date de confirmation de validation <span style={{ color: "#ef4444" }}>*</span></label>
                         <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateTransmissionBacklog || evolutionFormData.dateReception || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateConfirmationValidation" value={evolutionFormData.dateConfirmationValidation} onChange={handleEvolutionInputChange}
-                          style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
+                          data-field-error={errorsEvolution.dateConfirmationValidation ? "true" : undefined}
+                          style={{ width: "100%", padding: "10px", border: `1px solid ${errorsEvolution.dateConfirmationValidation ? "#EF4444" : "#d1d5db"}`, borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
+                        {errorsEvolution.dateConfirmationValidation && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateConfirmationValidation}</span>}
                       </div>
                     </div>
                     <div className="form-group" style={{ marginBottom: "20px" }}>
@@ -4242,11 +4336,19 @@ const Demandes = () => {
                       <div className="form-group">
                         <label>Date de communication du planning au client <span className="required">*</span></label>
                         <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={[evolutionFormData.dateRetourEquipesDev, evolutionFormData.dateRetourEquipesTif, evolutionFormData.dateConfirmationValidation].filter(Boolean).sort().pop() || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
-                          name="dateCommunicationPlanningClient" value={evolutionFormData.dateCommunicationPlanningClient} onChange={handleEvolutionInputChange} required />
+                          name="dateCommunicationPlanningClient" value={evolutionFormData.dateCommunicationPlanningClient} onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.dateCommunicationPlanningClient ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.dateCommunicationPlanningClient ? "#EF4444" : undefined }}
+                          required />
+                        {errorsEvolution.dateCommunicationPlanningClient && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateCommunicationPlanningClient}</span>}
                       </div>
                       <div className="form-group">
                         <label>Nombre de sprint <span className="required">*</span></label>
-                        <input type="number" name="nombreSprint" value={evolutionFormData.nombreSprint} onChange={handleEvolutionInputChange} min="1" placeholder="Ex: 3" required />
+                        <input type="number" name="nombreSprint" value={evolutionFormData.nombreSprint} onChange={handleEvolutionInputChange} min="1" placeholder="Ex: 3"
+                          data-field-error={errorsEvolution.nombreSprint ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.nombreSprint ? "#EF4444" : undefined }}
+                          required />
+                        {errorsEvolution.nombreSprint && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.nombreSprint}</span>}
                       </div>
                     </div>
                     {parseInt(evolutionFormData.nombreSprint) > 0 && (
@@ -4381,19 +4483,25 @@ const Demandes = () => {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", maxWidth: "600px" }}>
                       <div className="form-group">
                         <label>Statut Codage <span className="required">*</span></label>
-                        <select name="statutCodage" value={evolutionFormData.statutCodage} onChange={handleEvolutionInputChange}>
+                        <select name="statutCodage" value={evolutionFormData.statutCodage} onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.statutCodage ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.statutCodage ? "#EF4444" : undefined }}>
                           <option value="en attente">En attente</option>
                           <option value="en cours">En cours</option>
                           <option value="terminé">Terminé</option>
                         </select>
+                        {errorsEvolution.statutCodage && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.statutCodage}</span>}
                       </div>
                       <div className="form-group">
                         <label>Statut TIF <span className="required">*</span></label>
-                        <select name="statutTIF" value={evolutionFormData.statutTIF} onChange={handleEvolutionInputChange}>
+                        <select name="statutTIF" value={evolutionFormData.statutTIF} onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.statutTIF ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.statutTIF ? "#EF4444" : undefined }}>
                           <option value="en attente">En attente</option>
                           <option value="en cours">En cours</option>
                           <option value="terminé">Terminé</option>
                         </select>
+                        {errorsEvolution.statutTIF && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.statutTIF}</span>}
                       </div>
                     </div>
                     {parseInt(evolutionFormData.nombreSprint) > 0 && (
@@ -4505,15 +4613,27 @@ const Demandes = () => {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "24px" }}>
                       <div className="form-group">
                         <label>Présentation de kickoff - Lien INGRID <span className="required">*</span></label>
-                        <input type="url" name="lienIngridKickoff" value={evolutionFormData.lienIngridKickoff} onChange={handleEvolutionInputChange} placeholder="https://ingrid.example.com/..." required />
+                        <input type="url" name="lienIngridKickoff" value={evolutionFormData.lienIngridKickoff} onChange={handleEvolutionInputChange} placeholder="https://ingrid.example.com/..."
+                          data-field-error={errorsEvolution.lienIngridKickoff ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.lienIngridKickoff ? "#EF4444" : undefined }}
+                          required />
+                        {errorsEvolution.lienIngridKickoff && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.lienIngridKickoff}</span>}
                       </div>
                       <div className="form-group">
                         <label>Rédaction des points de contrôles (TIF) - Lien INGRID <span className="required">*</span></label>
-                        <input type="url" name="lienIngridPointsControleTIF" value={evolutionFormData.lienIngridPointsControleTIF} onChange={handleEvolutionInputChange} placeholder="https://ingrid.example.com/..." required />
+                        <input type="url" name="lienIngridPointsControleTIF" value={evolutionFormData.lienIngridPointsControleTIF} onChange={handleEvolutionInputChange} placeholder="https://ingrid.example.com/..."
+                          data-field-error={errorsEvolution.lienIngridPointsControleTIF ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.lienIngridPointsControleTIF ? "#EF4444" : undefined }}
+                          required />
+                        {errorsEvolution.lienIngridPointsControleTIF && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.lienIngridPointsControleTIF}</span>}
                       </div>
                       <div className="form-group">
                         <label>Rédaction du signoff document - Lien INGRID <span className="required">*</span></label>
-                        <input type="url" name="lienIngridSignoff" value={evolutionFormData.lienIngridSignoff} onChange={handleEvolutionInputChange} placeholder="https://ingrid.example.com/..." required />
+                        <input type="url" name="lienIngridSignoff" value={evolutionFormData.lienIngridSignoff} onChange={handleEvolutionInputChange} placeholder="https://ingrid.example.com/..."
+                          data-field-error={errorsEvolution.lienIngridSignoff ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.lienIngridSignoff ? "#EF4444" : undefined }}
+                          required />
+                        {errorsEvolution.lienIngridSignoff && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.lienIngridSignoff}</span>}
                       </div>
                     </div>
                   </div>
