@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Tooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
 
 import "./PageStyles.css";
 
@@ -1792,7 +1794,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           <PermissionGuard module="parametrage" submodule="societes" action="update">
                             <button
                               onClick={() => handleEditSociete(societe)}
-                              title="Modifier"
+                              data-tooltip-id="param-tooltip" data-tooltip-content="Modifier"
                               style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#DBEAFE", color: "#1E40AF", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
                               <i className="fa-solid fa-pen"></i>
@@ -1801,7 +1803,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           <PermissionGuard module="parametrage" submodule="societes" action="delete">
                             <button
                               onClick={() => handleToggleActivationSociete(societe)}
-                              title={societe.actif !== false ? "Désactiver" : "Activer"}
+                              data-tooltip-id="param-tooltip" data-tooltip-content={societe.actif !== false ? "Désactiver" : "Activer"}
                               style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: societe.actif !== false ? "#FEF3C7" : "#D1FAE5", color: societe.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
                               <i className={societe.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
@@ -2192,7 +2194,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             <button
                               onClick={() => handleEditUO(uo)}
                               disabled={uo.actif === false}
-                              title="Modifier"
+                              data-tooltip-id="param-tooltip" data-tooltip-content="Modifier"
                               style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: uo.actif === false ? "#F3F4F6" : "#DBEAFE", color: uo.actif === false ? "#D1D5DB" : "#1E40AF", cursor: uo.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
                               <i className="fa-solid fa-pen"></i>
@@ -2201,7 +2203,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           <PermissionGuard module="parametrage" submodule="uo" action="delete">
                             <button
                               onClick={() => handleToggleActivationUO(uo)}
-                              title={uo.actif !== false ? "Désactiver" : "Activer"}
+                              data-tooltip-id="param-tooltip" data-tooltip-content={uo.actif !== false ? "Désactiver" : "Activer"}
                               style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5", color: uo.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
                               <i className={uo.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
@@ -2438,7 +2440,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           <PermissionGuard module="parametrage" submodule="statuts" action="update">
                             <button
                               onClick={() => handleEditStatut(statut)}
-                              title="Modifier"
+                              data-tooltip-id="param-tooltip" data-tooltip-content="Modifier"
                               style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#DBEAFE", color: "#1E40AF", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
                               <i className="fa-solid fa-pen"></i>
@@ -2447,7 +2449,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           <PermissionGuard module="parametrage" submodule="statuts" action="delete">
                             <button
                               onClick={() => handleDeleteStatut(statut)}
-                              title="Supprimer"
+                              data-tooltip-id="param-tooltip" data-tooltip-content="Supprimer"
                               style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#FEE2E2", color: "#991B1B", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
                               <i className="fa-solid fa-trash"></i>
@@ -2708,7 +2710,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                               <button
                                 onClick={() => handleEditInterlocuteur(interlocuteur)}
                                 disabled={interlocuteur.actif === false}
-                                title="Modifier"
+                                data-tooltip-id="param-tooltip" data-tooltip-content="Modifier"
                                 style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: interlocuteur.actif === false ? "#F3F4F6" : "#DBEAFE", color: interlocuteur.actif === false ? "#D1D5DB" : "#1E40AF", cursor: interlocuteur.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
                                 <i className="fa-solid fa-pen"></i>
@@ -2717,7 +2719,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             <PermissionGuard module="parametrage" submodule="interlocuteurs" action="delete">
                               <button
                                 onClick={() => handleToggleActivationInterlocuteur(interlocuteur)}
-                                title={interlocuteur.actif !== false ? "Désactiver" : "Activer"}
+                                data-tooltip-id="param-tooltip" data-tooltip-content={interlocuteur.actif !== false ? "Désactiver" : "Activer"}
                                 style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5", color: interlocuteur.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                               >
                                 <i className={interlocuteur.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
@@ -2740,6 +2742,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
   return (
     <div className="page-container">
+      <Tooltip id="param-tooltip" place="top" style={{ backgroundColor: "#1F2937", color: "#fff", borderRadius: "6px", fontSize: "12px", fontWeight: "500", padding: "5px 10px", zIndex: 9999 }} />
       <div className="page-header">
         <h1>{subPages[activeSubPage].title}</h1>
 

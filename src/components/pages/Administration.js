@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { Tooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
 import { usePermissions } from "../PermissionGuard";
 
 import {
@@ -1783,7 +1785,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                               <button
                                 onClick={() => handleEdit(profil)}
                                 disabled={profil.actif === false}
-                                title="Modifier"
+                                data-tooltip-id="admin-tooltip" data-tooltip-content="Modifier"
                                 style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif === false ? "#F3F4F6" : "#DBEAFE", color: profil.actif === false ? "#D1D5DB" : "#1E40AF", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
                                 <i className="fa-solid fa-pen"></i>
@@ -1793,7 +1795,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                               <button
                                 onClick={() => handleManagePermissions(profil)}
                                 disabled={profil.actif === false}
-                                title="Attribuer des permissions"
+                                data-tooltip-id="admin-tooltip" data-tooltip-content="Attribuer des permissions"
                                 style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif === false ? "#F3F4F6" : "#EDE9FE", color: profil.actif === false ? "#D1D5DB" : "#6D28D9", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
                                 <i className="fa-solid fa-key"></i>
@@ -1803,7 +1805,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                               <>
                                 <button
                                   onClick={() => handleToggleActivation(profil)}
-                                  title={profil.actif !== false ? "Désactiver" : "Activer"}
+                                  data-tooltip-id="admin-tooltip" data-tooltip-content={profil.actif !== false ? "Désactiver" : "Activer"}
                                   style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif !== false ? "#FEF3C7" : "#D1FAE5", color: profil.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                                 >
                                   <i className={profil.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
@@ -2586,7 +2588,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                           {peutModifierUtilisateur && (
                             <button
                               onClick={() => handleEditUser(user)}
-                              title="Modifier"
+                              data-tooltip-id="admin-tooltip" data-tooltip-content="Modifier"
                               style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#DBEAFE", color: "#1E40AF", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
                               <i className="fa-solid fa-pen"></i>
@@ -2595,7 +2597,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                           {peutSupprimerUtilisateur && (
                             <button
                               onClick={() => handleDeleteUser(user)}
-                              title="Supprimer"
+                              data-tooltip-id="admin-tooltip" data-tooltip-content="Supprimer"
                               style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#FEE2E2", color: "#991B1B", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
                               <i className="fa-solid fa-trash"></i>
@@ -2655,6 +2657,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
   return (
     <div className="page-container">
+      <Tooltip id="admin-tooltip" place="top" style={{ backgroundColor: "#1F2937", color: "#fff", borderRadius: "6px", fontSize: "12px", fontWeight: "500", padding: "5px 10px", zIndex: 9999 }} />
       <div className="page-header">
         <h1>{subPages[activeSubPage].title}</h1>
         {subPages[activeSubPage].description && (
