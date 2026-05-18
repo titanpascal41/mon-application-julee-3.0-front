@@ -95,7 +95,6 @@ const creerUtilisateur = async (
   email,
   motDePasse,
   profilId,
-  description = "",
 ) => {
   // Vérifier si l'email existe déjà (y compris admin)
   if (await emailExisteComplet(email)) {
@@ -243,16 +242,15 @@ const supprimerUtilisateur = async (id) => {
     const response = await apiFetch(`/users/${id}`, { method: "DELETE" });
 
     if (!response.ok) {
-      if (response.status === 404) {
-        return { succes: false, message: "Utilisateur introuvable" };
-      }
-      throw new Error("Erreur lors de la suppression de l'utilisateur");
+      const errData = await response.json().catch(() => ({}));
+      if (response.status === 404) return { succes: false, message: "Utilisateur introuvable" };
+      throw new Error(errData.error || "Erreur lors de la suppression de l'utilisateur");
     }
 
     return { succes: true, message: "Utilisateur supprimé avec succès" };
   } catch (error) {
     console.error("Erreur lors de la suppression de l'utilisateur:", error);
-    return { succes: false, message: "Erreur lors de la suppression" };
+    return { succes: false, message: error.message || "Erreur lors de la suppression" };
   }
 };
 

@@ -19,6 +19,7 @@ import {
   mettreAJourUO,
   supprimerUO,
   toggleActivationUO,
+  verifierDemandesUO,
 } from "../../data/gestionUO";
 
 import {
@@ -35,6 +36,7 @@ import {
   mettreAJourInterlocuteur,
   supprimerInterlocuteur,
   toggleActivationInterlocuteur,
+  verifierDemandesInterlocuteur,
 } from "../../data/gestionInterlocuteurs";
 
 import { PermissionGuard, usePermissions } from "../PermissionGuard";
@@ -114,6 +116,10 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const [societeToDelete, setSocieteToDelete] = useState(null);
   const [showSocieteOccupeeModal, setShowSocieteOccupeeModal] = useState(false);
   const [societeOccupeeName, setSocieteOccupeeName] = useState("");
+  const [societeOccupeeMessage, setSocieteOccupeeMessage] = useState("");
+  const [societeDeleteError, setSocieteDeleteError] = useState("");
+  const [showBlockedModal, setShowBlockedModal] = useState(false);
+  const [blockedModalMessage, setBlockedModalMessage] = useState("");
 
   // États pour la gestion des UO
 
@@ -142,9 +148,10 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const [errorsUO, setErrorsUO] = useState({});
 
   const [showUODeleteConfirm, setShowUODeleteConfirm] = useState(false);
-
   const [uoToDelete, setUOToDelete] = useState(null);
+  const [uoDeleteError, setUoDeleteError] = useState("");
   const [showDeactivateUOModal, setShowDeactivateUOModal] = useState(false);
+  const [deactivateUOError, setDeactivateUOError] = useState("");
   const [uoToToggle, setUoToToggle] = useState(null);
   const [motifDesactivationUO, setMotifDesactivationUO] = useState("");
 
@@ -169,8 +176,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const [errorsStatut, setErrorsStatut] = useState({});
 
   const [showStatutDeleteConfirm, setShowStatutDeleteConfirm] = useState(false);
-
   const [statutToDelete, setStatutToDelete] = useState(null);
+  const [statutDeleteError, setStatutDeleteError] = useState("");
 
   const dragStatutIndex = useRef(null);
   const dragOverStatutIndex = useRef(null);
@@ -205,7 +212,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const [interlocuteurFormData, setInterlocuteurFormData] = useState({
     nom: "",
     email: "",
-    poste: "",
     telephone: "",
     actif: true,
     uoId: "",
@@ -219,11 +225,11 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
   const [errorsInterlocuteur, setErrorsInterlocuteur] = useState({});
 
-  const [showInterlocuteurDeleteConfirm, setShowInterlocuteurDeleteConfirm] =
-    useState(false);
-
+  const [showInterlocuteurDeleteConfirm, setShowInterlocuteurDeleteConfirm] = useState(false);
   const [interlocuteurToDelete, setInterlocuteurToDelete] = useState(null);
+  const [interlocuteurDeleteError, setInterlocuteurDeleteError] = useState("");
   const [showDeactivateInterlocuteurModal, setShowDeactivateInterlocuteurModal] = useState(false);
+  const [deactivateInterlocuteurError, setDeactivateInterlocuteurError] = useState("");
   const [interlocuteurToToggle, setInterlocuteurToToggle] = useState(null);
   const [motifDesactivationInterlocuteur, setMotifDesactivationInterlocuteur] = useState("");
 
@@ -448,44 +454,37 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
       await chargerLesSocietes();
       setTimeout(() => setSocieteMessage({ type: "", text: "" }), 3000);
     } else {
-      if (societe.actif === true) {
-        // Tentative de désactivation bloquée → popup
-        setSocieteOccupeeName(societe.nom);
-        setShowSocieteOccupeeModal(true);
-      } else {
-        setSocieteMessage({ type: "error", text: resultat.message || "Erreur" });
-        setTimeout(() => setSocieteMessage({ type: "", text: "" }), 5000);
-      }
+      setSocieteOccupeeName(societe.nom);
+      setSocieteOccupeeMessage(resultat.message || "Désactivation impossible.");
+      setShowSocieteOccupeeModal(true);
     }
   };
 
   const handlePermanentDeleteSociete = (societe) => {
     setSocieteToDelete(societe);
     setSocieteDeleteMode("permanent");
+    setSocieteDeleteError("");
     setShowSocieteDeleteConfirm(true);
   };
 
   const confirmDeleteSociete = async () => {
-    if (societeToDelete) {
-      let resultat;
-      if (societeDeleteMode === "permanent") {
-        resultat = await supprimerSociete(societeToDelete.id);
-      } else {
-        resultat = await archiverSociete(societeToDelete.id);
-      }
-
-      if (resultat.succes) {
-        setSocieteMessage({ type: "success", text: resultat.message });
-        await chargerLesSocietes();
-        setTimeout(() => setSocieteMessage({ type: "", text: "" }), 3000);
-      } else {
-        setSocieteMessage({ type: "error", text: resultat.message });
-        setTimeout(() => setSocieteMessage({ type: "", text: "" }), 5000);
-      }
+    if (!societeToDelete) return;
+    let resultat;
+    if (societeDeleteMode === "permanent") {
+      resultat = await supprimerSociete(societeToDelete.id);
+    } else {
+      resultat = await archiverSociete(societeToDelete.id);
     }
-
-    setShowSocieteDeleteConfirm(false);
-    setSocieteToDelete(null);
+    if (resultat.succes) {
+      setSocieteMessage({ type: "success", text: resultat.message });
+      await chargerLesSocietes();
+      setTimeout(() => setSocieteMessage({ type: "", text: "" }), 3000);
+      setShowSocieteDeleteConfirm(false);
+      setSocieteToDelete(null);
+      setSocieteDeleteError("");
+    } else {
+      setSocieteDeleteError(resultat.message || "Erreur lors de la suppression.");
+    }
   };
 
   const cancelDeleteSociete = () => {
@@ -700,10 +699,25 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setErrorsUO({});
   };
 
-  const handleToggleActivationUO = (uo) => {
+  const formatBlockedMessage = (entite, { count, noms }) => {
+    if (count === 0) return "";
+    const liste = noms.length > 0
+      ? ` : ${noms.map(n => `"${n}"`).join(", ")}`
+      : "";
+    return `Impossible de désactiver ${entite}\n${count} demande(s) y sont liées${liste}.`;
+  };
+
+  const handleToggleActivationUO = async (uo) => {
     if (uo.actif !== false) {
+      const result = await verifierDemandesUO(uo.id);
+      if (result.count > 0) {
+        setBlockedModalMessage(formatBlockedMessage(`l'UO "${uo.nom}"`, result));
+        setShowBlockedModal(true);
+        return;
+      }
       setUoToToggle(uo);
       setMotifDesactivationUO("");
+      setDeactivateUOError("");
       setShowDeactivateUOModal(true);
     } else {
       toggleActivationUO(uo.id, true, null).then((resultat) => {
@@ -722,35 +736,31 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     const resultat = await toggleActivationUO(uoToToggle.id, false, null);
     if (resultat.succes) {
       chargerLesUO();
+      setShowDeactivateUOModal(false);
+      setUoToToggle(null);
+      setMotifDesactivationUO("");
+      setDeactivateUOError("");
     } else {
-      setUOMessage({ type: "error", text: resultat.message || "Erreur" });
-      setTimeout(() => setUOMessage({ type: "", text: "" }), 4000);
+      setShowDeactivateUOModal(false);
+      setDeactivateUOError("");
+      setBlockedModalMessage(resultat.message || "Désactivation impossible.");
+      setShowBlockedModal(true);
     }
-    setShowDeactivateUOModal(false);
-    setUoToToggle(null);
-    setMotifDesactivationUO("");
   };
 
   const confirmDeleteUO = async () => {
-    if (uoToDelete) {
-      const resultat = await supprimerUO(uoToDelete.id);
-
-      if (resultat.succes) {
-        setUOMessage({ type: "success", text: resultat.message });
-
-        chargerLesUO();
-
-        setTimeout(() => setUOMessage({ type: "", text: "" }), 3000);
-      } else {
-        setUOMessage({ type: "error", text: resultat.message });
-
-        setTimeout(() => setUOMessage({ type: "", text: "" }), 5000);
-      }
+    if (!uoToDelete) return;
+    const resultat = await supprimerUO(uoToDelete.id);
+    if (resultat.succes) {
+      setUOMessage({ type: "success", text: resultat.message });
+      chargerLesUO();
+      setTimeout(() => setUOMessage({ type: "", text: "" }), 3000);
+      setShowUODeleteConfirm(false);
+      setUOToDelete(null);
+      setUoDeleteError("");
+    } else {
+      setUoDeleteError(resultat.message || "Erreur lors de la suppression.");
     }
-
-    setShowUODeleteConfirm(false);
-
-    setUOToDelete(null);
   };
 
   const cancelDeleteUO = () => {
@@ -948,56 +958,30 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
       setStatutMessage({ type: "success", text: `Statut "${statut.nom}" ${!statut.actif ? "activé" : "désactivé"}.` });
       setTimeout(() => setStatutMessage({ type: "", text: "" }), 3000);
     } else {
-      setStatutMessage({ type: "error", text: resultat.message || "Erreur lors de la modification." });
+      setBlockedModalMessage(resultat.message || "Opération impossible.");
+      setShowBlockedModal(true);
     }
   };
 
   const handleDeleteStatut = (statut) => {
     setStatutToDelete(statut);
+    setStatutDeleteError("");
     setShowStatutDeleteConfirm(true);
   };
 
   const confirmDeleteStatut = async () => {
-    if (statutToDelete) {
-      const resultat = await supprimerStatut(statutToDelete.id);
-
-      if (resultat.succes) {
-        setStatutMessage({ type: "success", text: resultat.message });
-
-        chargerLesStatuts();
-
-        setTimeout(() => setStatutMessage({ type: "", text: "" }), 3000);
-      } else {
-        // Afficher un message d'erreur plus détaillé
-
-        let errorMessage = resultat.message;
-
-        // Ajouter une explication spécifique pour les statuts créés automatiquement
-        if (resultat.message && resultat.message.includes("utilisé")) {
-          errorMessage +=
-            "\n\n💡 Note : Si ce statut a été créé automatiquement depuis une demande, il ne peut être supprimé que lorsque la demande associée est supprimée.";
-        }
-
-        const finalErrorMessage = resultat.details
-          ? `${errorMessage}\nDétails: ${resultat.details}`
-          : errorMessage;
-
-        setStatutMessage({
-          type: "error",
-          text: finalErrorMessage,
-
-          details: resultat.details,
-        });
-
-        setTimeout(
-          () => setStatutMessage({ type: "", text: "", details: "" }),
-          10000,
-        );
-      }
+    if (!statutToDelete) return;
+    const resultat = await supprimerStatut(statutToDelete.id);
+    if (resultat.succes) {
+      setStatutMessage({ type: "success", text: resultat.message });
+      chargerLesStatuts();
+      setTimeout(() => setStatutMessage({ type: "", text: "" }), 3000);
+      setShowStatutDeleteConfirm(false);
+      setStatutToDelete(null);
+      setStatutDeleteError("");
+    } else {
+      setStatutDeleteError(resultat.message || "Erreur lors de la suppression.");
     }
-
-    setShowStatutDeleteConfirm(false);
-    setStatutToDelete(null);
   };
 
   const cancelDeleteStatut = () => {
@@ -1111,22 +1095,9 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const handleCreateInterlocuteur = () => {
     setEditingInterlocuteur(null);
 
-    setInterlocuteurFormData({
-      nom: "",
-
-      email: "",
-
-      poste: "",
-
-      telephone: "",
-
-      actif: true,
-    });
-
+    setInterlocuteurFormData({ nom: "", email: "", telephone: "", actif: true, uoId: "" });
     setShowInterlocuteurForm(true);
-
     setInterlocuteurMessage({ type: "", text: "" });
-
     setErrorsInterlocuteur({});
   };
 
@@ -1136,7 +1107,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setInterlocuteurFormData({
       nom: interlocuteur.nom,
       email: interlocuteur.email || "",
-      poste: interlocuteur.poste || "",
       telephone: interlocuteur.telephone || "",
       actif: interlocuteur.actif,
       uoId: interlocuteur.uoId ? interlocuteur.uoId.toString() : "",
@@ -1149,10 +1119,17 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setErrorsInterlocuteur({});
   };
 
-  const handleToggleActivationInterlocuteur = (interlocuteur) => {
+  const handleToggleActivationInterlocuteur = async (interlocuteur) => {
     if (interlocuteur.actif !== false) {
+      const result = await verifierDemandesInterlocuteur(interlocuteur.id);
+      if (result.count > 0) {
+        setBlockedModalMessage(formatBlockedMessage(`l'interlocuteur "${interlocuteur.nom}"`, result));
+        setShowBlockedModal(true);
+        return;
+      }
       setInterlocuteurToToggle(interlocuteur);
       setMotifDesactivationInterlocuteur("");
+      setDeactivateInterlocuteurError("");
       setShowDeactivateInterlocuteurModal(true);
     } else {
       toggleActivationInterlocuteur(interlocuteur.id, true, null).then((resultat) => {
@@ -1171,32 +1148,30 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     const resultat = await toggleActivationInterlocuteur(interlocuteurToToggle.id, false, null);
     if (resultat.succes) {
       chargerLesInterlocuteurs();
+      setShowDeactivateInterlocuteurModal(false);
+      setInterlocuteurToToggle(null);
+      setMotifDesactivationInterlocuteur("");
+      setDeactivateInterlocuteurError("");
     } else {
-      setInterlocuteurMessage({ type: "error", text: resultat.message || "Erreur" });
-      setTimeout(() => setInterlocuteurMessage({ type: "", text: "" }), 4000);
+      setShowDeactivateInterlocuteurModal(false);
+      setDeactivateInterlocuteurError("");
+      setBlockedModalMessage(resultat.message || "Désactivation impossible.");
+      setShowBlockedModal(true);
     }
-    setShowDeactivateInterlocuteurModal(false);
-    setInterlocuteurToToggle(null);
-    setMotifDesactivationInterlocuteur("");
   };
 
   const confirmDeleteInterlocuteur = async () => {
-    if (interlocuteurToDelete) {
-      const resultat = await supprimerInterlocuteur(interlocuteurToDelete.id);
-
-      if (resultat.succes) {
-        setInterlocuteurMessage({ type: "success", text: resultat.message });
-
-        chargerLesInterlocuteurs();
-      } else {
-        setInterlocuteurMessage({ type: "error", text: resultat.message });
-      }
-
-      setShowInterlocuteurDeleteConfirm(false);
-
-      setInterlocuteurToDelete(null);
-
+    if (!interlocuteurToDelete) return;
+    const resultat = await supprimerInterlocuteur(interlocuteurToDelete.id);
+    if (resultat.succes) {
+      setInterlocuteurMessage({ type: "success", text: resultat.message });
+      chargerLesInterlocuteurs();
       setTimeout(() => setInterlocuteurMessage({ type: "", text: "" }), 3000);
+      setShowInterlocuteurDeleteConfirm(false);
+      setInterlocuteurToDelete(null);
+      setInterlocuteurDeleteError("");
+    } else {
+      setInterlocuteurDeleteError(resultat.message || "Erreur lors de la suppression.");
     }
   };
 
@@ -1249,18 +1224,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
       setShowInterlocuteurForm(false);
 
-      setInterlocuteurFormData({
-        nom: "",
-
-        email: "",
-
-        poste: "",
-
-        telephone: "",
-
-        actif: true,
-      });
-
+      setInterlocuteurFormData({ nom: "", email: "", telephone: "", actif: true, uoId: "" });
       setEditingInterlocuteur(null);
 
     } else {
@@ -1273,20 +1237,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const handleCancelInterlocuteur = () => {
     setShowInterlocuteurForm(false);
 
-    setInterlocuteurFormData({
-      nom: "",
-
-      email: "",
-
-      poste: "",
-
-      telephone: "",
-
-      actif: true,
-    });
-
+    setInterlocuteurFormData({ nom: "", email: "", telephone: "", actif: true, uoId: "" });
     setEditingInterlocuteur(null);
-
     setInterlocuteurMessage({ type: "", text: "" });
 
     setErrorsInterlocuteur({});
@@ -2252,9 +2204,16 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             <button
                               onClick={() => handleToggleActivationUO(uo)}
                               data-tooltip-id="param-tooltip" data-tooltip-content={uo.actif !== false ? "Désactiver" : "Activer"}
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5", color: uo.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5", color: uo.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
                               <i className={uo.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
+                            </button>
+                            <button
+                              onClick={() => { setUOToDelete(uo); setUoDeleteError(""); setShowUODeleteConfirm(true); }}
+                              data-tooltip-id="param-tooltip" data-tooltip-content="Supprimer"
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#FEE2E2", color: "#991B1B", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                            >
+                              <i className="fa-solid fa-trash"></i>
                             </button>
                           </PermissionGuard>
                         </td>
@@ -2760,9 +2719,16 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                               <button
                                 onClick={() => handleToggleActivationInterlocuteur(interlocuteur)}
                                 data-tooltip-id="param-tooltip" data-tooltip-content={interlocuteur.actif !== false ? "Désactiver" : "Activer"}
-                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5", color: interlocuteur.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5", color: interlocuteur.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
                                 <i className={interlocuteur.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
+                              </button>
+                              <button
+                                onClick={() => { setInterlocuteurToDelete(interlocuteur); setInterlocuteurDeleteError(""); setShowInterlocuteurDeleteConfirm(true); }}
+                                data-tooltip-id="param-tooltip" data-tooltip-content="Supprimer"
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#FEE2E2", color: "#991B1B", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                              >
+                                <i className="fa-solid fa-trash"></i>
                               </button>
                             </PermissionGuard>
                           </td>
@@ -2801,31 +2767,20 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
             </div>
 
             <div className="confirm-modal-body">
-              <p style={{ textAlign: "center", marginBottom: "10px" }}>
-                <strong>ATTENTION ! </strong>
-              </p>
               <p style={{ color: "#dc2626" }}>
-                Êtes-vous sûr de vouloir supprimer le statut{" "}
-                <strong>"{statutToDelete.nom}"</strong> ?
+                Êtes-vous sûr de vouloir supprimer le statut <strong>"{statutToDelete.nom}"</strong> ?
               </p>
+              {statutDeleteError && (
+                <div style={{ backgroundColor: "#FEE2E2", border: "1px solid #FECACA", borderRadius: "8px", padding: "10px 14px", marginTop: "12px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                  <i className="fa-solid fa-circle-exclamation" style={{ color: "#DC2626", marginTop: "2px", flexShrink: 0 }}></i>
+                  <span style={{ color: "#991B1B", fontSize: "13px" }}>{statutDeleteError}</span>
+                </div>
+              )}
             </div>
 
             <div className="confirm-modal-actions">
-              <button
-                type="button"
-                className="btn-danger"
-                onClick={confirmDeleteStatut}
-              >
-                Supprimer
-              </button>
-
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={cancelDeleteStatut}
-              >
-                Annuler
-              </button>
+              <button type="button" className="btn-danger" onClick={confirmDeleteStatut}>Supprimer</button>
+              <button type="button" className="btn-secondary" onClick={() => { cancelDeleteStatut(); setStatutDeleteError(""); }}>Annuler</button>
             </div>
           </div>
         </div>
@@ -2841,33 +2796,18 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
             </div>
 
             <div className="confirm-modal-body">
-              <p>
-                Êtes-vous sûr de vouloir supprimer l'unité organisationnelle{" "}
-                <strong>"{uoToDelete.nom}"</strong> ?
-              </p>
-
-              <p className="confirm-warning">
-                Cette action est irréversible. Une UO ne peut pas être supprimée
-                si elle contient des utilisateurs ou des UO filles.
-              </p>
+              <p>Êtes-vous sûr de vouloir supprimer l'unité organisationnelle <strong>"{uoToDelete.nom}"</strong> ?</p>
+              {uoDeleteError && (
+                <div style={{ backgroundColor: "#FEE2E2", border: "1px solid #FECACA", borderRadius: "8px", padding: "10px 14px", marginTop: "12px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                  <i className="fa-solid fa-circle-exclamation" style={{ color: "#DC2626", marginTop: "2px", flexShrink: 0 }}></i>
+                  <span style={{ color: "#991B1B", fontSize: "13px" }}>{uoDeleteError}</span>
+                </div>
+              )}
             </div>
 
             <div className="confirm-modal-actions">
-              <button
-                type="button"
-                className="btn-danger"
-                onClick={confirmDeleteUO}
-              >
-                Supprimer
-              </button>
-
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={cancelDeleteUO}
-              >
-                Annuler
-              </button>
+              <button type="button" className="btn-danger" onClick={confirmDeleteUO}>Supprimer</button>
+              <button type="button" className="btn-secondary" onClick={() => { cancelDeleteUO(); setUoDeleteError(""); }}>Annuler</button>
             </div>
           </div>
         </div>
@@ -2888,45 +2828,23 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
             <div className="confirm-modal-body">
               <p>
-                {societeDeleteMode === "permanent" ? (
-                  <>
-                    Êtes-vous sûr de vouloir supprimer définitivement la société{" "}
-                    <strong>"{societeToDelete.nom}"</strong> ?
-                  </>
-                ) : (
-                  <>
-                    Êtes-vous sûr de vouloir retirer la société{" "}
-                    <strong>"{societeToDelete.nom}"</strong> de la liste active
-                    ?
-                  </>
-                )}
-              </p>
-
-              <p className="confirm-warning">
                 {societeDeleteMode === "permanent"
-                  ? "Cette action est irréversible."
-                  : "La société restera disponible pour être réajoutée ultérieurement."}
+                  ? <>Êtes-vous sûr de vouloir supprimer définitivement la société <strong>"{societeToDelete.nom}"</strong> ?</>
+                  : <>Êtes-vous sûr de vouloir retirer la société <strong>"{societeToDelete.nom}"</strong> de la liste active ?</>}
               </p>
+              {societeDeleteError && (
+                <div style={{ backgroundColor: "#FEE2E2", border: "1px solid #FECACA", borderRadius: "8px", padding: "10px 14px", marginTop: "12px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                  <i className="fa-solid fa-circle-exclamation" style={{ color: "#DC2626", marginTop: "2px", flexShrink: 0 }}></i>
+                  <span style={{ color: "#991B1B", fontSize: "13px" }}>{societeDeleteError}</span>
+                </div>
+              )}
             </div>
 
             <div className="confirm-modal-actions">
-              <button
-                type="button"
-                className="btn-danger"
-                onClick={confirmDeleteSociete}
-              >
-                {societeDeleteMode === "permanent"
-                  ? "Supprimer définitivement"
-                  : "Retirer"}
+              <button type="button" className="btn-danger" onClick={confirmDeleteSociete}>
+                {societeDeleteMode === "permanent" ? "Supprimer définitivement" : "Retirer"}
               </button>
-
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={cancelDeleteSociete}
-              >
-                Annuler
-              </button>
+              <button type="button" className="btn-secondary" onClick={() => { cancelDeleteSociete(); setSocieteDeleteError(""); }}>Annuler</button>
             </div>
           </div>
         </div>
@@ -2944,10 +2862,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
             </div>
             <div className="confirm-modal-body">
               <p>
-                La société <strong>"{societeOccupeeName}"</strong> est attribuée à une ou plusieurs unités organisationnelles.
-              </p>
-              <p style={{ color: "#6B7280", fontSize: "14px" }}>
-                Veuillez d'abord retirer cette société des unités organisationnelles concernées avant de la désactiver.
+                <strong>"{societeOccupeeName}"</strong> — {societeOccupeeMessage}
               </p>
             </div>
             <div className="confirm-modal-actions">
@@ -2956,6 +2871,28 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 className="btn-primary"
                 onClick={() => setShowSocieteOccupeeModal(false)}
               >
+                Compris
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup opération bloquée (UO, Statut, Interlocuteur) */}
+      {showBlockedModal && (
+        <div className="modal-overlay" onClick={() => setShowBlockedModal(false)}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-modal-header" style={{ backgroundColor: "#FEF3C7", borderBottom: "1px solid #FDE68A", borderRadius: "12px 12px 0 0" }}>
+              <h3 style={{ color: "#92400E" }}>
+                <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: "8px" }}></i>
+                Opération impossible
+              </h3>
+            </div>
+            <div className="confirm-modal-body">
+              <p style={{ whiteSpace: "pre-line" }}>{blockedModalMessage}</p>
+            </div>
+            <div className="confirm-modal-actions">
+              <button type="button" className="btn-primary" onClick={() => setShowBlockedModal(false)}>
                 Compris
               </button>
             </div>
@@ -3004,6 +2941,12 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   Le motif est obligatoire
                 </p>
               )}
+              {deactivateUOError && (
+                <div style={{ backgroundColor: "#FEE2E2", border: "1px solid #FECACA", borderRadius: "8px", padding: "10px 14px", marginTop: "12px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                  <i className="fa-solid fa-circle-exclamation" style={{ color: "#DC2626", marginTop: "2px", flexShrink: 0 }}></i>
+                  <span style={{ color: "#991B1B", fontSize: "13px" }}>{deactivateUOError}</span>
+                </div>
+              )}
             </div>
             <div style={{
               display: "flex",
@@ -3012,7 +2955,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
               padding: "16px 32px 24px 32px",
               borderTop: "1px solid #e5e7eb",
             }}>
-              <button className="btn-secondary" onClick={() => setShowDeactivateUOModal(false)}>
+              <button className="btn-secondary" onClick={() => { setShowDeactivateUOModal(false); setDeactivateUOError(""); }}>
                 Annuler
               </button>
               <button
@@ -3077,6 +3020,12 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   Le motif est obligatoire
                 </p>
               )}
+              {deactivateInterlocuteurError && (
+                <div style={{ backgroundColor: "#FEE2E2", border: "1px solid #FECACA", borderRadius: "8px", padding: "10px 14px", marginTop: "12px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                  <i className="fa-solid fa-circle-exclamation" style={{ color: "#DC2626", marginTop: "2px", flexShrink: 0 }}></i>
+                  <span style={{ color: "#991B1B", fontSize: "13px" }}>{deactivateInterlocuteurError}</span>
+                </div>
+              )}
             </div>
             <div style={{
               display: "flex",
@@ -3085,7 +3034,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
               padding: "16px 32px 24px 32px",
               borderTop: "1px solid #e5e7eb",
             }}>
-              <button className="btn-secondary" onClick={() => setShowDeactivateInterlocuteurModal(false)}>
+              <button className="btn-secondary" onClick={() => { setShowDeactivateInterlocuteurModal(false); setDeactivateInterlocuteurError(""); }}>
                 Annuler
               </button>
               <button
@@ -3122,30 +3071,18 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
             </div>
 
             <div className="confirm-modal-body">
-              <p>
-                Êtes-vous sûr de vouloir supprimer l'interlocuteur{" "}
-                <strong>"{interlocuteurToDelete.nom}"</strong> ?
-              </p>
-
-              <p className="confirm-warning">Cette action est irréversible.</p>
+              <p>Êtes-vous sûr de vouloir supprimer l'interlocuteur <strong>"{interlocuteurToDelete.nom}"</strong> ?</p>
+              {interlocuteurDeleteError && (
+                <div style={{ backgroundColor: "#FEE2E2", border: "1px solid #FECACA", borderRadius: "8px", padding: "10px 14px", marginTop: "12px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                  <i className="fa-solid fa-circle-exclamation" style={{ color: "#DC2626", marginTop: "2px", flexShrink: 0 }}></i>
+                  <span style={{ color: "#991B1B", fontSize: "13px" }}>{interlocuteurDeleteError}</span>
+                </div>
+              )}
             </div>
 
             <div className="confirm-modal-actions">
-              <button
-                type="button"
-                className="btn-danger"
-                onClick={confirmDeleteInterlocuteur}
-              >
-                Supprimer
-              </button>
-
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setShowInterlocuteurDeleteConfirm(false)}
-              >
-                Annuler
-              </button>
+              <button type="button" className="btn-danger" onClick={confirmDeleteInterlocuteur}>Supprimer</button>
+              <button type="button" className="btn-secondary" onClick={() => { setShowInterlocuteurDeleteConfirm(false); setInterlocuteurDeleteError(""); }}>Annuler</button>
             </div>
           </div>
         </div>

@@ -155,4 +155,15 @@ const toggleActivationUO = async (id, actif, utilisateurId = null) => {
   }
 };
 
-export { chargerUO, creerUO, mettreAJourUO, supprimerUO, uoContientUtilisateurs, toggleActivationUO };
+const verifierDemandesUO = async (id) => {
+  try {
+    const response = await apiFetch(`/uo/${id}/demandes-count`);
+    if (!response.ok) return { count: 0, noms: [] };
+    const data = await response.json();
+    return { count: data.count ?? 0, noms: data.noms ?? [] };
+  } catch {
+    return { count: 0, noms: [] };
+  }
+};
+
+export { chargerUO, creerUO, mettreAJourUO, supprimerUO, uoContientUtilisateurs, toggleActivationUO, verifierDemandesUO };

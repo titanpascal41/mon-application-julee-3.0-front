@@ -156,8 +156,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
   const [errorsUser, setErrorsUser] = useState({});
 
   const [showUserDeleteConfirm, setShowUserDeleteConfirm] = useState(false);
-
   const [userToDelete, setUserToDelete] = useState(null);
+  const [userDeleteError, setUserDeleteError] = useState("");
 
   const [showAucunProfilModal, setShowAucunProfilModal] = useState(false);
 
@@ -1007,7 +1007,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
   const handleDeleteUser = (user) => {
     setUserToDelete(user);
-
+    setUserDeleteError("");
     setShowUserDeleteConfirm(true);
   };
 
@@ -1017,30 +1017,22 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
       if (resultat.succes) {
         const userName = `${userToDelete.prenom} ${userToDelete.nom}`.trim();
-
-        setUserMessage({
-          type: "success",
-
-          text: `Utilisateur "${userName}" supprimé avec succès`,
-        });
-
+        setUserMessage({ type: "success", text: `Utilisateur "${userName}" supprimé avec succès` });
         await chargerLesUtilisateurs();
-
         setTimeout(() => setUserMessage({ type: "", text: "" }), 3000);
-
         setShowUserDeleteConfirm(false);
-
         setUserToDelete(null);
+        setUserDeleteError("");
       } else {
-        setUserMessage({ type: "error", text: resultat.message });
+        setUserDeleteError(resultat.message || "Erreur lors de la suppression.");
       }
     }
   };
 
   const cancelDeleteUser = () => {
     setShowUserDeleteConfirm(false);
-
     setUserToDelete(null);
+    setUserDeleteError("");
   };
 
   const validatePassword = (mdp) => {
@@ -2699,25 +2691,21 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                   <h3 style={{ margin: "0" }}>Confirmer la suppression</h3>
                 </div>
 
-                <p
-                  style={{
-                    marginBottom: "24px",
-
-                    fontSize: "14px",
-
-                    lineHeight: "1.5",
-                  }}
-                >
-                  Êtes-vous sûr de vouloir supprimer l'utilisateur "
-                  {userToDelete?.prenom} {userToDelete?.nom}" ? Cette action est
-                  irréversible.
+                <p style={{ marginBottom: "16px", fontSize: "14px", lineHeight: "1.5" }}>
+                  Êtes-vous sûr de vouloir supprimer l'utilisateur "{userToDelete?.prenom} {userToDelete?.nom}" ? Cette action est irréversible.
                 </p>
+
+                {userDeleteError && (
+                  <div style={{ backgroundColor: "#FEE2E2", border: "1px solid #FECACA", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                    <i className="fa-solid fa-circle-exclamation" style={{ color: "#DC2626", marginTop: "2px", flexShrink: 0 }}></i>
+                    <span style={{ color: "#991B1B", fontSize: "13px" }}>{userDeleteError}</span>
+                  </div>
+                )}
 
                 <div className="modal-actions" style={{ marginTop: "16px" }}>
                   <button className="btn-danger" onClick={confirmDeleteUser}>
                     Supprimer
                   </button>
-
                   <button className="btn-secondary" onClick={cancelDeleteUser}>
                     Annuler
                   </button>

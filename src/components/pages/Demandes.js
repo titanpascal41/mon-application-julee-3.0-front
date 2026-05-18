@@ -9,7 +9,7 @@ import { chargerSocietes } from "../../data/societes";
 import { chargerCollaborateurs } from "../../data/gestionCollaborateurs";
 import { chargerInterlocuteurs } from "../../data/gestionInterlocuteurs";
 import { useAuth } from "../AuthProvider";
-import { PermissionGuard, usePermissions } from "../PermissionGuard";
+import { usePermissions } from "../PermissionGuard";
 
 // ─── Composant Gantt réutilisable ────────────────────────────────────────────
 const MONTH_NAMES = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
@@ -796,21 +796,6 @@ const Demandes = () => {
     });
   };
 
-  const perimetreOptions = [
-    "ND",
-    "ANL",
-    "DEV",
-    "DEP",
-    "DEM",
-    "REC",
-    "TIF",
-    "LIV",
-    "FREC",
-    "ANN",
-    "SUSP",
-    "A PLAN",
-    "ENREG",
-  ];
 
   const [demandeMessage, setDemandeMessage] = useState({ type: "", text: "" });
   const [errorsProspecte, setErrorsProspecte] = useState({});
@@ -1359,7 +1344,7 @@ const Demandes = () => {
         formData: nouvelleDemandeFormData,
       }));
     }
-  }, [showNouvelleDemandeForm, nouvelleDemandeStep, nouvelleDemandeFormData]);
+  }, [showNouvelleDemandeForm, nouvelleDemandeStep, nouvelleDemandeFormData, FORM_STORAGE_KEY]);
 
   useEffect(() => {
     if (showProspecteForm) {
