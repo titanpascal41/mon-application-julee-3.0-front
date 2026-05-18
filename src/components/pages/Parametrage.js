@@ -358,45 +358,10 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const handleSocieteInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Validation spécifique pour le téléphone
+    setSocieteFormData((prev) => ({ ...prev, [name]: value }));
 
-    if (name === "telephone") {
-      // N'accepter que les chiffres
-
-      const telephoneValue = value.replace(/\D/g, "");
-
-      setSocieteFormData((prev) => ({
-        ...prev,
-
-        [name]: telephoneValue,
-      }));
-
-      // Afficher un message si le numéro n'est pas valide
-
-      if (telephoneValue && telephoneValue.length !== 10) {
-        setSocieteMessage({
-          type: "error",
-
-          text: "Le numéro doit contenir exactement 10 chiffres",
-        });
-      } else if (telephoneValue.length === 10) {
-        setSocieteMessage({ type: "", text: "" });
-      }
-    } else {
-      setSocieteFormData((prev) => ({
-        ...prev,
-
-        [name]: value,
-      }));
-    }
-
-    if (societeMessage.text && name !== "telephone") {
-      setSocieteMessage({ type: "", text: "" });
-    }
-
-    if (errorsSociete[name]) {
-      setErrorsSociete((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (societeMessage.text) setSocieteMessage({ type: "", text: "" });
+    if (errorsSociete[name]) setErrorsSociete((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleCreateSociete = () => {
