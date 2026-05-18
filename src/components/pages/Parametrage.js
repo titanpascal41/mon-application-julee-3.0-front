@@ -866,13 +866,25 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     const from = dragStatutIndex.current;
     const to = dragOverStatutIndex.current;
     if (from === null || to === null || from === to) return;
-    const updated = [...statuts];
-    const [moved] = updated.splice(from, 1);
-    updated.splice(to, 0, moved);
-    setStatuts(updated);
+    // Opérer sur statutsFiltrees pour que les indices correspondent à l'affichage
+    const updatedFiltrees = [...statutsFiltrees];
+    const [moved] = updatedFiltrees.splice(from, 1);
+    updatedFiltrees.splice(to, 0, moved);
+    // Reconstruire le tableau complet en remplaçant les éléments filtrés
+    const updatedAll = statuts.map((s) => {
+      const inFiltrees = updatedFiltrees.find((f) => f.id === s.id);
+      return inFiltrees || s;
+    });
+    // Réordonner selon l'ordre de updatedFiltrees (les autres gardent leur position relative)
+    const movedIds = updatedFiltrees.map((s) => s.id);
+    const finalOrder = [
+      ...updatedAll.filter((s) => !movedIds.includes(s.id)),
+      ...updatedFiltrees,
+    ];
+    setStatuts(finalOrder);
     dragStatutIndex.current = null;
     dragOverStatutIndex.current = null;
-    await reorderStatuts(updated.map((s) => s.id));
+    await reorderStatuts(updatedFiltrees.map((s) => s.id));
   };
 
   const handleStatutInputChange = (e) => {
@@ -1074,20 +1086,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
       setTimeout(() => setStatutMessage({ type: "", text: "" }), 5000);
     }
-
-    setShowStatutForm(false);
-
-    setStatutFormData({
-      nom: "",
-
-      description: "",
-
-      actif: true,
-    });
-
-    setEditingStatut(null);
-
-    setStatutMessage({ type: "", text: "" });
   };
 
   // Fonctions pour la gestion des interlocuteurs
