@@ -44,6 +44,8 @@ const PisteAudit = () => {
   const [selectedLog, setSelectedLog] = useState(null);
   const [filtreEntite, setFiltreEntite] = useState("");
   const [filtreAction, setFiltreAction] = useState("");
+  const [filtreDateDebut, setFiltreDateDebut] = useState("");
+  const [filtreDateFin, setFiltreDateFin] = useState("");
   const [pageAudit, setPageAudit] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -69,6 +71,8 @@ const PisteAudit = () => {
   const logsFiltres = logs.filter((l) => {
     if (filtreEntite && l.entite !== filtreEntite) return false;
     if (filtreAction && l.action !== filtreAction) return false;
+    if (filtreDateDebut && new Date(l.date) < new Date(filtreDateDebut)) return false;
+    if (filtreDateFin && new Date(l.date) > new Date(filtreDateFin + "T23:59:59")) return false;
     return true;
   });
 
@@ -80,7 +84,7 @@ const PisteAudit = () => {
 
   const handleFiltreEntite = (val) => { setFiltreEntite(val); setPageAudit(1); };
   const handleFiltreAction = (val) => { setFiltreAction(val); setPageAudit(1); };
-  const handleResetFiltres = () => { setFiltreEntite(""); setFiltreAction(""); setPageAudit(1); };
+  const handleResetFiltres = () => { setFiltreEntite(""); setFiltreAction(""); setFiltreDateDebut(""); setFiltreDateFin(""); setPageAudit(1); };
 
   if (!hasPermission("audit", null)) {
     return (
@@ -135,7 +139,22 @@ const PisteAudit = () => {
           ))}
         </select>
 
-        {(filtreEntite || filtreAction) && (
+        <input
+          type="date"
+          value={filtreDateDebut}
+          onChange={(e) => { setFiltreDateDebut(e.target.value); setPageAudit(1); }}
+          style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #D1D5DB", fontSize: "13px", color: "#374151", backgroundColor: "#fff", cursor: "pointer" }}
+          title="Date début"
+        />
+        <input
+          type="date"
+          value={filtreDateFin}
+          onChange={(e) => { setFiltreDateFin(e.target.value); setPageAudit(1); }}
+          style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #D1D5DB", fontSize: "13px", color: "#374151", backgroundColor: "#fff", cursor: "pointer" }}
+          title="Date fin"
+        />
+
+        {(filtreEntite || filtreAction || filtreDateDebut || filtreDateFin) && (
           <button
             onClick={handleResetFiltres}
             style={{
@@ -168,6 +187,7 @@ const PisteAudit = () => {
                   <th>Module</th>
                   <th>Action</th>
                   <th>Élément</th>
+                  <th>Effectué par</th>
                   <th>Détails</th>
                 </tr>
               </thead>
@@ -200,6 +220,9 @@ const PisteAudit = () => {
                       </td>
                       <td style={{ fontWeight: "500", color: "#111827", fontSize: "14px" }}>
                         {log.entiteNom || <span style={{ color: "#9CA3AF" }}>—</span>}
+                      </td>
+                      <td style={{ fontSize: "13px", color: "#374151" }}>
+                        {log.utilisateurNom || <span style={{ color: "#9CA3AF" }}>—</span>}
                       </td>
                       <td>
                         {log.details ? (
@@ -266,6 +289,12 @@ const PisteAudit = () => {
                   <div style={{ fontSize: "11px", fontWeight: "600", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>Date</div>
                   <div style={{ fontSize: "14px", color: "#111827" }}>{formatDate(selectedLog.date)}</div>
                 </div>
+                {selectedLog.utilisateurNom && (
+                  <div>
+                    <div style={{ fontSize: "11px", fontWeight: "600", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>Effectué par</div>
+                    <div style={{ fontSize: "14px", color: "#111827", fontWeight: "500" }}>{selectedLog.utilisateurNom}</div>
+                  </div>
+                )}
                 {selectedLog.details && (
                   <div>
                     <div style={{ fontSize: "11px", fontWeight: "600", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Informations</div>
