@@ -835,9 +835,6 @@ const Demandes = () => {
   const [suspensionDate, setSuspensionDate] = useState("");
 
   const sauvegarderNouvelleDemandeBrouillon = async (stepOverride) => {
-    console.log("Début de sauvegarderNouvelleDemandeBrouillon");
-    console.log("stepOverride:", stepOverride);
-    console.log("nouvelleDemandeStep:", nouvelleDemandeStep);
 
     const stepToStore = stepOverride || nouvelleDemandeStep;
 
@@ -848,15 +845,6 @@ const Demandes = () => {
         text: "Enregistrement du brouillon...",
       });
 
-      // Récupérer les données du formulaire (adapté de votre approche)
-      console.log(
-        "🔍 nouvelleDemandeFormData avant construction:",
-        nouvelleDemandeFormData,
-      );
-      console.log(
-        "🗓️ dateReception avant sauvegarde:",
-        nouvelleDemandeFormData.dateReception,
-      );
 
       const formData = {
         id: nouvelleDemandeFormData.id || null,
@@ -944,44 +932,6 @@ const Demandes = () => {
         utilisateurId: user?.id || 1, // Admin par défaut si pas d'utilisateur
       };
 
-      // DEBUG : Vérifier l'utilisateur
-      console.log("Utilisateur connecté:", user);
-      console.log("utilisateurId dans payload:", user?.id || 1);
-
-      // Si pas d'utilisateur, utiliser l'admin par défaut
-      if (!user?.id) {
-        console.warn(
-          "⚠️ Pas d'utilisateur connecté, utilisation de l'admin par défaut",
-        );
-      }
-
-      // DEBUG : Voir ce qui est envoyé au backend
-      console.log("Payload envoyé au backend:", payload);
-      console.log("Étape 2 dans payload:", {
-        descriptionPerimetre: payload.descriptionPerimetre,
-        statutDemande: payload.statutDemande,
-        lienIngridCDC: payload.lienIngridCDC,
-        dateTransmissionBacklog: payload.dateTransmissionBacklog,
-        dateConfirmationValidation: payload.dateConfirmationValidation,
-      });
-      console.log("Étape 3 dans payload:", {
-        dateDemandePlanificationDev: payload.dateDemandePlanificationDev,
-        dateDemandePlanificationTif: payload.dateDemandePlanificationTif,
-        dateRetourEquipesDev: payload.dateRetourEquipesDev,
-        dateRetourEquipesTif: payload.dateRetourEquipesTif,
-        dateCommunicationPlanningClient:
-          payload.dateCommunicationPlanningClient,
-        nombreSprint: payload.nombreSprint,
-        chargePrevisionnelleParSprint: payload.chargePrevisionnelleParSprint,
-        roadmap: payload.roadmap,
-      });
-
-      // Validation des champs obligatoires (assouplie pour les brouillons)
-      console.log("FormData avant validation:", formData);
-      console.log(
-        "nouvelleDemandeFormData complet:",
-        nouvelleDemandeFormData,
-      );
       if (!formData.nomProjet?.trim()) {
         setDemandeMessage({
           type: "error",
@@ -1056,7 +1006,6 @@ const Demandes = () => {
           ...prev,
           id: createdDemande.id,
         }));
-        console.log("📝 ID de la nouvelle demande enregistré:", createdDemande.id);
       }
 
       // Recharger la liste depuis le backend (après avoir défini l'ID)
@@ -1209,19 +1158,6 @@ const Demandes = () => {
   };
 
   const handleShowDetail = (demande) => {
-    console.log("Données brutes de la demande:", demande);
-    console.log(
-      "Étape 2 - descriptionPerimetre:",
-      demande.descriptionPerimetre,
-    );
-    console.log("Étape 2 - statutDemande:", demande.statutDemande);
-    console.log("Étape 2 - lienIngridCDC:", demande.lienIngridCDC);
-    console.log(
-      "Étape 3 - dateDemandePlanificationDevTif:",
-      demande.dateDemandePlanificationDevTif,
-    );
-    console.log("Étape 3 - dateRetourEquipes:", demande.dateRetourEquipes);
-    console.log("Étape 3 - nombreSprint:", demande.nombreSprint);
     setSelectedDemandeDetail(demande);
     setShowDetailModal(true);
   };
@@ -1405,7 +1341,7 @@ const Demandes = () => {
       const forceStep = openDemandeStepRef.current;
       openDemandeStepRef.current = null;
       if (forceStep) {
-        const stepLabels = { 1: "Enregistrement", 2: "Clarification", 3: "Planification", 4: "Réalisation", 5: "Documents", 6: "Livraison" };
+        const stepLabels = { 1: "Identification", 2: "Clarification", 3: "Planification", 4: "Réalisation", 5: "Documents", 6: "Livraison" };
         handlePoursuivreDemande({ ...demande, draftStep: forceStep, draftStepLabel: stepLabels[forceStep] });
       } else {
         handlePoursuivreDemande(demande);
@@ -1531,7 +1467,7 @@ const Demandes = () => {
         societeDemandeur: societyName,
         interlocuteur: prospecteFormData.interlocuteur,
         descriptionPerimetre: prospecteFormData.descriptionPerimetre || "",
-        isDraft: true,
+        isDraft: false,
         draftStep: 1,
         draftStepLabel: "Info demande",
         utilisateurId: user?.id || 1,
@@ -1893,7 +1829,6 @@ const Demandes = () => {
       }
 
       await chargerLesDemandes();
-      await chargerLesDemandes();
       localStorage.removeItem(EVOLUTION_STORAGE_KEY);
       setVueLivrees(true);
       setShowDemandesList(true);
@@ -2080,10 +2015,6 @@ const Demandes = () => {
         dateEffectiveLivraisonClient: formatDateForInput(demande.dateEffectiveLivraisonClient || prev.dateEffectiveLivraisonClient || ""),
       };
 
-      console.log("dateReception chargée depuis brouillon:", {
-        original: demande.dateReception,
-        formatted: updatedData.dateReception,
-      });
 
       return updatedData;
     });
@@ -2178,7 +2109,7 @@ const Demandes = () => {
 
   const getStepLabel = (step) => {
     const map = {
-      1: "Enregistrement",
+      1: "Identification",
       2: "Clarification",
       3: "Planification",
       4: "Réalisation",
@@ -2345,7 +2276,7 @@ const Demandes = () => {
               }}
             >
               {[
-                { num: 1, label: "Enregistrement" },
+                { num: 1, label: "Identification" },
                 { num: 2, label: "Clarification" },
                 { num: 3, label: "Planification" },
                 { num: 4, label: "Réalisation" },
@@ -2938,17 +2869,7 @@ const Demandes = () => {
                                       <input
                                         type="text"
                                         value={sprintData.chantier || ""}
-                                        onChange={(e) => {
-                                          const val = e.target.value;
-                                          const nb = parseInt(nouvelleDemandeFormData.nombreSprint) || 0;
-                                          setNouvelleDemandeFormData((prev) => {
-                                            const updated = [...(prev.sprintsData || [])];
-                                            for (let idx = 0; idx < nb; idx++) {
-                                              updated[idx] = { ...(updated[idx] || {}), chantier: val };
-                                            }
-                                            return { ...prev, sprintsData: updated };
-                                          });
-                                        }}
+                                        onChange={(e) => handleSprintDataChange(i, "chantier", e.target.value)}
                                         placeholder="Chantier obligatoire..."
                                         style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
                                       />
@@ -4366,17 +4287,7 @@ const Demandes = () => {
                                       <input
                                         type="text"
                                         value={sprintData.chantier || ""}
-                                        onChange={(e) => {
-                                          const val = e.target.value;
-                                          const nb = parseInt(evolutionFormData.nombreSprint) || 0;
-                                          setEvolutionFormData((prev) => {
-                                            const updated = [...(prev.sprintsData || [])];
-                                            for (let idx = 0; idx < nb; idx++) {
-                                              updated[idx] = { ...(updated[idx] || {}), chantier: val };
-                                            }
-                                            return { ...prev, sprintsData: updated };
-                                          });
-                                        }}
+                                        onChange={(e) => handleEvolutionSprintDataChange(i, "chantier", e.target.value)}
                                         placeholder="Chantier obligatoire..."
                                         style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
                                       />
@@ -5316,16 +5227,16 @@ const Demandes = () => {
               </table></div>`;
           }
 
-          const realRows = !isProspecte && !isEvolution ? (
+          const realRows = !isProspecte ? (
             row("Statut de codage", d.statutCodage) +
             row("Statut TIF", d.statutTIF)
           ) : "";
 
-          const docsRows = !isProspecte && !isEvolution ? (
+          const docsRows = !isProspecte ? (
             ""
           ) : "";
 
-          const livrRows = !isProspecte && !isEvolution ? (
+          const livrRows = !isProspecte ? (
             row("Statut livraison client", d.statutLivraisonClient) +
             row("Date effective livraison client", fmtD(d.dateEffectiveLivraisonClient)) +
             row("Motifs de retard client", d.motifsRetardClient)
@@ -5353,9 +5264,9 @@ const Demandes = () => {
             ${!isProspecte ? section("Clarification", clarRows) : ""}
             ${!isProspecte ? section("Planification", planRows) : ""}
             ${sprintTable}
-            ${!isProspecte && !isEvolution ? section("Réalisation", realRows) : ""}
-            ${!isProspecte && !isEvolution ? section("Documents", docsRows) : ""}
-            ${!isProspecte && !isEvolution ? section("Livraison", livrRows) : ""}
+            ${!isProspecte ? section("Réalisation", realRows) : ""}
+            ${!isProspecte ? section("Documents", docsRows) : ""}
+            ${!isProspecte ? section("Livraison", livrRows) : ""}
             <script>window.onload = function(){ window.print(); }</script>
             </body></html>`;
 
@@ -5572,6 +5483,16 @@ const Demandes = () => {
                 </Section>
               )}
 
+              {/* Section Suspension */}
+              {selectedDemandeDetail.motifSuspension && (
+                <Section icon="fa-solid fa-circle-pause" title="Suspension" color="#F59E0B">
+                  <InfoField label="Motif de suspension" value={selectedDemandeDetail.motifSuspension} full />
+                  {selectedDemandeDetail.dateSuspension && (
+                    <InfoField label="Date de suspension" value={formatDateForDisplay(selectedDemandeDetail.dateSuspension)} />
+                  )}
+                </Section>
+              )}
+
               </div>
 
               {/* Footer */}
@@ -5596,7 +5517,7 @@ const Demandes = () => {
 
       {/* Modal Roadmap / Gantt */}
       {showRoadmapModal && selectedDemandeDetail && (
-        <div className="modal-overlay" onClick={() => setShowRoadmapModal(false)} style={{ zIndex: 1300 }}>
+        <div className="modal-overlay" onClick={() => { setShowRoadmapModal(false); closeDetailModal(); }} style={{ zIndex: 1300 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "white", borderRadius: "14px", width: "95%", maxWidth: "1100px", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
             {/* Header */}
@@ -5608,7 +5529,7 @@ const Demandes = () => {
                   <div style={{ fontSize: "12px", color: "#6B7280" }}>{selectedDemandeDetail.nomProjet}</div>
                 </div>
               </div>
-              <button onClick={() => setShowRoadmapModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", fontSize: "22px", lineHeight: 1 }}>×</button>
+              <button onClick={() => { setShowRoadmapModal(false); closeDetailModal(); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", fontSize: "22px", lineHeight: 1 }}>×</button>
             </div>
 
             {/* Body */}
@@ -5620,7 +5541,7 @@ const Demandes = () => {
 
             {/* Footer */}
             <div style={{ padding: "12px 24px", borderTop: "1px solid #E5E7EB", display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
-              <button onClick={() => setShowRoadmapModal(false)} style={{ background: "#F3F4F6", border: "none", borderRadius: "8px", padding: "8px 28px", fontSize: "14px", fontWeight: "600", color: "#374151", cursor: "pointer" }}>
+              <button onClick={() => { setShowRoadmapModal(false); closeDetailModal(); }} style={{ background: "#F3F4F6", border: "none", borderRadius: "8px", padding: "8px 28px", fontSize: "14px", fontWeight: "600", color: "#374151", cursor: "pointer" }}>
                 Fermer
               </button>
             </div>
