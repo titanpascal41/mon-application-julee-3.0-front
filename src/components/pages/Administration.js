@@ -16,7 +16,7 @@ import {
   chargerUtilisateurs,
   creerUtilisateur,
   mettreAJourUtilisateur,
-  supprimerUtilisateur,
+  toggleActivationUtilisateur,
 } from "../../data/baseDeDonnees";
 
 import {
@@ -155,11 +155,10 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
   const [errorsUser, setErrorsUser] = useState({});
 
-  const [showUserDeleteConfirm, setShowUserDeleteConfirm] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
-  const [userDeleteError, setUserDeleteError] = useState("");
 
   const [showAucunProfilModal, setShowAucunProfilModal] = useState(false);
+  const [showDeactivateUserModal, setShowDeactivateUserModal] = useState(false);
+  const [userToToggle, setUserToToggle] = useState(null);
 
   useEffect(() => {
     if (activeSubPageProp) {
@@ -1005,35 +1004,38 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
     setErrorsUser({});
   };
 
-  const handleDeleteUser = (user) => {
-    setUserToDelete(user);
-    setUserDeleteError("");
-    setShowUserDeleteConfirm(true);
-  };
-
-  const confirmDeleteUser = async () => {
-    if (userToDelete) {
-      const resultat = await supprimerUtilisateur(userToDelete.id);
-
-      if (resultat.succes) {
-        const userName = `${userToDelete.prenom} ${userToDelete.nom}`.trim();
-        setUserMessage({ type: "success", text: `Utilisateur "${userName}" supprimé avec succès` });
-        await chargerLesUtilisateurs();
-        setTimeout(() => setUserMessage({ type: "", text: "" }), 3000);
-        setShowUserDeleteConfirm(false);
-        setUserToDelete(null);
-        setUserDeleteError("");
-      } else {
-        setUserDeleteError(resultat.message || "Erreur lors de la suppression.");
-      }
+  const handleToggleActivationUser = (user) => {
+    if (user.actif !== false) {
+      setUserToToggle(user);
+      setShowDeactivateUserModal(true);
+    } else {
+      toggleActivationUtilisateur(user.id, true).then((resultat) => {
+        if (resultat.succes) {
+          chargerLesUtilisateurs();
+          setUserMessage({ type: "success", text: `Utilisateur "${user.prenom} ${user.nom}" réactivé.` });
+          setTimeout(() => setUserMessage({ type: "", text: "" }), 3000);
+        } else {
+          setUserMessage({ type: "error", text: resultat.message || "Erreur" });
+          setTimeout(() => setUserMessage({ type: "", text: "" }), 4000);
+        }
+      });
     }
   };
 
-  const cancelDeleteUser = () => {
-    setShowUserDeleteConfirm(false);
-    setUserToDelete(null);
-    setUserDeleteError("");
+  const confirmDeactivationUser = async () => {
+    const resultat = await toggleActivationUtilisateur(userToToggle.id, false);
+    if (resultat.succes) {
+      chargerLesUtilisateurs();
+      setUserMessage({ type: "success", text: `Utilisateur "${userToToggle.prenom} ${userToToggle.nom}" désactivé.` });
+      setTimeout(() => setUserMessage({ type: "", text: "" }), 3000);
+    } else {
+      setUserMessage({ type: "error", text: resultat.message || "Erreur" });
+      setTimeout(() => setUserMessage({ type: "", text: "" }), 4000);
+    }
+    setShowDeactivateUserModal(false);
+    setUserToToggle(null);
   };
+
 
   const validatePassword = (mdp) => {
     if (mdp.length < 8)
@@ -2641,33 +2643,30 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
                 <tbody>
                   {utilisateursFiltres.slice((pageUtilisateurs - 1) * ITEMS_PER_PAGE, pageUtilisateurs * ITEMS_PER_PAGE).map((user) => (
-                    <tr key={user.id}>
+                    <tr key={user.id} style={user.actif === false ? { opacity: 0.6, backgroundColor: "#F3F4F6" } : {}}>
                       <td>{user.nom}</td>
-
                       <td>{user.prenom}</td>
-
                       <td>{user.email}</td>
-
                       <td>{getProfilName(user.profilId)}</td>
-
                       {peutVoirActionsUtilisateurs && (
                         <td style={{ whiteSpace: "nowrap" }}>
                           {peutModifierUtilisateur && (
                             <button
                               onClick={() => handleEditUser(user)}
+                              disabled={user.actif === false}
                               data-tooltip-id="admin-tooltip" data-tooltip-content="Modifier"
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#DBEAFE", color: "#1E40AF", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: user.actif === false ? "#F3F4F6" : "#DBEAFE", color: user.actif === false ? "#D1D5DB" : "#1E40AF", cursor: user.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
                               <i className="fa-solid fa-pen"></i>
                             </button>
                           )}
                           {peutSupprimerUtilisateur && (
                             <button
-                              onClick={() => handleDeleteUser(user)}
-                              data-tooltip-id="admin-tooltip" data-tooltip-content="Supprimer"
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#FEE2E2", color: "#991B1B", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                              onClick={() => handleToggleActivationUser(user)}
+                              data-tooltip-id="admin-tooltip" data-tooltip-content={user.actif !== false ? "Désactiver" : "Activer"}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: user.actif !== false ? "#FEF3C7" : "#D1FAE5", color: user.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
-                              <i className="fa-solid fa-trash"></i>
+                              <i className={user.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                             </button>
                           )}
                         </td>
@@ -2680,39 +2679,6 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
             {renderPagination(utilisateursFiltres.length, pageUtilisateurs, setPageUtilisateurs)}
           </div>
 
-          {showUserDeleteConfirm && (
-            <div className="modal-overlay" onClick={cancelDeleteUser}>
-              <div
-                className="modal-content"
-                onClick={(e) => e.stopPropagation()}
-                style={{ padding: "24px" }}
-              >
-                <div className="modal-header" style={{ marginBottom: "20px" }}>
-                  <h3 style={{ margin: "0" }}>Confirmer la suppression</h3>
-                </div>
-
-                <p style={{ marginBottom: "16px", fontSize: "14px", lineHeight: "1.5" }}>
-                  Êtes-vous sûr de vouloir supprimer l'utilisateur "{userToDelete?.prenom} {userToDelete?.nom}" ? Cette action est irréversible.
-                </p>
-
-                {userDeleteError && (
-                  <div style={{ backgroundColor: "#FEE2E2", border: "1px solid #FECACA", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
-                    <i className="fa-solid fa-circle-exclamation" style={{ color: "#DC2626", marginTop: "2px", flexShrink: 0 }}></i>
-                    <span style={{ color: "#991B1B", fontSize: "13px" }}>{userDeleteError}</span>
-                  </div>
-                )}
-
-                <div className="modal-actions" style={{ marginTop: "16px" }}>
-                  <button className="btn-danger" onClick={confirmDeleteUser}>
-                    Supprimer
-                  </button>
-                  <button className="btn-secondary" onClick={cancelDeleteUser}>
-                    Annuler
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       ),
     },
@@ -2729,6 +2695,28 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
       </div>
 
       <div className="page-content">{subPages[activeSubPage].content}</div>
+
+      {/* Modal désactivation utilisateur */}
+      {showDeactivateUserModal && userToToggle && (
+        <div className="modal-overlay" onClick={() => { setShowDeactivateUserModal(false); setUserToToggle(null); }}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-modal-header" style={{ backgroundColor: "#FEF3C7", borderBottom: "1px solid #FDE68A", borderRadius: "12px 12px 0 0" }}>
+              <h3 style={{ color: "#92400E" }}>
+                <i className="fa-solid fa-ban" style={{ marginRight: "8px" }}></i>
+                Désactiver l'utilisateur
+              </h3>
+            </div>
+            <div className="confirm-modal-body">
+              <p>Êtes-vous sûr de vouloir désactiver <strong>"{userToToggle.prenom} {userToToggle.nom}"</strong> ?</p>
+              <p style={{ color: "#6B7280", fontSize: "13px", marginTop: "8px" }}>Cet utilisateur ne pourra plus se connecter tant qu'il sera désactivé.</p>
+            </div>
+            <div className="confirm-modal-actions">
+              <button type="button" className="btn-primary" style={{ backgroundColor: "#F59E0B", borderColor: "#F59E0B" }} onClick={confirmDeactivationUser}>Confirmer</button>
+              <button type="button" className="btn-secondary" onClick={() => { setShowDeactivateUserModal(false); setUserToToggle(null); }}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal pour consulter les permissions du profil */}
 

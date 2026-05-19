@@ -15,7 +15,7 @@
 .header-logo {
   font-size: 26px;
   font-weight: 800;
-  color: #4A90E2;
+  color: #4a90e2;
   letter-spacing: 2px;
   user-select: none;
 }
@@ -71,7 +71,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+  background: #4a90e2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -279,7 +279,7 @@
 
 .notification-item.clickable:hover .notification-arrow {
   opacity: 1;
-  color: #4A90E2;
+  color: #4a90e2;
 }
 
 .notification-item:hover {
@@ -340,7 +340,7 @@
 .btn-link {
   background: none;
   border: none;
-  color: #4A90E2;
+  color: #4a90e2;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
@@ -349,7 +349,7 @@
 }
 
 .btn-link:hover {
-  color: #357ABD;
+  color: #357abd;
   text-decoration: underline;
 }
 

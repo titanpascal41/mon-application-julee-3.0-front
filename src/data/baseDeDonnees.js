@@ -236,6 +236,24 @@ const mettreAJourUtilisateur = async (
   }
 };
 
+// Activer / désactiver un utilisateur
+const toggleActivationUtilisateur = async (id, actif) => {
+  try {
+    const response = await apiFetch(`/users/${id}/activation`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ actif }),
+    });
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      return { succes: false, message: errData.error || "Erreur lors du changement d'activation" };
+    }
+    return { succes: true };
+  } catch (error) {
+    return { succes: false, message: error.message };
+  }
+};
+
 // Supprimer un utilisateur
 const supprimerUtilisateur = async (id) => {
   try {
@@ -291,5 +309,6 @@ export {
   creerUtilisateur,
   mettreAJourUtilisateur,
   supprimerUtilisateur,
+  toggleActivationUtilisateur,
   verifierConnexion,
 };

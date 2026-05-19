@@ -1831,12 +1831,12 @@ const Demandes = () => {
   const mapLabelToStep = (label) => {
     if (!label) return null;
     const l = label.toLowerCase();
+    if (l.includes("identification") || l.includes("enregistrement") || l.includes("enreg")) return 1;
     if (l.includes("clarification")) return 2;
     if (l.includes("planification")) return 3;
     if (l.includes("réalisation") || l.includes("realisation") || l.includes("codage") || l.includes("tif")) return 4;
     if (l.includes("document")) return 5;
     if (l.includes("livraison")) return 6;
-    if (l.includes("enregistrement") || l.includes("enreg")) return 1;
     return null;
   };
 
@@ -5157,7 +5157,7 @@ const Demandes = () => {
           const identRows =
             row("Société demandeur", societe) +
             row("Interlocuteur", interlocuteur) +
-            row("Type de projet", d.typeProjet) +
+            row("Type de projet", getTypeDemandeLabel(d.typeProjet)) +
             row("Nom du projet", d.nomProjet) +
             (isProspecte ? row("Périmètre", d.descriptionPerimetre || d.perimetre) : row("Description", d.descriptionProjet));
 
@@ -5286,7 +5286,7 @@ const Demandes = () => {
                     <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
                       {selectedDemandeDetail.typeProjet && (
                         <span style={{ background: "rgba(255,255,255,0.2)", color: "#fff", fontSize: "12px", fontWeight: "600", padding: "3px 10px", borderRadius: "20px", backdropFilter: "blur(4px)" }}>
-                          {selectedDemandeDetail.typeProjet}
+                          {getTypeDemandeLabel(selectedDemandeDetail.typeProjet)}
                         </span>
                       )}
                       {selectedDemandeDetail.isDraft && (selectedDemandeDetail.typeProjet || "").toLowerCase() !== "prospecte" && (
@@ -5314,7 +5314,7 @@ const Demandes = () => {
                 <Section icon="fa-solid fa-circle-info" title="Identification" color={typeColor}>
                   <InfoField label="Société demandeur" value={societe} />
                   <InfoField label="Interlocuteur" value={interlocuteur} />
-                  <InfoField label="Type de projet" value={selectedDemandeDetail.typeProjet} />
+                  <InfoField label="Type de projet" value={getTypeDemandeLabel(selectedDemandeDetail.typeProjet)} />
                   <InfoField label="Nom du projet" value={selectedDemandeDetail.nomProjet} />
                   {selectedDemandeDetail.typeProjet !== "Prospecte" && (
                     <InfoField label="Description" value={selectedDemandeDetail.descriptionProjet} full />

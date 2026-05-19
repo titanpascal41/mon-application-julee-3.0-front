@@ -50,12 +50,12 @@ body {
   left: 32px;
   z-index: 1;
   background: transparent;
-  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .nomlogotitre {
   font-size: 75px;
-  font-weight: 900;
+  font-weight: 800;
   line-height: 1;
   letter-spacing: 1px;
   position: absolute;
@@ -85,10 +85,10 @@ body {
 
 .sectionAuth {
   background-color: #fff;
-  border-radius: 30px;
+  border-radius: 16px;
   display: flex;
   justify-content: center;
-  color: #2c3e50;
+  color: #374151;
   align-items: center;
   flex-direction: column;
   z-index: 1;
@@ -107,8 +107,8 @@ body {
 }
 
 .logoimage img:hover {
-  transform: translateY(15px) translateX(15px);
-  transition: 2s;
+  transform: translateY(4px);
+  transition: transform 0.2s ease;
 }
 
 .contener {
@@ -122,7 +122,7 @@ body {
 .contener label {
   margin-bottom: 3px;
   display: block;
-  color: #2c3e50;
+  color: #374151;
 }
 
 .contener input {

@@ -151,7 +151,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const [uoToDelete, setUOToDelete] = useState(null);
   const [uoDeleteError, setUoDeleteError] = useState("");
   const [showDeactivateUOModal, setShowDeactivateUOModal] = useState(false);
-  const [deactivateUOError, setDeactivateUOError] = useState("");
   const [uoToToggle, setUoToToggle] = useState(null);
   const [motifDesactivationUO, setMotifDesactivationUO] = useState("");
 
@@ -229,7 +228,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const [interlocuteurToDelete, setInterlocuteurToDelete] = useState(null);
   const [interlocuteurDeleteError, setInterlocuteurDeleteError] = useState("");
   const [showDeactivateInterlocuteurModal, setShowDeactivateInterlocuteurModal] = useState(false);
-  const [deactivateInterlocuteurError, setDeactivateInterlocuteurError] = useState("");
   const [interlocuteurToToggle, setInterlocuteurToToggle] = useState(null);
   const [motifDesactivationInterlocuteur, setMotifDesactivationInterlocuteur] = useState("");
 
@@ -717,7 +715,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
       }
       setUoToToggle(uo);
       setMotifDesactivationUO("");
-      setDeactivateUOError("");
+      
       setShowDeactivateUOModal(true);
     } else {
       toggleActivationUO(uo.id, true, null).then((resultat) => {
@@ -739,10 +737,10 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
       setShowDeactivateUOModal(false);
       setUoToToggle(null);
       setMotifDesactivationUO("");
-      setDeactivateUOError("");
+      
     } else {
       setShowDeactivateUOModal(false);
-      setDeactivateUOError("");
+      
       setBlockedModalMessage(resultat.message || "Désactivation impossible.");
       setShowBlockedModal(true);
     }
@@ -1129,7 +1127,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
       }
       setInterlocuteurToToggle(interlocuteur);
       setMotifDesactivationInterlocuteur("");
-      setDeactivateInterlocuteurError("");
+      
       setShowDeactivateInterlocuteurModal(true);
     } else {
       toggleActivationInterlocuteur(interlocuteur.id, true, null).then((resultat) => {
@@ -1151,10 +1149,10 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
       setShowDeactivateInterlocuteurModal(false);
       setInterlocuteurToToggle(null);
       setMotifDesactivationInterlocuteur("");
-      setDeactivateInterlocuteurError("");
+      
     } else {
       setShowDeactivateInterlocuteurModal(false);
-      setDeactivateInterlocuteurError("");
+      
       setBlockedModalMessage(resultat.message || "Désactivation impossible.");
       setShowBlockedModal(true);
     }
@@ -2162,24 +2160,19 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           <span style={{ color: "#9ca3af" }}>—</span>
                         )}
                       </td>
-                      <td>
+                      <td style={{ textAlign: "center" }}>
                         {(() => {
-                          const s = societes.find((s) => s.id === uo.societeId);
-                          return s ? (
-                            <span
-                              style={{
-                                backgroundColor: "#e0e7ff",
-                                color: "#3730a3",
-                                padding: "2px 8px",
-                                borderRadius: "6px",
-                                fontWeight: "600",
-                                fontSize: "13px",
-                              }}
-                            >
-                              {s.code}
-                            </span>
-                          ) : (
-                            <span style={{ color: "#9ca3af" }}>—</span>
+                          const s = toutesSocietes.find((s) => s.id === uo.societeId);
+                          if (!s) return <span style={{ color: "#9ca3af" }}>—</span>;
+                          return (
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                              <span style={{ backgroundColor: "#e0e7ff", color: "#3730a3", padding: "2px 8px", borderRadius: "6px", fontWeight: "600", fontSize: "13px", display: "inline-block", textAlign: "center" }}>
+                                {s.code}
+                              </span>
+                              {s.departement && (
+                                <span style={{ fontSize: "11px", color: "#6b7280", textAlign: "center" }}>{s.departement}</span>
+                              )}
+                            </div>
                           );
                         })()}
                       </td>
@@ -2204,16 +2197,9 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             <button
                               onClick={() => handleToggleActivationUO(uo)}
                               data-tooltip-id="param-tooltip" data-tooltip-content={uo.actif !== false ? "Désactiver" : "Activer"}
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5", color: uo.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5", color: uo.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
                               <i className={uo.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
-                            </button>
-                            <button
-                              onClick={() => { setUOToDelete(uo); setUoDeleteError(""); setShowUODeleteConfirm(true); }}
-                              data-tooltip-id="param-tooltip" data-tooltip-content="Supprimer"
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#FEE2E2", color: "#991B1B", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
-                            >
-                              <i className="fa-solid fa-trash"></i>
                             </button>
                           </PermissionGuard>
                         </td>
@@ -2719,16 +2705,9 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                               <button
                                 onClick={() => handleToggleActivationInterlocuteur(interlocuteur)}
                                 data-tooltip-id="param-tooltip" data-tooltip-content={interlocuteur.actif !== false ? "Désactiver" : "Activer"}
-                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5", color: interlocuteur.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5", color: interlocuteur.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                               >
                                 <i className={interlocuteur.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
-                              </button>
-                              <button
-                                onClick={() => { setInterlocuteurToDelete(interlocuteur); setInterlocuteurDeleteError(""); setShowInterlocuteurDeleteConfirm(true); }}
-                                data-tooltip-id="param-tooltip" data-tooltip-content="Supprimer"
-                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#FEE2E2", color: "#991B1B", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
-                              >
-                                <i className="fa-solid fa-trash"></i>
                               </button>
                             </PermissionGuard>
                           </td>
@@ -2941,12 +2920,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   Le motif est obligatoire
                 </p>
               )}
-              {deactivateUOError && (
-                <div style={{ backgroundColor: "#FEE2E2", border: "1px solid #FECACA", borderRadius: "8px", padding: "10px 14px", marginTop: "12px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
-                  <i className="fa-solid fa-circle-exclamation" style={{ color: "#DC2626", marginTop: "2px", flexShrink: 0 }}></i>
-                  <span style={{ color: "#991B1B", fontSize: "13px" }}>{deactivateUOError}</span>
-                </div>
-              )}
             </div>
             <div style={{
               display: "flex",
@@ -2955,7 +2928,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
               padding: "16px 32px 24px 32px",
               borderTop: "1px solid #e5e7eb",
             }}>
-              <button className="btn-secondary" onClick={() => { setShowDeactivateUOModal(false); setDeactivateUOError(""); }}>
+              <button className="btn-secondary" onClick={() => { setShowDeactivateUOModal(false); }}>
                 Annuler
               </button>
               <button
@@ -3020,12 +2993,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   Le motif est obligatoire
                 </p>
               )}
-              {deactivateInterlocuteurError && (
-                <div style={{ backgroundColor: "#FEE2E2", border: "1px solid #FECACA", borderRadius: "8px", padding: "10px 14px", marginTop: "12px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
-                  <i className="fa-solid fa-circle-exclamation" style={{ color: "#DC2626", marginTop: "2px", flexShrink: 0 }}></i>
-                  <span style={{ color: "#991B1B", fontSize: "13px" }}>{deactivateInterlocuteurError}</span>
-                </div>
-              )}
             </div>
             <div style={{
               display: "flex",
@@ -3034,7 +3001,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
               padding: "16px 32px 24px 32px",
               borderTop: "1px solid #e5e7eb",
             }}>
-              <button className="btn-secondary" onClick={() => { setShowDeactivateInterlocuteurModal(false); setDeactivateInterlocuteurError(""); }}>
+              <button className="btn-secondary" onClick={() => { setShowDeactivateInterlocuteurModal(false); }}>
                 Annuler
               </button>
               <button
