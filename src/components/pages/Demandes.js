@@ -2481,7 +2481,6 @@ const Demandes = () => {
                             </option>
                           ))}
                         </select>
-                        {errorsNouvelle.societesDemandeurs && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.societesDemandeurs}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -2502,7 +2501,6 @@ const Demandes = () => {
                             </option>
                           ))}
                         </select>
-                        {errorsNouvelle.interlocuteurClient && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.interlocuteurClient}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -2520,7 +2518,6 @@ const Demandes = () => {
                           <option value="Agile">Agile</option>
                           <option value="Classique">Classique</option>
                         </select>
-                        {errorsNouvelle.typeProjet && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.typeProjet}</span>}
                       </div>
                       <div
                         className="form-group"
@@ -2548,7 +2545,6 @@ const Demandes = () => {
                           placeholder="Nom du projet"
                           required
                         />
-                        {errorsNouvelle.nomProjet && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.nomProjet}</span>}
                       </div>
                       <div
                         className="form-group"
@@ -2662,7 +2658,6 @@ const Demandes = () => {
                           required
                           style={{ width: "100%", padding: "10px", border: `1px solid ${errorsNouvelle.dateTransmissionBacklog ? "#EF4444" : "#d1d5db"}`, borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }}
                         />
-                        {errorsNouvelle.dateTransmissionBacklog && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.dateTransmissionBacklog}</span>}
                       </div>
                       <div className="form-group" style={{ margin: 0 }}>
                         <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>
@@ -2677,7 +2672,6 @@ const Demandes = () => {
                           required
                           style={{ width: "100%", padding: "10px", border: `1px solid ${errorsNouvelle.dateConfirmationValidation ? "#EF4444" : "#d1d5db"}`, borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }}
                         />
-                        {errorsNouvelle.dateConfirmationValidation && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.dateConfirmationValidation}</span>}
                       </div>
                     </div>
 
@@ -2783,7 +2777,6 @@ const Demandes = () => {
                                 className={retard(nouvelleDemandeFormData.dateCommunicationPlanningClient) ? flashClass : ""}
                                 style={{ borderColor: errorsNouvelle.dateCommunicationPlanningClient ? "#EF4444" : undefined }}
                               />
-                              {errorsNouvelle.dateCommunicationPlanningClient && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.dateCommunicationPlanningClient}</span>}
                             </div>
                           </>
                         );
@@ -2803,7 +2796,6 @@ const Demandes = () => {
                           style={{ borderColor: errorsNouvelle.nombreSprint ? "#EF4444" : undefined }}
                           required
                         />
-                        {errorsNouvelle.nombreSprint && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.nombreSprint}</span>}
                       </div>
                     </div>
 
@@ -2976,7 +2968,6 @@ const Demandes = () => {
                           <option value="en cours">En cours</option>
                           <option value="terminé">Terminé</option>
                         </select>
-                        {errorsNouvelle.statutCodage && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.statutCodage}</span>}
                       </div>
                       <div className="form-group">
                         <label>Statut TIF <span className="required">*</span></label>
@@ -2991,7 +2982,6 @@ const Demandes = () => {
                           <option value="en cours">En cours</option>
                           <option value="terminé">Terminé</option>
                         </select>
-                        {errorsNouvelle.statutTIF && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.statutTIF}</span>}
                       </div>
                     </div>
 
@@ -3146,7 +3136,6 @@ const Demandes = () => {
                           style={{ borderColor: errorsNouvelle.lienIngridKickoff ? "#EF4444" : undefined }}
                           required
                         />
-                        {errorsNouvelle.lienIngridKickoff && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.lienIngridKickoff}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3164,7 +3153,6 @@ const Demandes = () => {
                           style={{ borderColor: errorsNouvelle.lienIngridPointsControleTIF ? "#EF4444" : undefined }}
                           required
                         />
-                        {errorsNouvelle.lienIngridPointsControleTIF && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.lienIngridPointsControleTIF}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3180,7 +3168,6 @@ const Demandes = () => {
                           style={{ borderColor: errorsNouvelle.lienIngridSignoff ? "#EF4444" : undefined }}
                           required
                         />
-                        {errorsNouvelle.lienIngridSignoff && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsNouvelle.lienIngridSignoff}</span>}
                       </div>
                     </div>
                   </div>
@@ -3398,7 +3385,6 @@ const Demandes = () => {
                       data-field-error={errorsProspecte.dateReception ? "true" : undefined}
                       style={{ borderColor: errorsProspecte.dateReception ? "#EF4444" : undefined }}
                     />
-                    {errorsProspecte.dateReception && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsProspecte.dateReception}</span>}
                   </div>
                   <div className="form-group">
                     <label>
@@ -3431,7 +3417,6 @@ const Demandes = () => {
                         </option>
                       ))}
                     </select>
-                    {errorsProspecte.societesDemandeurs && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsProspecte.societesDemandeurs}</span>}
                   </div>
                   <div className="form-group">
                     <label>
@@ -3456,7 +3441,6 @@ const Demandes = () => {
                         </option>
                       ))}
                     </select>
-                    {errorsProspecte.interlocuteur && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsProspecte.interlocuteur}</span>}
                   </div>
                   <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                     <label>
@@ -3471,7 +3455,6 @@ const Demandes = () => {
                       onChange={handleProspecteInputChange}
                       placeholder="Nom du projet"
                     />
-                    {errorsProspecte.nomProjet && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsProspecte.nomProjet}</span>}
                   </div>
                   <div className="form-group">
                     <label>
@@ -3750,7 +3733,6 @@ const Demandes = () => {
                           style={{ borderColor: errorsEvolution.dateReception ? "#EF4444" : undefined }}
                           required
                         />
-                        {errorsEvolution.dateReception && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateReception}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3797,7 +3779,6 @@ const Demandes = () => {
                             </option>
                           ))}
                         </select>
-                        {errorsEvolution.societesDemandeurs && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.societesDemandeurs}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3823,7 +3804,6 @@ const Demandes = () => {
                             </option>
                           ))}
                         </select>
-                        {errorsEvolution.interlocuteur && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.interlocuteur}</span>}
                       </div>
                       <div
                         className="form-group"
@@ -3842,7 +3822,6 @@ const Demandes = () => {
                           placeholder="Nom du projet"
                           required
                         />
-                        {errorsEvolution.nomProjet && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.nomProjet}</span>}
                       </div>
                     </div>
                   </div>
@@ -3882,7 +3861,6 @@ const Demandes = () => {
                           style={{ borderColor: errorsEvolution.dateDemandeMiseAJourDATFL ? "#EF4444" : undefined }}
                           required
                         />
-                        {errorsEvolution.dateDemandeMiseAJourDATFL && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateDemandeMiseAJourDATFL}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3898,7 +3876,6 @@ const Demandes = () => {
                           style={{ borderColor: errorsEvolution.dateReponseMiseAJourDATFL ? "#EF4444" : undefined }}
                           required
                         />
-                        {errorsEvolution.dateReponseMiseAJourDATFL && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateReponseMiseAJourDATFL}</span>}
                       </div>
                     </div>
                   </div>
@@ -3940,7 +3917,6 @@ const Demandes = () => {
                           style={{ borderColor: errorsEvolution.charge ? "#EF4444" : undefined }}
                           required
                         />
-                        {errorsEvolution.charge && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.charge}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3956,7 +3932,6 @@ const Demandes = () => {
                           style={{ borderColor: errorsEvolution.planningDateDebut ? "#EF4444" : undefined }}
                           required
                         />
-                        {errorsEvolution.planningDateDebut && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.planningDateDebut}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -3972,7 +3947,6 @@ const Demandes = () => {
                           style={{ borderColor: errorsEvolution.planningDateFin ? "#EF4444" : undefined }}
                           required
                         />
-                        {errorsEvolution.planningDateFin && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.planningDateFin}</span>}
                       </div>
                       <div className="form-group">
                         <label>
@@ -4093,7 +4067,6 @@ const Demandes = () => {
                           <option value="">-- Sélectionner une société --</option>
                           {societesSelectOptions.map(s => <option key={s.id} value={s.id.toString()}>{s.code || s.nom}</option>)}
                         </select>
-                        {errorsEvolution.societesDemandeurs && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.societesDemandeurs}</span>}
                       </div>
                       <div className="form-group">
                         <label>Interlocuteur client <span className="required">*</span></label>
@@ -4103,7 +4076,6 @@ const Demandes = () => {
                           <option value="">Sélectionner un interlocuteur</option>
                           {interlocuteurs.map(i => <option key={i.id} value={i.nom}>{i.nom}</option>)}
                         </select>
-                        {errorsEvolution.interlocuteurClient && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.interlocuteurClient}</span>}
                       </div>
                       <div className="form-group">
                         <label>Méthodologie <span className="required">*</span></label>
@@ -4114,14 +4086,12 @@ const Demandes = () => {
                           <option value="Agile">Agile</option>
                           <option value="Classique">Classique</option>
                         </select>
-                        {errorsEvolution.methodologie && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.methodologie}</span>}
                       </div>
                       <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                         <label>Nom du projet <span className="required">*</span></label>
                         <input type="text" name="nomProjet" value={evolutionFormData.nomProjet} onChange={handleEvolutionInputChange} placeholder="Nom du projet"
                           data-field-error={errorsEvolution.nomProjet ? "true" : undefined}
                           style={{ borderColor: errorsEvolution.nomProjet ? "#EF4444" : undefined }} />
-                        {errorsEvolution.nomProjet && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.nomProjet}</span>}
                       </div>
                       <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                         <label>Description du projet</label>
@@ -4159,7 +4129,6 @@ const Demandes = () => {
                           name="dateTransmissionBacklog" value={evolutionFormData.dateTransmissionBacklog} onChange={handleEvolutionInputChange}
                           data-field-error={errorsEvolution.dateTransmissionBacklog ? "true" : undefined}
                           style={{ width: "100%", padding: "10px", border: `1px solid ${errorsEvolution.dateTransmissionBacklog ? "#EF4444" : "#d1d5db"}`, borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
-                        {errorsEvolution.dateTransmissionBacklog && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateTransmissionBacklog}</span>}
                       </div>
                       <div className="form-group" style={{ margin: 0 }}>
                         <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Date de confirmation de validation <span style={{ color: "#ef4444" }}>*</span></label>
@@ -4167,7 +4136,6 @@ const Demandes = () => {
                           name="dateConfirmationValidation" value={evolutionFormData.dateConfirmationValidation} onChange={handleEvolutionInputChange}
                           data-field-error={errorsEvolution.dateConfirmationValidation ? "true" : undefined}
                           style={{ width: "100%", padding: "10px", border: `1px solid ${errorsEvolution.dateConfirmationValidation ? "#EF4444" : "#d1d5db"}`, borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
-                        {errorsEvolution.dateConfirmationValidation && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateConfirmationValidation}</span>}
                       </div>
                     </div>
                     <div className="form-group" style={{ marginBottom: "20px" }}>
@@ -4218,7 +4186,6 @@ const Demandes = () => {
                           data-field-error={errorsEvolution.dateCommunicationPlanningClient ? "true" : undefined}
                           style={{ borderColor: errorsEvolution.dateCommunicationPlanningClient ? "#EF4444" : undefined }}
                           required />
-                        {errorsEvolution.dateCommunicationPlanningClient && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.dateCommunicationPlanningClient}</span>}
                       </div>
                       <div className="form-group">
                         <label>Nombre de sprint <span className="required">*</span></label>
@@ -4226,7 +4193,6 @@ const Demandes = () => {
                           data-field-error={errorsEvolution.nombreSprint ? "true" : undefined}
                           style={{ borderColor: errorsEvolution.nombreSprint ? "#EF4444" : undefined }}
                           required />
-                        {errorsEvolution.nombreSprint && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.nombreSprint}</span>}
                       </div>
                     </div>
                     {parseInt(evolutionFormData.nombreSprint) > 0 && (
@@ -4358,7 +4324,6 @@ const Demandes = () => {
                           <option value="en cours">En cours</option>
                           <option value="terminé">Terminé</option>
                         </select>
-                        {errorsEvolution.statutCodage && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.statutCodage}</span>}
                       </div>
                       <div className="form-group">
                         <label>Statut TIF <span className="required">*</span></label>
@@ -4369,7 +4334,6 @@ const Demandes = () => {
                           <option value="en cours">En cours</option>
                           <option value="terminé">Terminé</option>
                         </select>
-                        {errorsEvolution.statutTIF && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.statutTIF}</span>}
                       </div>
                     </div>
                     {parseInt(evolutionFormData.nombreSprint) > 0 && (
@@ -4485,7 +4449,6 @@ const Demandes = () => {
                           data-field-error={errorsEvolution.lienIngridKickoff ? "true" : undefined}
                           style={{ borderColor: errorsEvolution.lienIngridKickoff ? "#EF4444" : undefined }}
                           required />
-                        {errorsEvolution.lienIngridKickoff && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.lienIngridKickoff}</span>}
                       </div>
                       <div className="form-group">
                         <label>Rédaction des points de contrôles (TIF) - Lien INGRID <span className="required">*</span></label>
@@ -4493,7 +4456,6 @@ const Demandes = () => {
                           data-field-error={errorsEvolution.lienIngridPointsControleTIF ? "true" : undefined}
                           style={{ borderColor: errorsEvolution.lienIngridPointsControleTIF ? "#EF4444" : undefined }}
                           required />
-                        {errorsEvolution.lienIngridPointsControleTIF && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.lienIngridPointsControleTIF}</span>}
                       </div>
                       <div className="form-group">
                         <label>Rédaction du signoff document - Lien INGRID <span className="required">*</span></label>
@@ -4501,7 +4463,6 @@ const Demandes = () => {
                           data-field-error={errorsEvolution.lienIngridSignoff ? "true" : undefined}
                           style={{ borderColor: errorsEvolution.lienIngridSignoff ? "#EF4444" : undefined }}
                           required />
-                        {errorsEvolution.lienIngridSignoff && <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>{errorsEvolution.lienIngridSignoff}</span>}
                       </div>
                     </div>
                   </div>

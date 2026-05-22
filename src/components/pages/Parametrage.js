@@ -311,18 +311,19 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
   const applyFiltre = (items, recherche, filtreStatut, fields) => {
     const q = normaliser(recherche);
-    return items
-      .filter(item => {
-        const matchStatut = filtreStatut === "tous"
-          || (filtreStatut === "actif" ? item.actif !== false : item.actif === false);
-        const matchRecherche = !q || fields.some(f => normaliser(item[f]).includes(q));
-        return matchStatut && matchRecherche;
-      })
-      .sort((a, b) => {
-        // Désactivés en haut
+    const filtered = items.filter(item => {
+      const matchStatut = filtreStatut === "tous"
+        || (filtreStatut === "actif" ? item.actif !== false : item.actif === false);
+      const matchRecherche = !q || fields.some(f => normaliser(item[f]).includes(q));
+      return matchStatut && matchRecherche;
+    });
+    if (items.length > 10) {
+      filtered.sort((a, b) => {
         if (a.actif === b.actif) return 0;
         return a.actif === false ? -1 : 1;
       });
+    }
+    return filtered;
   };
 
   const societesFiltrees       = applyFiltre(societes,       rechercheSocietes,       filtreStatutSocietes,       ["code","nom","departement"]);
@@ -684,7 +685,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
       code: uo.code || "",
       nom: uo.nom,
       departement: uo.departement || "",
-      chefUO: uo.chefUO,
+      chefUO: uo.chefUO || "",
       projetSoumis: uo.projetSoumis || "",
       actif: uo.actif,
       societeId: uo.societeId != null ? uo.societeId.toString() : "",
@@ -776,6 +777,10 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
     if (!uoFormData.societeId) {
       newErrors.societeId = "La société est obligatoire.";
+    }
+
+    if (!editingUO && !uoFormData.chefUO?.trim()) {
+      newErrors.chefUO = "Le chef de l'UO est obligatoire.";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -1395,11 +1400,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         data-field-error={errorsSociete.code ? "true" : undefined}
                         style={{ textTransform: "uppercase", borderColor: errorsSociete.code ? "#EF4444" : undefined }}
                       />
-                      {errorsSociete.code && (
-                        <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                          {errorsSociete.code}
-                        </span>
-                      )}
                     </div>
                     <div className="form-group">
                       <label htmlFor="societeNom">
@@ -1415,11 +1415,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         data-field-error={errorsSociete.nom ? "true" : undefined}
                         style={{ borderColor: errorsSociete.nom ? "#EF4444" : undefined }}
                       />
-                      {errorsSociete.nom && (
-                        <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                          {errorsSociete.nom}
-                        </span>
-                      )}
                     </div>
                     <div className="form-group">
                       <label htmlFor="societeDepartement">Département</label>
@@ -1703,7 +1698,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
           <div className="table-container" style={{ marginTop: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
               {(!loading && societes.length > 0) && <h3 style={{ margin: 0 }}>Liste des sociétés</h3>}
-              {societes.length >= 5 && (
+              {societes.length > 10 && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <div style={{ position: "relative" }}>
                   <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
@@ -1752,8 +1747,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                       <td>
                         <span
                           style={{
-                            backgroundColor: "#e0e7ff",
-                            color: "#3730a3",
+                            backgroundColor: "#dbeafe",
+                            color: "#1e40af",
                             padding: "2px 8px",
                             borderRadius: "6px",
                             fontWeight: "600",
@@ -1775,7 +1770,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             <button
                               onClick={() => handleEditSociete(societe)}
                               data-tooltip-id="param-tooltip" data-tooltip-content="Modifier"
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#DBEAFE", color: "#1E40AF", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: "#4a90e2", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
                               <i className="fa-solid fa-pen"></i>
                             </button>
@@ -1784,7 +1779,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             <button
                               onClick={() => handleToggleActivationSociete(societe)}
                               data-tooltip-id="param-tooltip" data-tooltip-content={societe.actif !== false ? "Désactiver" : "Activer"}
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: societe.actif !== false ? "#FEF3C7" : "#D1FAE5", color: societe.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: societe.actif !== false ? "#4a90e2" : "#10B981", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
                               <i className={societe.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                             </button>
@@ -1921,11 +1916,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           </option>
                         ))}
                     </select>
-                    {errorsUO.societeId && (
-                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                        {errorsUO.societeId}
-                      </span>
-                    )}
                   </div>
 
                   {/* Département : toujours visible quand une société est sélectionnée */}
@@ -2047,15 +2037,10 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         style={{ borderColor: errorsUO.nom ? "#EF4444" : undefined }}
                       />
                     )}
-                    {errorsUO.nom && (
-                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                        {errorsUO.nom}
-                      </span>
-                    )}
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="uoChefUO">Chef de l'UO</label>
+                    <label htmlFor="uoChefUO">Chef de l'UO{!editingUO && <span style={{ color: "#EF4444" }}> *</span>}</label>
                     <input
                       type="text"
                       id="uoChefUO"
@@ -2063,6 +2048,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                       value={uoFormData.chefUO}
                       onChange={handleUOInputChange}
                       placeholder="Nom du chef de l'unité organisationnelle"
+                      style={{ borderColor: errorsUO.chefUO ? "#EF4444" : undefined }}
+                      data-field-error={!!errorsUO.chefUO}
                     />
                   </div>
 
@@ -2086,7 +2073,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
           <div className="table-container" style={{ marginTop: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
               {(!loading && uoList.length > 0) && <h3 style={{ margin: 0 }}>Liste des unités organisationnelles</h3>}
-              {uoList.length >= 5 && (
+              {uoList.length > 10 && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <div style={{ position: "relative" }}>
                   <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
@@ -2125,7 +2112,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                     <th>Code</th>
                     <th>Libellé du service</th>
                     <th>Chef de l'UO</th>
-                    <th>Société</th>
+                    <th style={{ textAlign: "center" }}>Société</th>
                     <th>Département</th>
                     {aActionsUO && <th>Actions</th>}
                   </tr>
@@ -2138,8 +2125,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         {uo.code ? (
                           <span
                             style={{
-                              backgroundColor: "#e0e7ff",
-                              color: "#3730a3",
+                              backgroundColor: "#dbeafe",
+                              color: "#1e40af",
                               padding: "2px 8px",
                               borderRadius: "6px",
                               fontWeight: "600",
@@ -2166,12 +2153,9 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           if (!s) return <span style={{ color: "#9ca3af" }}>—</span>;
                           return (
                             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
-                              <span style={{ backgroundColor: "#e0e7ff", color: "#3730a3", padding: "2px 8px", borderRadius: "6px", fontWeight: "600", fontSize: "13px", display: "inline-block", textAlign: "center" }}>
+                              <span style={{ backgroundColor: "#dbeafe", color: "#1e40af", padding: "2px 8px", borderRadius: "6px", fontWeight: "600", fontSize: "13px", display: "inline-block", textAlign: "center" }}>
                                 {s.code}
                               </span>
-                              {s.departement && (
-                                <span style={{ fontSize: "11px", color: "#6b7280", textAlign: "center" }}>{s.departement}</span>
-                              )}
                             </div>
                           );
                         })()}
@@ -2188,7 +2172,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                               onClick={() => handleEditUO(uo)}
                               disabled={uo.actif === false}
                               data-tooltip-id="param-tooltip" data-tooltip-content="Modifier"
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: uo.actif === false ? "#F3F4F6" : "#DBEAFE", color: uo.actif === false ? "#D1D5DB" : "#1E40AF", cursor: uo.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: uo.actif === false ? "#D1D5DB" : "#4a90e2", cursor: uo.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
                               <i className="fa-solid fa-pen"></i>
                             </button>
@@ -2197,7 +2181,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             <button
                               onClick={() => handleToggleActivationUO(uo)}
                               data-tooltip-id="param-tooltip" data-tooltip-content={uo.actif !== false ? "Désactiver" : "Activer"}
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: uo.actif !== false ? "#FEF3C7" : "#D1FAE5", color: uo.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: uo.actif !== false ? "#4a90e2" : "#10B981", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
                               <i className={uo.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                             </button>
@@ -2308,11 +2292,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                       data-field-error={errorsStatut.nom ? "true" : undefined}
                       style={{ borderColor: errorsStatut.nom ? "#EF4444" : undefined }}
                     />
-                    {errorsStatut.nom && (
-                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                        {errorsStatut.nom}
-                      </span>
-                    )}
                   </div>
 
                   <div className="form-group">
@@ -2348,7 +2327,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
           <div className="table-container" style={{ marginTop: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
               {(!loading && statuts.length > 0) && <h3 style={{ margin: 0 }}>Liste des statuts</h3>}
-              {statuts.length >= 5 && (
+              {statuts.length > 10 && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <div style={{ position: "relative" }}>
                   <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
@@ -2440,7 +2419,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             <button
                               onClick={() => handleEditStatut(statut)}
                               data-tooltip-id="param-tooltip" data-tooltip-content="Modifier"
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#DBEAFE", color: "#1E40AF", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: "#4a90e2", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
                               <i className="fa-solid fa-pen"></i>
                             </button>
@@ -2449,7 +2428,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                             <button
                               onClick={() => handleDeleteStatut(statut)}
                               data-tooltip-id="param-tooltip" data-tooltip-content="Supprimer"
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#FEE2E2", color: "#991B1B", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: "#4a90e2", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
                               <i className="fa-solid fa-trash"></i>
                             </button>
@@ -2529,11 +2508,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         data-field-error={errorsInterlocuteur.nom ? "true" : undefined}
                         style={{ borderColor: errorsInterlocuteur.nom ? "#EF4444" : undefined }}
                       />
-                      {errorsInterlocuteur.nom && (
-                        <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                          {errorsInterlocuteur.nom}
-                        </span>
-                      )}
                     </div>
 
                     <div className="form-group">
@@ -2549,11 +2523,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         data-field-error={errorsInterlocuteur.email ? "true" : undefined}
                         style={{ borderColor: errorsInterlocuteur.email ? "#EF4444" : undefined }}
                       />
-                      {errorsInterlocuteur.email && (
-                        <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                          {errorsInterlocuteur.email}
-                        </span>
-                      )}
                     </div>
 
                     <div className="form-group">
@@ -2614,7 +2583,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
             <div className="table-container" style={{ marginTop: "24px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
                 {(!loading && interlocuteurs.length > 0) && <h3 style={{ margin: 0 }}>Liste des interlocuteurs</h3>}
-                {interlocuteurs.length >= 5 && (
+                {interlocuteurs.length > 10 && (
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <div style={{ position: "relative" }}>
                     <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
@@ -2696,7 +2665,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                                 onClick={() => handleEditInterlocuteur(interlocuteur)}
                                 disabled={interlocuteur.actif === false}
                                 data-tooltip-id="param-tooltip" data-tooltip-content="Modifier"
-                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: interlocuteur.actif === false ? "#F3F4F6" : "#DBEAFE", color: interlocuteur.actif === false ? "#D1D5DB" : "#1E40AF", cursor: interlocuteur.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: interlocuteur.actif === false ? "#D1D5DB" : "#4a90e2", cursor: interlocuteur.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
                                 <i className="fa-solid fa-pen"></i>
                               </button>
@@ -2705,7 +2674,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                               <button
                                 onClick={() => handleToggleActivationInterlocuteur(interlocuteur)}
                                 data-tooltip-id="param-tooltip" data-tooltip-content={interlocuteur.actif !== false ? "Désactiver" : "Activer"}
-                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: interlocuteur.actif !== false ? "#FEF3C7" : "#D1FAE5", color: interlocuteur.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: interlocuteur.actif !== false ? "#4a90e2" : "#10B981", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                               >
                                 <i className={interlocuteur.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                               </button>

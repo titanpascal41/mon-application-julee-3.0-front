@@ -1239,17 +1239,21 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
   };
 
   const profilsBase = profils.filter(p => p.id !== 1);
-  const profilsFiltres = profilsBase
-    .filter(p => !rechercheProfils || normaliser(p.nom).includes(normaliser(rechercheProfils)) || normaliser(p.code).includes(normaliser(rechercheProfils)))
-    .sort(sortInactifEnHaut);
-  const utilisateursFiltres = utilisateurs
-    .filter(u =>
+  const profilsFiltres = (() => {
+    const filtered = profilsBase.filter(p => !rechercheProfils || normaliser(p.nom).includes(normaliser(rechercheProfils)) || normaliser(p.code).includes(normaliser(rechercheProfils)));
+    if (profilsBase.length > 10) filtered.sort(sortInactifEnHaut);
+    return filtered;
+  })();
+  const utilisateursFiltres = (() => {
+    const filtered = utilisateurs.filter(u =>
       !rechercheUtilisateurs ||
       normaliser(u.nom).includes(normaliser(rechercheUtilisateurs)) ||
       normaliser(u.prenom).includes(normaliser(rechercheUtilisateurs)) ||
       normaliser(u.email).includes(normaliser(rechercheUtilisateurs))
-    )
-    .sort(sortInactifEnHaut);
+    );
+    if (utilisateurs.length > 10) filtered.sort(sortInactifEnHaut);
+    return filtered;
+  })();
 
   const renderPagination = (total, page, setPage) => {
     const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
@@ -1389,11 +1393,6 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                           data-field-error={errorsProfil.nom ? "true" : undefined}
                           style={{ borderColor: errorsProfil.nom ? "#EF4444" : undefined }}
                         />
-                        {errorsProfil.nom && (
-                          <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                            {errorsProfil.nom}
-                          </span>
-                        )}
                       </div>
 
                       <div
@@ -1657,7 +1656,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
           <div className="table-container" style={{ marginTop: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
               {profils.length > 0 && <h3 style={{ margin: 0 }}>Liste des profils</h3>}
-              {profils.length >= 5 && (
+              {profils.length > 10 && (
               <div style={{ position: "relative" }}>
                 <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
                 <input type="text" placeholder="Rechercher..." value={rechercheProfils}
@@ -1706,9 +1705,9 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                           {profil.code ? (
                             <span
                               style={{
-                                backgroundColor: "#e0e7ff",
+                                backgroundColor: "#dbeafe",
 
-                                color: "#3730a3",
+                                color: "#1e40af",
 
                                 padding: "2px 8px",
 
@@ -1808,7 +1807,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                                 onClick={() => handleEdit(profil)}
                                 disabled={profil.actif === false}
                                 data-tooltip-id="admin-tooltip" data-tooltip-content="Modifier"
-                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif === false ? "#F3F4F6" : "#F3F4F6", color: profil.actif === false ? "#D1D5DB" : "#374151", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: profil.actif === false ? "#D1D5DB" : "#4a90e2", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
                                 <i className="fa-solid fa-pen"></i>
                               </button>
@@ -1818,7 +1817,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                                 onClick={() => handleManagePermissions(profil)}
                                 disabled={profil.actif === false}
                                 data-tooltip-id="admin-tooltip" data-tooltip-content="Attribuer des permissions"
-                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif === false ? "#F3F4F6" : "#F3F4F6", color: profil.actif === false ? "#D1D5DB" : "#374151", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: profil.actif === false ? "#D1D5DB" : "#4a90e2", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
                                 <i className="fa-solid fa-key"></i>
                               </button>
@@ -1828,7 +1827,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                                 <button
                                   onClick={() => handleToggleActivation(profil)}
                                   data-tooltip-id="admin-tooltip" data-tooltip-content={profil.actif !== false ? "Désactiver" : "Activer"}
-                                  style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif !== false ? "#F3F4F6" : "#D1FAE5", color: profil.actif !== false ? "#374151" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                                  style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: profil.actif !== false ? "#4a90e2" : "#10B981", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                                 >
                                   <i className={profil.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                                 </button>
@@ -2346,11 +2345,6 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                       data-field-error={errorsUser.prenom ? "true" : undefined}
                       style={{ borderColor: errorsUser.prenom ? "#EF4444" : undefined }}
                     />
-                    {errorsUser.prenom && (
-                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                        {errorsUser.prenom}
-                      </span>
-                    )}
                   </div>
 
                   <div className="form-group">
@@ -2367,11 +2361,6 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                       data-field-error={errorsUser.nom ? "true" : undefined}
                       style={{ borderColor: errorsUser.nom ? "#EF4444" : undefined }}
                     />
-                    {errorsUser.nom && (
-                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                        {errorsUser.nom}
-                      </span>
-                    )}
                   </div>
 
                   <div className="form-group">
@@ -2388,11 +2377,6 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                       data-field-error={errorsUser.email ? "true" : undefined}
                       style={{ borderColor: errorsUser.email ? "#EF4444" : undefined }}
                     />
-                    {errorsUser.email && (
-                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                        {errorsUser.email}
-                      </span>
-                    )}
                   </div>
 
                   <div className="form-group">
@@ -2451,12 +2435,6 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                         ></i>
                       </button>
                     </div>
-
-                    {errorsUser.motDePasse && (
-                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                        {errorsUser.motDePasse}
-                      </span>
-                    )}
 
                     {userFormData.motDePasse &&
                       (() => {
@@ -2537,11 +2515,6 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                         </option>
                       ))}
                     </select>
-                    {errorsUser.profilId && (
-                      <span style={{ color: "#EF4444", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                        {errorsUser.profilId}
-                      </span>
-                    )}
                     {(() => {
                       const profilSelectionne = profils.find(p => String(p.id) === String(userFormData.profilId));
                       return profilSelectionne?.actif === false ? (
@@ -2590,7 +2563,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
           <div className="table-container" style={{ marginTop: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
               {utilisateurs.length > 0 && <h3 style={{ margin: 0 }}>Liste des utilisateurs</h3>}
-              {utilisateurs.length >= 5 && (
+              {utilisateurs.length > 10 && (
               <div style={{ position: "relative" }}>
                 <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
                 <input type="text" placeholder="Rechercher..." value={rechercheUtilisateurs}
@@ -2639,7 +2612,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                               onClick={() => handleEditUser(user)}
                               disabled={user.actif === false}
                               data-tooltip-id="admin-tooltip" data-tooltip-content="Modifier"
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#F3F4F6", color: user.actif === false ? "#D1D5DB" : "#374151", cursor: user.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: user.actif === false ? "#D1D5DB" : "#4a90e2", cursor: user.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
                               <i className="fa-solid fa-pen"></i>
                             </button>
@@ -2648,7 +2621,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                             <button
                               onClick={() => handleToggleActivationUser(user)}
                               data-tooltip-id="admin-tooltip" data-tooltip-content={user.actif !== false ? "Désactiver" : "Activer"}
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: user.actif !== false ? "#F3F4F6" : "#D1FAE5", color: user.actif !== false ? "#374151" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: user.actif !== false ? "#4a90e2" : "#10B981", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
                               <i className={user.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                             </button>

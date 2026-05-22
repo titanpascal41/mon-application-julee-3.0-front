@@ -191,9 +191,9 @@
 }
 
 .submenu-item.active {
-  color: #4a90e2;
-  background: #eff6ff;
-  font-weight: 500;
+  color: #374151;
+  background: #F3F4F6;
+  font-weight: 600;
 }
 
 /* Scrollbar styling */
