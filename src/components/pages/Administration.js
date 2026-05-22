@@ -585,7 +585,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
         // Forcer le rafraîchissement du service de permissions
 
         try {
-          await permissionService.refreshPermissions();
+          await permissionService.refresh();
         } catch (refreshError) {
           console.warn(
             "Erreur lors du rafraîchissement des permissions:",
@@ -1784,34 +1784,18 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                           <button
                             style={{
                               padding: "6px 14px",
-
                               borderRadius: "12px",
-
-                              backgroundColor: "#dcfce7",
-
-                              color: "#166534",
-
+                              backgroundColor: "#dbeafe",
+                              color: "#1e40af",
                               fontWeight: "500",
-
                               fontSize: "14px",
-
-                              border: "1px solid #bbf7d0",
-
+                              border: "1px solid #bfdbfe",
                               cursor: "pointer",
-
                               transition: "all 0.2s ease",
                             }}
                             onClick={() => handleViewPermissions(profil)}
-                            onMouseOver={(e) => {
-                              e.target.style.backgroundColor = "#bbf7d0";
-
-                              e.target.style.transform = "scale(1.05)";
-                            }}
-                            onMouseOut={(e) => {
-                              e.target.style.backgroundColor = "#dcfce7";
-
-                              e.target.style.transform = "scale(1)";
-                            }}
+                            onMouseOver={(e) => { e.target.style.backgroundColor = "#bfdbfe"; e.target.style.transform = "scale(1.05)"; }}
+                            onMouseOut={(e) => { e.target.style.backgroundColor = "#dbeafe"; e.target.style.transform = "scale(1)"; }}
                           >
                             Voir les accès
                           </button>
@@ -1824,7 +1808,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                                 onClick={() => handleEdit(profil)}
                                 disabled={profil.actif === false}
                                 data-tooltip-id="admin-tooltip" data-tooltip-content="Modifier"
-                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif === false ? "#F3F4F6" : "#DBEAFE", color: profil.actif === false ? "#D1D5DB" : "#1E40AF", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif === false ? "#F3F4F6" : "#F3F4F6", color: profil.actif === false ? "#D1D5DB" : "#374151", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
                                 <i className="fa-solid fa-pen"></i>
                               </button>
@@ -1834,7 +1818,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                                 onClick={() => handleManagePermissions(profil)}
                                 disabled={profil.actif === false}
                                 data-tooltip-id="admin-tooltip" data-tooltip-content="Attribuer des permissions"
-                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif === false ? "#F3F4F6" : "#EDE9FE", color: profil.actif === false ? "#D1D5DB" : "#6D28D9", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                                style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif === false ? "#F3F4F6" : "#F3F4F6", color: profil.actif === false ? "#D1D5DB" : "#374151", cursor: profil.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                               >
                                 <i className="fa-solid fa-key"></i>
                               </button>
@@ -1844,7 +1828,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                                 <button
                                   onClick={() => handleToggleActivation(profil)}
                                   data-tooltip-id="admin-tooltip" data-tooltip-content={profil.actif !== false ? "Désactiver" : "Activer"}
-                                  style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif !== false ? "#FEF3C7" : "#D1FAE5", color: profil.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                                  style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: profil.actif !== false ? "#F3F4F6" : "#D1FAE5", color: profil.actif !== false ? "#374151" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                                 >
                                   <i className={profil.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                                 </button>
@@ -2347,7 +2331,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                   </div>
                 )}
 
-                <form autoComplete="off" onSubmit={handleUserSubmit}>
+                <form autoComplete="off" noValidate onSubmit={handleUserSubmit}>
                   <div className="form-group">
                     <label htmlFor="prenom">
                       Prénom <span className="required">*</span>
@@ -2655,7 +2639,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                               onClick={() => handleEditUser(user)}
                               disabled={user.actif === false}
                               data-tooltip-id="admin-tooltip" data-tooltip-content="Modifier"
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: user.actif === false ? "#F3F4F6" : "#DBEAFE", color: user.actif === false ? "#D1D5DB" : "#1E40AF", cursor: user.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "#F3F4F6", color: user.actif === false ? "#D1D5DB" : "#374151", cursor: user.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
                             >
                               <i className="fa-solid fa-pen"></i>
                             </button>
@@ -2664,7 +2648,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                             <button
                               onClick={() => handleToggleActivationUser(user)}
                               data-tooltip-id="admin-tooltip" data-tooltip-content={user.actif !== false ? "Désactiver" : "Activer"}
-                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: user.actif !== false ? "#FEF3C7" : "#D1FAE5", color: user.actif !== false ? "#92400E" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: user.actif !== false ? "#F3F4F6" : "#D1FAE5", color: user.actif !== false ? "#374151" : "#065F46", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
                             >
                               <i className={user.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
                             </button>

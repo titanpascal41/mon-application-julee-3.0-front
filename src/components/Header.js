@@ -123,6 +123,60 @@ const genererNotifications = (demandes) => {
       });
     }
 
+    // 7. Livraison client dépassée (date passée, pas encore livré)
+    if (d.sprintsData) {
+      try {
+        const sprints = typeof d.sprintsData === "string" ? JSON.parse(d.sprintsData) : d.sprintsData;
+        if (Array.isArray(sprints)) {
+          sprints.forEach((s, i) => {
+            if (s.statutSprint === "terminé") return;
+            const num = i + 1;
+
+            // Date TIF sprint dépassée
+            if (s.datePrevTIF && !s.dateEffTIF) {
+              const j = diffJours(s.datePrevTIF);
+              if (j !== null && j < 0) {
+                notifs.push({
+                  id: `tif-depasse-${d.id}-${i}`,
+                  type: "urgent",
+                  title: `Sprint ${num} — Date TIF dépassée de ${Math.abs(j)} jour${Math.abs(j) > 1 ? "s" : ""}`,
+                  details: nom,
+                  lien: "demandes-gestion",
+                });
+              }
+            }
+
+            // Livraison client sprint dépassée
+            if (s.datePrevClient && !s.dateEffClient) {
+              const j = diffJours(s.datePrevClient);
+              if (j !== null && j < 0) {
+                notifs.push({
+                  id: `client-depasse-${d.id}-${i}`,
+                  type: "urgent",
+                  title: `Sprint ${num} — Livraison client dépassée de ${Math.abs(j)} jour${Math.abs(j) > 1 ? "s" : ""}`,
+                  details: nom,
+                  lien: "demandes-gestion",
+                });
+              }
+            }
+
+            // Sprint bloqué à 0% depuis > 3 jours
+            if (s.statutSprint === "en cours" && parseInt(s.avancement || 0) === 0 && s.datePrevTIF) {
+              const j = diffJours(s.datePrevTIF);
+              if (j !== null && j <= -3) {
+                notifs.push({
+                  id: `sprint-zero-${d.id}-${i}`,
+                  type: "warning",
+                  title: `Sprint ${num} — Aucun avancement enregistré`,
+                  details: nom,
+                  lien: "demandes-gestion",
+                });
+              }
+            }
+          });
+        }
+      } catch {}
+    }
 
     // 8. Planification non faite depuis plus de 5 jours
     if (!d.nombreSprint) {
@@ -136,6 +190,47 @@ const genererNotifications = (demandes) => {
           lien: "demandes-gestion",
         });
       }
+    }
+
+    // 9. Brouillon abandonné depuis > 7 jours
+    if (d.isDraft && d.dateEnregistrement) {
+      const j = diffJours(d.dateEnregistrement);
+      if (j !== null && j <= -7) {
+        notifs.push({
+          id: `brouillon-${d.id}`,
+          type: "warning",
+          title: `Brouillon non finalisé depuis ${Math.abs(j)} jours`,
+          details: nom,
+          lien: "demandes-gestion",
+        });
+      }
+    }
+
+    // 10. Validation en attente dépassée
+    if (d.dateConfirmationValidation && !d.dateTransmissionBacklog) {
+      const j = diffJours(d.dateConfirmationValidation);
+      if (j !== null && j < 0) {
+        notifs.push({
+          id: `validation-${d.id}`,
+          type: "warning",
+          title: `Confirmation validation dépassée de ${Math.abs(j)} jour${Math.abs(j) > 1 ? "s" : ""}`,
+          details: nom,
+          lien: "demandes-gestion",
+        });
+      }
+    }
+
+    // 11. Demande sans UO assignée (non brouillon, non prospecte)
+    if (!d.isDraft && !d.uniteOrganisationnelleId &&
+        (d.typeProjet || "").toLowerCase() !== "prospecte" &&
+        !d.archived) {
+      notifs.push({
+        id: `sans-uo-${d.id}`,
+        type: "info",
+        title: "Aucune unité organisationnelle assignée",
+        details: nom,
+        lien: "demandes-gestion",
+      });
     }
   });
 

@@ -1514,6 +1514,11 @@ const Demandes = () => {
 
       if (evolutionStep === 1) {
         const newErrors = {};
+        if (!evolutionFormData.dateReception) {
+          newErrors.dateReception = "La date de réception est obligatoire.";
+        } else if (evolutionFormData.dateEnregistrement && evolutionFormData.dateReception > evolutionFormData.dateEnregistrement) {
+          newErrors.dateReception = "La date de réception ne peut pas dépasser la date d'enregistrement.";
+        }
         if (!evolutionFormData.societesDemandeurs?.[0]) {
           newErrors.societesDemandeurs = "Veuillez sélectionner une société.";
         }
@@ -1529,16 +1534,6 @@ const Demandes = () => {
             const el = document.querySelector('[data-field-error="true"]');
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }, 50);
-          return;
-        }
-        if (!evolutionFormData.dateReception) {
-          newErrors.dateReception = "La date de réception est obligatoire.";
-        } else if (evolutionFormData.dateEnregistrement && evolutionFormData.dateReception > evolutionFormData.dateEnregistrement) {
-          newErrors.dateReception = "La date de réception ne peut pas dépasser la date d'enregistrement.";
-        }
-        if (Object.keys(newErrors).length > 0) {
-          setErrorsEvolution(newErrors);
-          setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
           return;
         }
         setErrorsEvolution({});
@@ -2364,7 +2359,7 @@ const Demandes = () => {
             )}
 
             {/* Formulaire selon l'étape */}
-            <form autoComplete="off" onSubmit={handleNouvelleDemandeSubmit}>
+            <form autoComplete="off" noValidate onSubmit={handleNouvelleDemandeSubmit}>
               {demandeMessage.text && (
                 <div
                   className={`info-box ${
@@ -3347,7 +3342,7 @@ const Demandes = () => {
               Demande Prospecte
             </h2>
 
-            <form autoComplete="off" onSubmit={handleProspecteSubmit}>
+            <form autoComplete="off" noValidate onSubmit={handleProspecteSubmit}>
               {demandeMessage.text && demandeMessage.type !== "error" && (
                 <div
                   className="info-box success-box"
@@ -3671,7 +3666,7 @@ const Demandes = () => {
               </div>
             )}
 
-            <form autoComplete="off" onSubmit={handleEvolutionSubmit}>
+            <form autoComplete="off" noValidate onSubmit={handleEvolutionSubmit}>
               {demandeMessage.text && (
                 <div
                   className={`info-box ${

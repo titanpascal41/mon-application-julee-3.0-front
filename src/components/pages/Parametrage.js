@@ -1380,7 +1380,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
                 {/* Mode création */}
                 {(societePopupMode === "create" || editingSociete) && (
-                  <form autoComplete="off" onSubmit={handleSocieteSubmit}>
+                  <form autoComplete="off" noValidate onSubmit={handleSocieteSubmit}>
                     <div className="form-group">
                       <label htmlFor="societeCode">
                         Code <span className="required">*</span>
@@ -1861,7 +1861,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   </div>
                 )}
 
-                <form autoComplete="off" onSubmit={handleUOSubmit}>
+                <form autoComplete="off" noValidate onSubmit={handleUOSubmit}>
                   <div className="form-group">
                     <label htmlFor="uoCode">Code (acronyme)</label>
                     <input
@@ -2293,7 +2293,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   </div>
                 )}
 
-                <form autoComplete="off" onSubmit={handleStatutSubmit}>
+                <form autoComplete="off" noValidate onSubmit={handleStatutSubmit}>
                   <div className="form-group">
                     <label htmlFor="statutNom">
                       Nom du statut <span className="required">*</span>
@@ -2515,7 +2515,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
                   </div>
 
-                  <form autoComplete="off" onSubmit={handleInterlocuteurSubmit}>
+                  <form autoComplete="off" noValidate onSubmit={handleInterlocuteurSubmit}>
                     <div className="form-group">
                       <label htmlFor="collabNom">
                         Nom et prenoms <span className="required">*</span>
