@@ -1722,7 +1722,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
             ) : societesFiltrees.length === 0 ? (
               societes.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <i className="fa-solid fa-building" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
+                  <i className="fa-solid fa-building" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
                   <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucune société créée pour le moment.</p>
                 </div>
               ) : (
@@ -2097,7 +2097,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
             ) : uoFiltrees.length === 0 ? (
               uoList.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <i className="fa-solid fa-sitemap" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
+                  <i className="fa-solid fa-sitemap" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
                   <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucune unité organisationnelle créée pour le moment.</p>
                 </div>
               ) : (
@@ -2351,7 +2351,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
             ) : statutsFiltrees.length === 0 ? (
               statuts.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <i className="fa-solid fa-tags" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
+                  <i className="fa-solid fa-tags" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
                   <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun statut créé pour le moment.</p>
                 </div>
               ) : (
@@ -2607,7 +2607,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
               ) : interlocuteursFiltrees.length === 0 ? (
                 interlocuteurs.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "48px 0" }}>
-                    <i className="fa-solid fa-address-book" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
+                    <i className="fa-solid fa-address-book" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
                     <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun interlocuteur créé pour le moment.</p>
                   </div>
                 ) : (
@@ -2864,7 +2864,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 Vous allez désactiver l'UO <strong>"{uoToToggle.nom}"</strong>.<br />
                 Veuillez indiquer le motif de désactivation.
               </p>
-              <label style={{ fontSize: "13px", fontWeight: "600", color: "#374151", display: "block", marginBottom: "8px" }}>
+              <label style={{ fontSize: "13px", fontWeight: "600", color: "#374151", display: "block", textAlign: "center", marginBottom: "8px" }}>
                 Motif de désactivation <span style={{ color: "#EF4444" }}>*</span>
               </label>
               <textarea
@@ -2937,7 +2937,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 Vous allez désactiver l'interlocuteur <strong>"{interlocuteurToToggle.nom}"</strong>.<br />
                 Veuillez indiquer le motif de désactivation.
               </p>
-              <label style={{ fontSize: "13px", fontWeight: "600", color: "#374151", display: "block", marginBottom: "8px" }}>
+              <label style={{ fontSize: "13px", fontWeight: "600", color: "#374151", display: "block", textAlign: "center", marginBottom: "8px" }}>
                 Motif de désactivation <span style={{ color: "#EF4444" }}>*</span>
               </label>
               <textarea

@@ -2646,7 +2646,7 @@ const Demandes = () => {
                     {/* Dates sur 2 colonnes */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>
+                        <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>
                           Date de transmission du backlog <span style={{ color: "#ef4444" }}>*</span>
                         </label>
                         <input
@@ -2660,7 +2660,7 @@ const Demandes = () => {
                         />
                       </div>
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>
+                        <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>
                           Date de confirmation de validation <span style={{ color: "#ef4444" }}>*</span>
                         </label>
                         <input
@@ -2677,7 +2677,7 @@ const Demandes = () => {
 
                     {/* Lien CDC pleine largeur */}
                     <div className="form-group" style={{ marginBottom: "20px" }}>
-                      <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>
+                      <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>
                         Lien Ingrid CDC
                       </label>
                       <input
@@ -2692,7 +2692,7 @@ const Demandes = () => {
 
                     {/* Zone de commentaires pour remplir l'espace */}
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>
+                      <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>
                         Observations / Commentaires
                       </label>
                       <textarea
@@ -4124,14 +4124,14 @@ const Demandes = () => {
                     </h3>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Date de transmission du backlog <span style={{ color: "#ef4444" }}>*</span></label>
+                        <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>Date de transmission du backlog <span style={{ color: "#ef4444" }}>*</span></label>
                         <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateReception || formatDateForInput(evolutionFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateTransmissionBacklog" value={evolutionFormData.dateTransmissionBacklog} onChange={handleEvolutionInputChange}
                           data-field-error={errorsEvolution.dateTransmissionBacklog ? "true" : undefined}
                           style={{ width: "100%", padding: "10px", border: `1px solid ${errorsEvolution.dateTransmissionBacklog ? "#EF4444" : "#d1d5db"}`, borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
                       </div>
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Date de confirmation de validation <span style={{ color: "#ef4444" }}>*</span></label>
+                        <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>Date de confirmation de validation <span style={{ color: "#ef4444" }}>*</span></label>
                         <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateTransmissionBacklog || evolutionFormData.dateReception || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateConfirmationValidation" value={evolutionFormData.dateConfirmationValidation} onChange={handleEvolutionInputChange}
                           data-field-error={errorsEvolution.dateConfirmationValidation ? "true" : undefined}
@@ -4139,12 +4139,12 @@ const Demandes = () => {
                       </div>
                     </div>
                     <div className="form-group" style={{ marginBottom: "20px" }}>
-                      <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Lien Ingrid CDC</label>
+                      <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>Lien Ingrid CDC</label>
                       <input type="text" name="lienIngridCDC" value={evolutionFormData.lienIngridCDC || ""} onChange={handleEvolutionInputChange} placeholder="URL du Cahier Des Charges dans Ingrid..."
                         style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Observations / Commentaires</label>
+                      <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>Observations / Commentaires</label>
                       <textarea name="observations" value={evolutionFormData.observations || ""} onChange={handleEvolutionInputChange}
                         placeholder="Notez ici les observations issues de la clarification..." rows={6}
                         style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", resize: "vertical", boxSizing: "border-box" }} />
@@ -5668,7 +5668,7 @@ const Demandes = () => {
               {isSuspensionStatus(newStatusValue) && (
                 <>
                   <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#374151" }}>
+                    <label style={{ display: "block", textAlign: "center", marginBottom: "8px", fontWeight: "600", color: "#374151" }}>
                       Motif de suspension <span style={{ color: "#ef4444" }}>*</span>
                     </label>
                     <textarea
@@ -5680,7 +5680,7 @@ const Demandes = () => {
                     />
                   </div>
                   <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#374151" }}>
+                    <label style={{ display: "block", textAlign: "center", marginBottom: "8px", fontWeight: "600", color: "#374151" }}>
                       Date de suspension <span style={{ color: "#ef4444" }}>*</span>
                     </label>
                     <input

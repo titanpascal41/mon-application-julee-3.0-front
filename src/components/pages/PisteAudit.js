@@ -110,6 +110,7 @@ const PisteAudit = () => {
       </div>
 
       {/* Filtres */}
+      {logs.length > 0 && (
       <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
         <select
           value={filtreEntite}
@@ -167,6 +168,7 @@ const PisteAudit = () => {
         )}
 
       </div>
+      )}
 
       <div className="page-content">
         {loading ? (

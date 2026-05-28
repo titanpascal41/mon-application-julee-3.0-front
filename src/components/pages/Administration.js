@@ -1655,8 +1655,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
           <div className="table-container" style={{ marginTop: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-              {profils.length > 0 && <h3 style={{ margin: 0 }}>Liste des profils</h3>}
-              {profils.length > 10 && (
+              {profilsBase.length > 0 && <h3 style={{ margin: 0 }}>Liste des profils</h3>}
+              {profilsBase.length > 10 && (
               <div style={{ position: "relative" }}>
                 <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
                 <input type="text" placeholder="Rechercher..." value={rechercheProfils}
@@ -1667,9 +1667,9 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
             </div>
 
             {profilsFiltres.length === 0 ? (
-              profils.length === 0 ? (
+              profilsBase.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <i className="fa-solid fa-id-card" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
+                  <i className="fa-solid fa-id-card" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
                   <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun profil créé pour le moment.</p>
                 </div>
               ) : (
@@ -2576,7 +2576,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
             {utilisateursFiltres.length === 0 ? (
               utilisateurs.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <i className="fa-solid fa-users" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", marginBottom: "16px", marginTop: "119px" }} />
+                  <i className="fa-solid fa-users" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
                   <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun utilisateur créé pour le moment.</p>
                 </div>
               ) : (
