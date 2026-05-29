@@ -1721,8 +1721,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
               </div>
             ) : societesFiltrees.length === 0 ? (
               societes.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <i className="fa-solid fa-building" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", marginTop: "60px" }}>
+                  <i className="fa-solid fa-building" style={{ fontSize: "52px", color: "#E5E7EB", marginBottom: "16px" }} />
                   <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucune société créée pour le moment.</p>
                 </div>
               ) : (
@@ -2096,8 +2096,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
               </div>
             ) : uoFiltrees.length === 0 ? (
               uoList.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <i className="fa-solid fa-sitemap" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", marginTop: "60px" }}>
+                  <i className="fa-solid fa-sitemap" style={{ fontSize: "52px", color: "#E5E7EB", marginBottom: "16px" }} />
                   <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucune unité organisationnelle créée pour le moment.</p>
                 </div>
               ) : (
@@ -2350,8 +2350,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
               </div>
             ) : statutsFiltrees.length === 0 ? (
               statuts.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <i className="fa-solid fa-tags" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", marginTop: "60px" }}>
+                  <i className="fa-solid fa-tags" style={{ fontSize: "52px", color: "#E5E7EB", marginBottom: "16px" }} />
                   <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun statut créé pour le moment.</p>
                 </div>
               ) : (
@@ -2606,8 +2606,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                 </div>
               ) : interlocuteursFiltrees.length === 0 ? (
                 interlocuteurs.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "48px 0" }}>
-                    <i className="fa-solid fa-address-book" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", marginTop: "60px" }}>
+                    <i className="fa-solid fa-address-book" style={{ fontSize: "52px", color: "#E5E7EB", marginBottom: "16px" }} />
                     <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun interlocuteur créé pour le moment.</p>
                   </div>
                 ) : (

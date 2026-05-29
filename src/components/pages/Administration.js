@@ -1668,8 +1668,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
             {profilsFiltres.length === 0 ? (
               profilsBase.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <i className="fa-solid fa-id-card" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", marginTop: "60px" }}>
+                  <i className="fa-solid fa-id-card" style={{ fontSize: "52px", color: "#E5E7EB", marginBottom: "16px" }} />
                   <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun profil créé pour le moment.</p>
                 </div>
               ) : (
@@ -2504,7 +2504,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                       }}
                     >
                       <option value="">-- Sélectionner un profil --</option>
-                      {[...profils].sort((a, b) => (a.actif === false ? 1 : 0) - (b.actif === false ? 1 : 0)).map((profil) => (
+                      {[...profils].filter(p => p.id !== 1 || user?.profilId === 1).sort((a, b) => (a.actif === false ? 1 : 0) - (b.actif === false ? 1 : 0)).map((profil) => (
                         <option
                           key={profil.id}
                           value={profil.id}
@@ -2575,8 +2575,8 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
 
             {utilisateursFiltres.length === 0 ? (
               utilisateurs.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <i className="fa-solid fa-users" style={{ fontSize: "52px", color: "#E5E7EB", display: "block", textAlign: "center", marginBottom: "16px", marginTop: "119px" }} />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", marginTop: "60px" }}>
+                  <i className="fa-solid fa-users" style={{ fontSize: "52px", color: "#E5E7EB", marginBottom: "16px" }} />
                   <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun utilisateur créé pour le moment.</p>
                 </div>
               ) : (

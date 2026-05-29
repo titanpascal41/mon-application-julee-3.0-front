@@ -249,12 +249,13 @@ const Header = ({ user, deconnecter }) => {
 
   const chargerNotifications = useCallback(async () => {
     try {
-      const res = await apiFetch(`/demandes`);
+      const url = user?.id ? `/demandes?utilisateurId=${user.id}` : `/demandes`;
+      const res = await apiFetch(url);
       if (!res.ok) return;
       const demandes = await res.json();
       setNotifications(genererNotifications(demandes));
     } catch {}
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     chargerNotifications();
