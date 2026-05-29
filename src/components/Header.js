@@ -277,7 +277,6 @@ const Header = ({ user, deconnecter }) => {
   }, []);
 
   const nonVues = notifications.filter((n) => !vues.has(n.id));
-  const isAdmin = user?.profil?.nom === "Administrateur";
 
   const ouvrirNotifications = () => {
     setShowNotifications(!showNotifications);
@@ -426,11 +425,9 @@ const Header = ({ user, deconnecter }) => {
           </div>
           {showUserMenu && (
             <div className="user-dropdown" ref={dropdownRef}>
-              {isAdmin && (
-                <div className="dropdown-item" onClick={() => { setShowUserMenu(false); navigate("/profile"); }}>
-                  <i className="fa-solid fa-user" style={{ color: "#4A90E2" }}></i> Profil
-                </div>
-              )}
+              <div className="dropdown-item" onClick={() => { setShowUserMenu(false); navigate("/profile"); }}>
+                <i className="fa-solid fa-user" style={{ color: "#4A90E2" }}></i> Profil
+              </div>
               <div className="dropdown-divider"></div>
               <div className="dropdown-item logout" onClick={deconnecter}>
                 <i className="fa-solid fa-right-from-bracket"></i> Se déconnecter

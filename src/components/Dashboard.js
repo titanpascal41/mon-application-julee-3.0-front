@@ -20,7 +20,13 @@ const Dashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem("julee_sidebar_collapsed") === "true"
+  );
+
+  useEffect(() => {
+    localStorage.setItem("julee_sidebar_collapsed", sidebarCollapsed);
+  }, [sidebarCollapsed]);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const { user, logout, permissions } = useAuth();
 
@@ -28,28 +34,17 @@ const Dashboard = () => {
   useEffect(() => {
     const path = location.pathname;
     if (path === "/" || path === "/dashboard") {
-      console.log("Dashboard: Vérification des sous-modules accessibles...");
       setIsRedirecting(true);
 
-      // Attendre un peu que les permissions soient chargées
       const checkPermissions = () => {
         const firstRoute = permissions.getFirstAccessibleRoute();
-        console.log("Première route accessible:", firstRoute);
 
         if (firstRoute) {
-          console.log("Redirection vers le sous-module:", firstRoute);
           navigate(`/${firstRoute}`, { replace: true });
         } else {
-          // Fallback pour l'admin : si aucune route trouvée mais c'est un admin, rediriger vers administration-profils
           if (permissions.isAdmin()) {
             navigate("/tableau-de-bord", { replace: true });
-            console.log(
-              "🔧 Admin détecté, redirection vers /administration-profils",
-            );
           } else {
-            console.log(
-              "⚠️ Aucun sous-module accessible, redirection vers /no-access",
-            );
             navigate("/no-access", { replace: true });
           }
         }
@@ -238,7 +233,7 @@ const Dashboard = () => {
           <div
             style={{
               fontSize: "24px",
-              color: "#3b82f6",
+              color: "#4A90E2",
               marginBottom: "16px",
             }}
           >

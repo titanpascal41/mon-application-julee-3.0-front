@@ -7,92 +7,24 @@ const Sidebar = ({ collapsed }) => {
   const location = useLocation();
   const { user, permissions } = useAuth();
 
-  // Forcer la mise à jour quand les permissions changent
-  useEffect(() => {
-    if (permissions.userPermissions) {
-      console.log("Sidebar - Permissions mises à jour, forcer re-rendu");
-      // Forcer un re-rendu en mettant à jour une clé
-    }
-  }, [permissions.userPermissions]);
-
-  // Log des permissions chargées pour débogage
-  console.log("Sidebar - Utilisateur:", user);
-  console.log(
-    "Sidebar - Permissions utilisateur:",
-    permissions.userPermissions,
-  );
-
-  // Vérifier si l'utilisateur est admin (accès total inconditionnel)
   const isAdmin = () => {
     if (!user) return false;
-    console.log(
-      "Vérification admin - profilId:",
-      user.profilId,
-      "type:",
-      typeof user.profilId,
-    );
-    // Admin est seulement profilId: 1 (Administrateur)
     return user.profilId === 1 || user.profilId === "1";
   };
 
-  // Vérifier si l'utilisateur a accès à un module
   const aAccesModule = (moduleKey) => {
     if (!user) return false;
-
-    // Admin a accès à tout - inconditionnel
-    if (isAdmin()) {
-      console.log(`Accès autorisé pour admin au module: ${moduleKey}`);
-      return true;
-    }
-
-    // Si les permissions ne sont pas encore chargées, refuser l'accès
-    if (
-      !permissions.userPermissions ||
-      permissions.userPermissions.length === 0
-    ) {
-      console.log(
-        `Permissions non chargées, accès refusé au module: ${moduleKey}`,
-      );
-      return false;
-    }
-
-    // Utiliser le service de permissions
+    if (isAdmin()) return true;
+    if (!permissions.userPermissions || permissions.userPermissions.length === 0) return false;
     const modulePermissions = permissions.getModulePermissions(moduleKey);
     return modulePermissions.some((perm) => perm.access);
   };
 
-  // Vérifier si l'utilisateur a accès à un sous-module
   const verifierPermissionSousModule = (module, submodule) => {
     if (!user) return false;
-
-    // Admin a accès à tout - inconditionnel
-    if (isAdmin()) {
-      console.log(
-        `Accès autorisé pour admin au sous-module: ${module}_${submodule}`,
-      );
-      return true;
-    }
-
-    // Si les permissions ne sont pas encore chargées, refuser l'accès
-    if (
-      !permissions.userPermissions ||
-      permissions.userPermissions.length === 0
-    ) {
-      console.log(
-        `Permissions non chargées, accès refusé au sous-module: ${module}_${submodule}`,
-      );
-      return false;
-    }
-
-    const hasPermission = permissions.hasPermission(
-      module,
-      submodule,
-      "access",
-    );
-    console.log(
-      `Vérification permission: ${module}_${submodule} = ${hasPermission}`,
-    );
-    return hasPermission;
+    if (isAdmin()) return true;
+    if (!permissions.userPermissions || permissions.userPermissions.length === 0) return false;
+    return permissions.hasPermission(module, submodule, "access");
   };
 
   // Déterminer la page active depuis l'URL
@@ -152,7 +84,7 @@ const Sidebar = ({ collapsed }) => {
       key: "tableau-de-bord",
       label: "Tableau de Bord",
       icon: "fa-solid fa-gauge",
-      iconColor: "#3B82F6",
+      iconColor: "#4A90E2",
       path: "tableau-de-bord",
       noPermissionRequired: true,
     },

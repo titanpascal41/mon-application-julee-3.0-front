@@ -41,6 +41,7 @@ const PisteAudit = () => {
   const { hasPermission } = usePermissions();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [erreur, setErreur] = useState(false);
   const [selectedLog, setSelectedLog] = useState(null);
   const [filtreEntite, setFiltreEntite] = useState("");
   const [filtreAction, setFiltreAction] = useState("");
@@ -52,13 +53,14 @@ const PisteAudit = () => {
   useEffect(() => {
     const charger = async () => {
       setLoading(true);
+      setErreur(false);
       try {
         const response = await apiFetch(`/audit`);
         if (!response.ok) throw new Error("Erreur chargement");
         const data = await response.json();
-        setLogs(data);
+        setLogs(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
       } catch (err) {
-        console.error("Erreur chargement piste d'audit:", err);
+        setErreur(true);
       } finally {
         setLoading(false);
       }
@@ -174,6 +176,11 @@ const PisteAudit = () => {
         {loading ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#6B7280" }}>
             <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }}></i>
+          </div>
+        ) : erreur ? (
+          <div style={{ textAlign: "center", padding: "60px 0", color: "#9CA3AF" }}>
+            <i className="fa-solid fa-circle-exclamation" style={{ fontSize: "36px", marginBottom: "12px", display: "block", color: "#EF4444" }}></i>
+            <span style={{ fontSize: "14px" }}>Impossible de charger la piste d'audit. Vérifiez votre connexion.</span>
           </div>
         ) : logsFiltres.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#9CA3AF", fontSize: "15px" }}>
