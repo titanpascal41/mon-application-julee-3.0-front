@@ -174,17 +174,17 @@ const PisteAudit = () => {
 
       <div className="page-content">
         {loading ? (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "#6B7280" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 0", color: "#6B7280" }}>
             <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }}></i>
           </div>
         ) : erreur ? (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "#9CA3AF" }}>
-            <i className="fa-solid fa-circle-exclamation" style={{ fontSize: "36px", marginBottom: "12px", display: "block", color: "#EF4444" }}></i>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 0", color: "#9CA3AF" }}>
+            <i className="fa-solid fa-circle-exclamation" style={{ fontSize: "36px", marginBottom: "12px", color: "#EF4444" }}></i>
             <span style={{ fontSize: "14px" }}>Impossible de charger la piste d'audit. Vérifiez votre connexion.</span>
           </div>
         ) : logsFiltres.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "#9CA3AF", fontSize: "15px" }}>
-            <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: "40px", marginBottom: "16px", display: "block", color: "#D1D5DB" }}></i>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 0", color: "#9CA3AF", fontSize: "15px" }}>
+            <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: "40px", marginBottom: "16px", color: "#D1D5DB" }}></i>
             Aucun événement enregistré.
           </div>
         ) : (
