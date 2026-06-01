@@ -17,6 +17,8 @@ const Sidebar = ({ collapsed }) => {
     if (isAdmin()) return true;
     if (!permissions.userPermissions || permissions.userPermissions.length === 0) return false;
     const modulePermissions = permissions.getModulePermissions(moduleKey);
+    // Compatibilité : si aucune permission configurée pour tableau, autoriser par défaut
+    if (moduleKey === "tableau" && modulePermissions.length === 0) return true;
     return modulePermissions.some((perm) => perm.access);
   };
 
@@ -86,7 +88,7 @@ const Sidebar = ({ collapsed }) => {
       icon: "fa-solid fa-gauge",
       iconColor: "#4A90E2",
       path: "tableau-de-bord",
-      noPermissionRequired: true,
+      module: "tableau",
     },
     {
       key: "administration",
@@ -235,7 +237,7 @@ const Sidebar = ({ collapsed }) => {
 
       <nav className="sidebar-nav">
         {menuItems
-          .filter((item) => item.noPermissionRequired || aAccesModule(item.key))
+          .filter((item) => item.noPermissionRequired || aAccesModule(item.module || item.key))
           .map((item) => (
             <div key={item.key} className="nav-item-wrapper">
               {item.submenus ? (

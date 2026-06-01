@@ -115,14 +115,16 @@ const Dashboard = () => {
     if (
       moduleKey &&
       moduleKey !== "dashboard" &&
-      moduleKey !== "tableau" &&
       moduleKey !== "profile" &&
       moduleKey !== "audit" &&
       moduleKey !== "no-access"
     ) {
       const modulePermissions = permissions.getModulePermissions(moduleKey);
-      if (!modulePermissions.some((perm) => perm.access)) {
-        // Rediriger vers la page d'accès refusé si l'utilisateur n'a pas accès à ce module
+      // Compatibilité : si aucune permission configurée pour tableau, autoriser par défaut
+      const denied = moduleKey === "tableau" && modulePermissions.length === 0
+        ? false
+        : !modulePermissions.some((perm) => perm.access);
+      if (denied) {
         navigate("/no-access", { replace: true });
         return null;
       }

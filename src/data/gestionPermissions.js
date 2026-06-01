@@ -3,6 +3,10 @@ import { apiFetch } from "../utils/apiFetch";
 
 // Définition des modules et sous-modules
 export const MODULES_STRUCTURE = {
+  tableau: {
+    label: "Tableau de Bord",
+    submodules: {},
+  },
   administration: {
     label: "Administration",
     submodules: {
