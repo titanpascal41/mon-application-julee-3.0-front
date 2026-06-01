@@ -314,7 +314,35 @@ class PermissionService {
 
   // Obtenir la première route complète accessible (module-sousmodule)
   getFirstAccessibleRoute() {
-    return "tableau-de-bord";
+    if (this.isAdmin()) return "tableau-de-bord";
+
+    if (!this.userPermissions) return null;
+
+    // Vérifier tableau en premier (fallback true si jamais configuré)
+    const tableauPerms = this.userPermissions.filter(p => p.module === "tableau");
+    const tableauOk = tableauPerms.length === 0 ? true : tableauPerms.some(p => p.access);
+    if (tableauOk) return "tableau-de-bord";
+
+    // Chercher la première route accessible dans l'ordre de la sidebar
+    const routes = [
+      { module: "administration", submodule: "profils",        path: "administration-profils" },
+      { module: "administration", submodule: "utilisateurs",   path: "administration-utilisateurs" },
+      { module: "parametrage",    submodule: "societes",       path: "parametrage-societes" },
+      { module: "parametrage",    submodule: "uo",             path: "parametrage-uo" },
+      { module: "parametrage",    submodule: "statuts",        path: "parametrage-statuts" },
+      { module: "parametrage",    submodule: "interlocuteurs", path: "parametrage-interlocuteurs" },
+      { module: "demandes",       submodule: "gestion",        path: "demandes-gestion" },
+      { module: "audit",          submodule: null,             path: "audit" },
+    ];
+
+    for (const route of routes) {
+      const perm = this.userPermissions.find(
+        p => p.module === route.module && p.submodule === route.submodule
+      );
+      if (perm?.access) return route.path;
+    }
+
+    return null;
   }
 }
 
