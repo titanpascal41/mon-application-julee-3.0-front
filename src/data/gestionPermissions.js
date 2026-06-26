@@ -21,6 +21,7 @@ export const MODULES_STRUCTURE = {
       uo: "Gestion des Unités Organisationnelles",
       statuts: "Gestion des Statuts",
       interlocuteurs: "Gestion des Interlocuteurs",
+      departements: "Gestion des Départements",
     },
   },
   demandes: {

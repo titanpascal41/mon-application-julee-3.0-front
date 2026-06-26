@@ -28,25 +28,22 @@ const Authentification = () => {
         motDePasse: motDePasseConnexion,
       });
 
-      // Rediriger vers le premier sous-module accessible après la connexion
-      setTimeout(() => {
+      // Attendre que les permissions soient réellement chargées puis rediriger
+      const attendreEtRediriger = async () => {
+        const maxTentatives = 60; // 6 secondes max (60 × 100ms)
+        let tentatives = 0;
+        while (!permissionService.userPermissions && tentatives < maxTentatives) {
+          await new Promise((r) => setTimeout(r, 100));
+          tentatives++;
+        }
         const firstRoute = permissionService.getFirstAccessibleRoute();
-        console.log(" Première route accessible:", firstRoute);
-
         if (firstRoute) {
           navigate(`/${firstRoute}`, { replace: true });
-          console.log(` Redirection vers /${firstRoute}`);
         } else {
-          if (permissionService.isAdmin()) {
-            navigate("/tableau-de-bord", { replace: true });
-          } else {
-            navigate("/no-access", { replace: true });
-          }
+          navigate(permissionService.isAdmin() ? "/tableau-de-bord" : "/no-access", { replace: true });
         }
-      }, 1000); // Attendre que les permissions soient chargées
-      console.log(
-        " Connexion réussie, recherche des sous-modules accessibles...",
-      );
+      };
+      attendreEtRediriger();
     } catch (error) {
       console.error("Erreur de connexion:", error);
       changerMessageConnexion(error.message || "Erreur de connexion. Veuillez réessayer.");

@@ -573,6 +573,12 @@
   font-size: 14px;
 }
 
+.form-group:has(input[data-field-error="true"]) label,
+.form-group:has(select[data-field-error="true"]) label,
+.form-group:has(textarea[data-field-error="true"]) label {
+  color: #ef4444;
+}
+
 .form-group .required {
   color: #ef4444;
 }

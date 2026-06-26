@@ -201,7 +201,7 @@ class PermissionService {
       ];
       const submodules = {
         administration: ["profils", "utilisateurs"],
-        parametrage: ["societes", "uo", "statuts", "interlocuteurs"],
+        parametrage: ["societes", "uo", "statuts", "interlocuteurs", "departements"],
         demandes: ["nouvelle", "evolution", "prospecte"],
         dashboard: [],
         audit: [],
@@ -290,7 +290,7 @@ class PermissionService {
     if (this.isAdmin()) {
       const allSubmodules = {
         administration: ["profils", "utilisateurs"],
-        parametrage: ["societes", "uo", "statuts", "interlocuteurs"],
+        parametrage: ["societes", "uo", "statuts", "interlocuteurs", "departements"],
         demandes: ["nouvelle", "evolution", "prospecte"],
         dashboard: [],
         reporting: [],
@@ -331,6 +331,7 @@ class PermissionService {
       { module: "parametrage",    submodule: "uo",             path: "parametrage-uo" },
       { module: "parametrage",    submodule: "statuts",        path: "parametrage-statuts" },
       { module: "parametrage",    submodule: "interlocuteurs", path: "parametrage-interlocuteurs" },
+      { module: "parametrage",    submodule: "departements",   path: "parametrage-departements" },
       { module: "demandes",       submodule: "gestion",        path: "demandes-gestion" },
       { module: "audit",          submodule: null,             path: "audit" },
     ];

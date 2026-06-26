@@ -55,6 +55,7 @@ const Sidebar = ({ collapsed }) => {
         "parametrage-uo",
         "parametrage-statuts",
         "parametrage-interlocuteurs",
+        "parametrage-departements",
       ],
       demandes: ["demandes-gestion"],
     };
@@ -139,6 +140,12 @@ const Sidebar = ({ collapsed }) => {
           label: "Gestion des interlocuteurs",
           path: "parametrage-interlocuteurs",
           icon: "fa-solid fa-users",
+        },
+        {
+          key: "gestion-departements",
+          label: "Gestion des Départements",
+          path: "parametrage-departements",
+          icon: "fa-solid fa-building-shield",
         },
       ],
     },
@@ -296,6 +303,10 @@ const Sidebar = ({ collapsed }) => {
                               module: "parametrage",
                               submodule: "interlocuteurs",
                             },
+                            "gestion-departements": {
+                              module: "parametrage",
+                              submodule: "departements",
+                            },
                             "gestion-demandes": {
                               module: "demandes",
                               submodule: "gestion",
@@ -322,6 +333,14 @@ const Sidebar = ({ collapsed }) => {
                             }`}
                             onClick={() => {
                               setClickedMainMenu(null);
+                              if (
+                                submenu.path === "demandes-gestion" &&
+                                activePage === "demandes-gestion"
+                              ) {
+                                window.dispatchEvent(
+                                  new CustomEvent("julee:retour-liste-demandes"),
+                                );
+                              }
                             }}
                           >
                             {submenu.icon && (

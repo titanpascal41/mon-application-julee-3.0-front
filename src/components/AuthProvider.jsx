@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import permissionService from '../services/permissionService';
 import { setUnauthorizedHandler, saveToken, removeToken } from '../utils/apiFetch';
@@ -168,6 +168,37 @@ export const AuthProvider = ({ children }) => {
     setUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
   };
+
+  // Déconnexion automatique après 10 minutes sans aucune activité
+  // (souris, clavier, scroll, tactile) lorsqu'un utilisateur est connecté.
+  const INACTIVITY_LIMIT_MS = 10 * 60 * 1000;
+  const inactivityTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const resetInactivityTimer = () => {
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = setTimeout(() => {
+        console.log('Déconnexion automatique pour inactivité (10 min)');
+        // Laisser une chance à une demande en cours de saisie de se sauvegarder
+        // en brouillon avant que le token ne soit supprimé par logout().
+        window.dispatchEvent(new Event('julee:retour-liste-demandes'));
+        logout();
+        navigate('/login', { replace: true });
+      }, INACTIVITY_LIMIT_MS);
+    };
+
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+    activityEvents.forEach((evt) => window.addEventListener(evt, resetInactivityTimer));
+    resetInactivityTimer();
+
+    return () => {
+      activityEvents.forEach((evt) => window.removeEventListener(evt, resetInactivityTimer));
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const value = {
     user,

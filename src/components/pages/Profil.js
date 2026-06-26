@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthProvider";
 import { apiFetch } from "../../utils/apiFetch";
 import "./PageStyles.css";
@@ -26,6 +27,7 @@ const compresserImage = (file) =>
   });
 
 const Profil = () => {
+  const navigate = useNavigate();
   const { user: userInitial, updateUser } = useAuth();
   const fileInputRef = useRef(null);
 
@@ -234,7 +236,9 @@ const Profil = () => {
                 <button
                   className="btn-secondary"
                   onClick={handleRemoveAvatar}
-                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#dc2626", borderColor: "#fecaca" }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#dc2626", borderColor: "#fecaca", transition: "all 0.2s ease" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f9e9e9"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "white"; }}
                 >
                   <i className="fa-solid fa-trash"></i>
                   Supprimer
@@ -274,12 +278,18 @@ const Profil = () => {
             />
           </div>
 
-          <div className="action-buttons" style={{ marginTop: "32px" }}>
+          <div className="action-buttons" style={{ marginTop: "32px", display: "flex", gap: "12px" }}>
             <button className="btn-primary" onClick={handleSaveProfile} disabled={saving}
               style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
               {saving
                 ? <><i className="fa-solid fa-spinner fa-spin"></i> Enregistrement...</>
                 : <><i className="fa-solid fa-floppy-disk"></i> Enregistrer les modifications</>}
+            </button>
+            <button className="btn-secondary" onClick={() => navigate(-1)}
+              style={{ display: "inline-flex", alignItems: "center", gap: "8px", backgroundColor: "#EF4444", color: "#fff", borderColor: "#EF4444", transition: "transform 0.2s ease, background-color 0.2s ease" }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.backgroundColor = "#F87171"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.backgroundColor = "#EF4444"; }}>
+              <i className="fa-solid fa-xmark"></i> Fermer
             </button>
           </div>
         </div>

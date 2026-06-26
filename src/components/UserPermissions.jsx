@@ -48,6 +48,7 @@ const UserPermissions = () => {
     uo: 'Unités Organisationnelles',
     statuts: 'Statuts',
     interlocuteurs: 'Interlocuteurs',
+    departements: 'Départements',
     gestion: 'Gestion des demandes',
     creation: 'Création de demandes',
     validation: 'Validation des demandes'

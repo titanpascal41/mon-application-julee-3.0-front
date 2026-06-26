@@ -35,31 +35,16 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
   const { hasPermission } = usePermissions();
 
   // Permissions profils
-  const peutModifierProfil = hasPermission(
-    "administration",
-    "profils",
-    "update",
-  );
-  const peutSupprimerProfil = hasPermission(
-    "administration",
-    "profils",
-    "delete",
-  );
+  const peutCreerProfil = hasPermission("administration", "profils", "create");
+  const peutModifierProfil = hasPermission("administration", "profils", "update");
+  const peutSupprimerProfil = hasPermission("administration", "profils", "delete");
   const peutVoirActionsProfils = peutModifierProfil || peutSupprimerProfil;
 
   // Permissions utilisateurs
-  const peutModifierUtilisateur = hasPermission(
-    "administration",
-    "utilisateurs",
-    "update",
-  );
-  const peutSupprimerUtilisateur = hasPermission(
-    "administration",
-    "utilisateurs",
-    "delete",
-  );
-  const peutVoirActionsUtilisateurs =
-    peutModifierUtilisateur || peutSupprimerUtilisateur;
+  const peutCreerUtilisateur = hasPermission("administration", "utilisateurs", "create");
+  const peutModifierUtilisateur = hasPermission("administration", "utilisateurs", "update");
+  const peutSupprimerUtilisateur = hasPermission("administration", "utilisateurs", "delete");
+  const peutVoirActionsUtilisateurs = peutModifierUtilisateur || peutSupprimerUtilisateur;
 
   // États pour la gestion des profils
 
@@ -1283,9 +1268,11 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
       content: (
         <div>
           <div className="action-buttons">
-            <button className="btn-primary" onClick={handleCreate}>
-              Ajouter un profil
-            </button>
+            {peutCreerProfil && (
+              <button className="btn-primary" onClick={handleCreate}>
+                Ajouter un profil
+              </button>
+            )}
           </div>
 
           {showForm && (
@@ -1555,6 +1542,7 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
                                         "interlocuteurs",
                                         "profils",
                                         "utilisateurs",
+                                        "departements",
                                       ];
                                       const labelSupprimer =
                                         DESACTIVER_MODULES.includes(
@@ -2275,9 +2263,11 @@ const Administration = ({ activeSubPage: activeSubPageProp }) => {
       content: (
         <div>
           <div className="action-buttons">
-            <button className="btn-primary" onClick={handleCreateUser}>
-              Ajouter un utilisateur
-            </button>
+            {peutCreerUtilisateur && (
+              <button className="btn-primary" onClick={handleCreateUser}>
+                Ajouter un utilisateur
+              </button>
+            )}
           </div>
 
           {showAucunProfilModal && (

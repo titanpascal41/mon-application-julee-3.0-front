@@ -28,7 +28,23 @@ const Dashboard = () => {
     localStorage.setItem("julee_sidebar_collapsed", sidebarCollapsed);
   }, [sidebarCollapsed]);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [permissionsReady, setPermissionsReady] = useState(false);
   const { user, logout, permissions } = useAuth();
+
+  // Déclencher un re-render dès que les permissions sont chargées
+  useEffect(() => {
+    if (permissions.userPermissions) {
+      setPermissionsReady(true);
+      return;
+    }
+    const interval = setInterval(() => {
+      if (permissions.userPermissions) {
+        clearInterval(interval);
+        setPermissionsReady(true);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [permissions]);
 
   // Rediriger vers le premier sous-module accessible dès le montage et au changement de permissions
   useEffect(() => {
@@ -83,6 +99,9 @@ const Dashboard = () => {
 
   // Fonction de déconnexion
   const deconnecter = () => {
+    // Si une demande est en cours de saisie, lui laisser une chance de se
+    // sauvegarder en brouillon avant que le token ne soit supprimé par logout().
+    window.dispatchEvent(new Event("julee:retour-liste-demandes"));
     logout();
     navigate("/login", { replace: true });
   };
@@ -108,24 +127,42 @@ const Dashboard = () => {
     }
   };
 
-  const renderContent = () => {
-    // Vérifier si l'utilisateur a accès au module demandé
-    const moduleKey = activePage.split("-")[0]; // Extraire le module principal
+  // Mapping exact route → module/sous-module pour la vérification des permissions
+  const ROUTE_PERMISSIONS = {
+    "tableau-de-bord":            { module: "tableau",       submodule: null },
+    "administration-profils":     { module: "administration", submodule: "profils" },
+    "administration-utilisateurs":{ module: "administration", submodule: "utilisateurs" },
+    "parametrage-societes":       { module: "parametrage",    submodule: "societes" },
+    "parametrage-uo":             { module: "parametrage",    submodule: "uo" },
+    "parametrage-statuts":        { module: "parametrage",    submodule: "statuts" },
+    "parametrage-interlocuteurs": { module: "parametrage",    submodule: "interlocuteurs" },
+    "demandes-gestion":           { module: "demandes",       submodule: "gestion" },
+  };
 
-    if (
-      moduleKey &&
-      moduleKey !== "dashboard" &&
-      moduleKey !== "profile" &&
-      moduleKey !== "audit" &&
-      moduleKey !== "no-access"
-    ) {
-      const modulePermissions = permissions.getModulePermissions(moduleKey);
-      // Compatibilité : si aucune permission configurée pour tableau, autoriser par défaut
-      const denied = moduleKey === "tableau" && modulePermissions.length === 0
-        ? false
-        : !modulePermissions.some((perm) => perm.access);
-      if (denied) {
-        navigate("/no-access", { replace: true });
+  const renderContent = () => {
+    const routeInfo = ROUTE_PERMISSIONS[activePage];
+
+    if (routeInfo) {
+      // Ne pas vérifier tant que les permissions ne sont pas chargées
+      if (!permissionsReady) return null;
+
+      const { module: mod, submodule: sub } = routeInfo;
+      let hasAccess;
+
+      if (sub === null) {
+        // Module sans sous-module (tableau, audit)
+        const modulePerms = permissions.getModulePermissions(mod);
+        hasAccess = mod === "tableau" && modulePerms.length === 0
+          ? true  // fallback : tableau sans config = autorisé
+          : modulePerms.some((p) => p.access);
+      } else {
+        // Vérification au niveau du sous-module exact
+        hasAccess = permissions.hasPermission(mod, sub);
+      }
+
+      if (!hasAccess) {
+        const firstRoute = permissions.getFirstAccessibleRoute();
+        navigate(firstRoute ? `/${firstRoute}` : "/no-access", { replace: true });
         return null;
       }
     }

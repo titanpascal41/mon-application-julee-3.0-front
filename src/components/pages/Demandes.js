@@ -196,16 +196,6 @@ const PROSPECTE_STORAGE_KEY = "julee_prospecte_demande_wip";
 const EVOLUTION_STORAGE_KEY = "julee_evolution_demande_wip";
 const NOUVELLE_STORAGE_KEY  = "julee_nouvelle_demande_wip";
 
-// Retourne quel formulaire était actif en dernier (un seul à la fois)
-const _getInitialActiveForm = () => {
-  try {
-    if (localStorage.getItem(EVOLUTION_STORAGE_KEY)) return "evolution";
-    if (localStorage.getItem(PROSPECTE_STORAGE_KEY)) return "prospecte";
-    const nouv = localStorage.getItem(NOUVELLE_STORAGE_KEY);
-    if (nouv && JSON.parse(nouv).open) return "nouvelle";
-  } catch {}
-  return null;
-};
 
 const getProspecteInitialState = () => ({
   dateEnregistrement: new Date().toISOString().split("T")[0],
@@ -214,6 +204,17 @@ const getProspecteInitialState = () => ({
   nomProjet: "",
   descriptionPerimetre: "",
   dateReception: "",
+  statutDemande: "",
+  // Étape 2
+  dateTransmissionBacklog: "",
+  dateLimiteReponseDev: "",
+  dateLimiteReponseTif: "",
+  dateRetourEquipesDev: "",
+  dateRetourEquipesTif: "",
+  chargeDeveloppement: "",
+  chargeTIF: "",
+  motifEcartChargeTIF: "",
+  tarifHommeJour: "",
 });
 
 const getEvolutionInitialState = () => ({
@@ -338,7 +339,10 @@ const Demandes = () => {
   // États pour la sélection de type de demande
   const [selectedDemandeType, setSelectedDemandeType] = useState(null);
   const [isModificationMode, setIsModificationMode] = useState(false);
-  const [showSelectionCards, setShowSelectionCards] = useState(() => _getInitialActiveForm() === null);
+  // Le module repart toujours sur la page principale (sélection) quand on y revient,
+  // même s'il existait un formulaire en cours : ce dernier a été sauvegardé en
+  // brouillon automatiquement en quittant le module (voir l'effet de nettoyage plus bas).
+  const [showSelectionCards, setShowSelectionCards] = useState(true);
   const [showDemandesList, setShowDemandesList] = useState(true);
 
   // États pour la gestion des demandes
@@ -360,43 +364,19 @@ const Demandes = () => {
   // États pour le formulaire multi-étapes "Nouvelle demande"
   const FORM_STORAGE_KEY = NOUVELLE_STORAGE_KEY;
 
-  const [showNouvelleDemandeForm, setShowNouvelleDemandeForm] = useState(() => _getInitialActiveForm() === "nouvelle");
-  const [nouvelleDemandeStep, setNouvelleDemandeStep] = useState(() => {
-    try {
-      const saved = localStorage.getItem(FORM_STORAGE_KEY);
-      return saved ? (JSON.parse(saved).step || 1) : 1;
-    } catch { return 1; }
-  });
-  const [nouvelleDemandeFormData, setNouvelleDemandeFormData] = useState(() => {
-    try {
-      const saved = localStorage.getItem(FORM_STORAGE_KEY);
-      return saved ? (JSON.parse(saved).formData || getNouvelleDemandeInitialState()) : getNouvelleDemandeInitialState();
-    } catch { return getNouvelleDemandeInitialState(); }
-  });
+  const [showNouvelleDemandeForm, setShowNouvelleDemandeForm] = useState(false);
+  const [nouvelleDemandeStep, setNouvelleDemandeStep] = useState(1);
+  const [nouvelleDemandeFormData, setNouvelleDemandeFormData] = useState(() => getNouvelleDemandeInitialState());
 
   // États pour le formulaire multi-étapes "Demande prospecte"
-  const [showProspecteForm, setShowProspecteForm] = useState(() => _getInitialActiveForm() === "prospecte");
-  const [prospecteFormData, setProspecteFormData] = useState(() => {
-    try {
-      const saved = localStorage.getItem(PROSPECTE_STORAGE_KEY);
-      return saved ? { ...getProspecteInitialState(), ...JSON.parse(saved).formData } : getProspecteInitialState();
-    } catch { return getProspecteInitialState(); }
-  });
+  const [showProspecteForm, setShowProspecteForm] = useState(false);
+  const [prospecteStep, setProspecteStep] = useState(1);
+  const [prospecteFormData, setProspecteFormData] = useState(() => getProspecteInitialState());
 
   // États pour le formulaire multi-étapes "Demande d'évolution"
-  const [showEvolutionForm, setShowEvolutionForm] = useState(() => _getInitialActiveForm() === "evolution");
-  const [evolutionStep, setEvolutionStep] = useState(() => {
-    try {
-      const saved = localStorage.getItem(EVOLUTION_STORAGE_KEY);
-      return saved ? (JSON.parse(saved).step || 1) : 1;
-    } catch { return 1; }
-  });
-  const [evolutionFormData, setEvolutionFormData] = useState(() => {
-    try {
-      const saved = localStorage.getItem(EVOLUTION_STORAGE_KEY);
-      return saved ? { ...getEvolutionInitialState(), ...JSON.parse(saved).formData } : getEvolutionInitialState();
-    } catch { return getEvolutionInitialState(); }
-  });
+  const [showEvolutionForm, setShowEvolutionForm] = useState(false);
+  const [evolutionStep, setEvolutionStep] = useState(1);
+  const [evolutionFormData, setEvolutionFormData] = useState(() => getEvolutionInitialState());
 
   // Fonction pour formater une date en français (ex: "lundi 15 janvier 2025")
   const formatDateEnFrancais = (dateString) => {
@@ -824,13 +804,6 @@ const Demandes = () => {
     const stepToStore = stepOverride || nouvelleDemandeStep;
 
     try {
-      // Afficher un indicateur de chargement
-      setDemandeMessage({
-        type: "info",
-        text: "Enregistrement du brouillon...",
-      });
-
-
       const formData = {
         id: nouvelleDemandeFormData.id || null,
         // Étape 1: Enregistrement
@@ -917,15 +890,13 @@ const Demandes = () => {
         utilisateurId: user?.id || 1, // Admin par défaut si pas d'utilisateur
       };
 
-      if (!formData.nomProjet?.trim()) {
-        setDemandeMessage({
-          type: "error",
-          text: "Le nom du projet est obligatoire pour enregistrer le brouillon.",
-        });
-        scrollToFormTop();
-        return;
+      // Un brouillon peut être enregistré même avec des champs vides : aucun blocage ici.
+      // Seul le passage à l'étape suivante (handleNouvelleDemandeNext) exige les champs obligatoires.
+      const nomProjetSaisi = !!formData.nomProjet?.trim();
+      if (!nomProjetSaisi) {
+        payload.nomProjet = "Brouillon sans nom";
       }
-      if (nomProjetEstDuplique(formData.nomProjet, formData.id)) {
+      if (nomProjetSaisi && nomProjetEstDuplique(formData.nomProjet, formData.id)) {
         setDemandeMessage({
           type: "error",
           text: `Un projet nommé "${formData.nomProjet.trim()}" existe déjà. Veuillez choisir un autre nom.`,
@@ -933,26 +904,9 @@ const Demandes = () => {
         scrollToFormTop();
         return;
       }
-      // Validation : chantier obligatoire pour chaque sprint (étape 3)
-      if (nouvelleDemandeStep === 3) {
-        const nb = parseInt(formData.nombreSprint) || 0;
-        if (nb > 0) {
-          const sprints = formData.sprintsData || [];
-          const manquants = Array.from({ length: nb }, (_, i) => i + 1).filter(
-            (i) => !sprints[i - 1]?.chantier?.trim()
-          );
-          if (manquants.length > 0) {
-            setDemandeMessage({
-              type: "error",
-              text: `Le chantier est obligatoire pour chaque sprint. Sprint${manquants.length > 1 ? "s" : ""} sans chantier : ${manquants.map((n) => `Sprint ${n}`).join(", ")}.`,
-            });
-            scrollToFormTop();
-            return;
-          }
-        }
-      }
-      if (!formData.typeProjet?.trim()) {
-        formData.typeProjet = "Brouillon";
+      // Vérification du chantier par sprint (étape 3) : avertissement non bloquant pour un brouillon
+      if (!payload.typeProjet?.trim()) {
+        payload.typeProjet = "Nouvelle demande";
       }
 
       // Vérifier si on est en train d'éditer une demande existante
@@ -1037,17 +991,13 @@ const Demandes = () => {
       9: "Livraison",
     };
 
-    if (!evolutionFormData.nomProjet?.trim()) {
-      setDemandeMessage({ type: "error", text: "Le nom du projet est obligatoire pour enregistrer le brouillon." });
-      scrollToFormTop();
-      return;
-    }
-
+    // Un brouillon peut être enregistré même avec des champs vides : aucun blocage ici.
+    // Seul le passage à l'étape suivante (handleEvolutionNext) exige les champs obligatoires.
     const currentDemandeId = evolutionFormData.id;
 
     const payload = {
       typeProjet: "Evolution",
-      nomProjet: evolutionFormData.nomProjet || "",
+      nomProjet: evolutionFormData.nomProjet?.trim() || "Brouillon sans nom",
       dateEnregistrement: evolutionFormData.dateEnregistrement || new Date().toISOString().split("T")[0],
       dateReception: evolutionFormData.dateReception || null,
       societeDemandeur: evolutionFormData.societesDemandeursNames?.[0] || null,
@@ -1348,15 +1298,284 @@ const Demandes = () => {
 
   useEffect(() => {
     if (showProspecteForm) {
-      localStorage.setItem(PROSPECTE_STORAGE_KEY, JSON.stringify({ formData: prospecteFormData }));
+      localStorage.setItem(PROSPECTE_STORAGE_KEY, JSON.stringify({ step: prospecteStep, formData: prospecteFormData }));
     }
-  }, [showProspecteForm, prospecteFormData]);
+  }, [showProspecteForm, prospecteStep, prospecteFormData]);
 
   useEffect(() => {
     if (showEvolutionForm) {
       localStorage.setItem(EVOLUTION_STORAGE_KEY, JSON.stringify({ step: evolutionStep, formData: evolutionFormData }));
     }
   }, [showEvolutionForm, evolutionStep, evolutionFormData]);
+
+  // Toujours garder une "photo" à jour de l'état des formulaires, pour pouvoir
+  // les sauvegarder en brouillon au moment exact où l'utilisateur quitte le module
+  // (voir l'effet de nettoyage juste en dessous).
+  const etatFormulairesRef = useRef(null);
+  etatFormulairesRef.current = {
+    showNouvelleDemandeForm,
+    nouvelleDemandeFormData,
+    nouvelleDemandeStep,
+    showEvolutionForm,
+    evolutionFormData,
+    evolutionStep,
+    showProspecteForm,
+    prospecteFormData,
+    prospecteStep,
+  };
+
+  // Sauvegarde silencieuse (sans validation, sans modifier l'UI) d'un brouillon
+  // "Nouvelle demande" à partir d'une photo de ses données.
+  const enregistrerBrouillonAutoNouvelle = async (fd, step) => {
+    try {
+      const payload = {
+        id: fd.id || null,
+        typeProjet: fd.typeProjet?.trim() || "Nouvelle demande",
+        nomProjet: fd.nomProjet?.trim() || "Brouillon sans nom",
+        demandeur: fd.demandeur || null,
+        descriptionProjet: fd.descriptionProjet || null,
+        dateEnregistrement: fd.dateEnregistrement || null,
+        interlocuteurClient: fd.interlocuteurClient || null,
+        societesDemandeurs: fd.societesDemandeursNames?.join(", ") || null,
+        dateReception: fd.dateReception || null,
+        descriptionPerimetre: fd.descriptionPerimetre || null,
+        statutDemande: fd.statutDemande || null,
+        lienIngridCDC: fd.lienIngridCDC || null,
+        observations: fd.observations || null,
+        dateTransmissionBacklog: fd.dateTransmissionBacklog || null,
+        dateConfirmationValidation: fd.dateConfirmationValidation || null,
+        dateDemandePlanificationDev: fd.dateDemandePlanificationDev || null,
+        dateDemandePlanificationTif: fd.dateDemandePlanificationTif || null,
+        dateRetourEquipesDev: fd.dateRetourEquipesDev || null,
+        dateRetourEquipesTif: fd.dateRetourEquipesTif || null,
+        dateCommunicationPlanningClient: fd.dateCommunicationPlanningClient || null,
+        nombreSprint: fd.nombreSprint || null,
+        roadmap: fd.roadmap || null,
+        sprintsData: fd.sprintsData?.length > 0 ? fd.sprintsData : null,
+        statutCodage: fd.statutCodage || null,
+        lienIngridKickoff: fd.lienIngridKickoff || null,
+        lienIngridPointsControleTIF: fd.lienIngridPointsControleTIF || null,
+        lienIngridSignoff: fd.lienIngridSignoff || null,
+        societeDemandeur: fd.societeDemandeur || null,
+        interlocuteur: fd.interlocuteur || null,
+        isDraft: true,
+        draftStep: Number(step || 1),
+        draftStepLabel: getStepLabel(step || 1),
+        utilisateurId: user?.id || 1,
+      };
+      const id = fd.id;
+      if (id) {
+        await apiFetch(`/demandes/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+      } else {
+        await apiFetch(`/demandes`, { method: "POST", body: JSON.stringify(payload) });
+      }
+      localStorage.removeItem(NOUVELLE_STORAGE_KEY);
+    } catch (error) {
+      console.error("Sauvegarde automatique du brouillon (Nouvelle demande) échouée:", error);
+    }
+  };
+
+  // Sauvegarde silencieuse d'un brouillon "Évolution"
+  const enregistrerBrouillonAutoEvolution = async (fd, step) => {
+    const evolutionStepLabels = {
+      1: "Info demande", 2: "DATFL", 3: "Planning & SLT", 4: "Enregistrement",
+      5: "Clarification", 6: "Planification", 7: "Réalisation", 8: "Documents", 9: "Livraison",
+    };
+    try {
+      const payload = {
+        typeProjet: "Evolution",
+        nomProjet: fd.nomProjet?.trim() || "Brouillon sans nom",
+        dateEnregistrement: fd.dateEnregistrement || new Date().toISOString().split("T")[0],
+        dateReception: fd.dateReception || null,
+        societeDemandeur: fd.societesDemandeursNames?.[0] || null,
+        societesDemandeurs: fd.societesDemandeursNames?.join(", ") || null,
+        interlocuteur: fd.interlocuteur || null,
+        interlocuteurClient: fd.interlocuteurClient || null,
+        demandeur: fd.demandeur || null,
+        dateDemandeMiseAJourDATFL: fd.dateDemandeMiseAJourDATFL || null,
+        dateReponseMiseAJourDATFL: fd.dateReponseMiseAJourDATFL || null,
+        charge: fd.charge ? parseFloat(fd.charge) : null,
+        planningDateDebut: fd.planningDateDebut || null,
+        planningDateFin: fd.planningDateFin || null,
+        dateDemandeDevolution: fd.dateDemandeDevolution || null,
+        dateReponseDevolution: fd.dateReponseDevolution || null,
+        slt: fd.slt || null,
+        aleasNormeParJour: fd.aleasNormeParJour || null,
+        descriptionProjet: fd.descriptionProjet || null,
+        descriptionPerimetre: fd.descriptionPerimetre || null,
+        statutDemande: fd.statutDemande || null,
+        lienIngridCDC: fd.lienIngridCDC || null,
+        observations: fd.observations || null,
+        nombreSprint: fd.nombreSprint || null,
+        sprintsData: fd.sprintsData?.length > 0 ? fd.sprintsData : null,
+        statutCodage: fd.statutCodage || null,
+        lienIngridKickoff: fd.lienIngridKickoff || null,
+        lienIngridPointsControleTIF: fd.lienIngridPointsControleTIF || null,
+        lienIngridSignoff: fd.lienIngridSignoff || null,
+        isDraft: true,
+        draftStep: Number(step || 1),
+        draftStepLabel: evolutionStepLabels[step] || `Étape ${step || 1}`,
+        utilisateurId: user?.id || 1,
+      };
+      const id = fd.id;
+      if (id) {
+        await apiFetch(`/demandes/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+      } else {
+        await apiFetch(`/demandes`, { method: "POST", body: JSON.stringify(payload) });
+      }
+      localStorage.removeItem(EVOLUTION_STORAGE_KEY);
+    } catch (error) {
+      console.error("Sauvegarde automatique du brouillon (Évolution) échouée:", error);
+    }
+  };
+
+  // Sauvegarde silencieuse d'un brouillon "Prospecte"
+  const enregistrerBrouillonAutoProspecte = async (fd, step) => {
+    const stepLabels = { 1: "Info demande", 2: "Backlog & budget" };
+    try {
+      const societe = societes.find((s) => s.id.toString() === fd.societesDemandeurs?.[0]);
+      const societyName = societe?.nom || fd.societesDemandeurs?.[0] || "";
+      const dev = parseFloat(fd.chargeDeveloppement) || 0;
+      const tif = parseFloat(fd.chargeTIF) || 0;
+      const support = dev ? Math.round(dev * 0.10 * 100) / 100 : 0;
+      const globale = Math.round((dev + tif + support) * 100) / 100;
+      const tarif = parseFloat(fd.tarifHommeJour) || 0;
+      const payload = {
+        id: fd.id || null,
+        typeProjet: "Prospecte",
+        nomProjet: fd.nomProjet?.trim() || "Brouillon sans nom",
+        dateEnregistrement: fd.dateEnregistrement || new Date().toISOString().split("T")[0],
+        dateReception: fd.dateReception || null,
+        societesDemandeurs: societyName || null,
+        societeDemandeur: societyName || null,
+        interlocuteur: fd.interlocuteur || null,
+        descriptionPerimetre: fd.descriptionPerimetre || null,
+        statutDemande: fd.statutDemande || null,
+        dateTransmissionBacklog: fd.dateTransmissionBacklog || null,
+        dateLimiteReponseDev: fd.dateLimiteReponseDev || null,
+        dateLimiteReponseTif: fd.dateLimiteReponseTif || null,
+        dateRetourEquipesDev: fd.dateRetourEquipesDev || null,
+        dateRetourEquipesTif: fd.dateRetourEquipesTif || null,
+        chargeDeveloppement: fd.chargeDeveloppement ? dev : null,
+        chargeTIF: fd.chargeTIF ? tif : null,
+        motifEcartChargeTIF: fd.motifEcartChargeTIF || null,
+        chargeSupportRecette: support,
+        chargeGlobale: globale,
+        tarifHommeJour: fd.tarifHommeJour ? tarif : null,
+        budgetAlloue: Math.round(globale * tarif * 100) / 100,
+        isDraft: true,
+        draftStep: Number(step || 1),
+        draftStepLabel: stepLabels[step] || stepLabels[1],
+        utilisateurId: user?.id || 1,
+      };
+      const id = fd.id;
+      if (id) {
+        await apiFetch(`/demandes/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+      } else {
+        await apiFetch(`/demandes`, { method: "POST", body: JSON.stringify(payload) });
+      }
+      localStorage.removeItem(PROSPECTE_STORAGE_KEY);
+    } catch (error) {
+      console.error("Sauvegarde automatique du brouillon (Prospecte) échouée:", error);
+    }
+  };
+
+  // Un formulaire est considéré "vide" si aucun champ significatif n'a été
+  // renseigné (on ignore les valeurs pré-remplies par défaut, comme la date
+  // du jour). Dans ce cas, inutile de créer un brouillon en base.
+  const formulaireNouvelleEstVide = (fd) => {
+    return (
+      !fd.nomProjet?.trim() &&
+      !fd.typeProjet &&
+      !fd.demandeur?.trim() &&
+      !(fd.societesDemandeurs?.length > 0 && fd.societesDemandeurs[0]) &&
+      !fd.interlocuteurClient &&
+      !fd.descriptionProjet?.trim() &&
+      !fd.descriptionPerimetre?.trim() &&
+      !fd.dateReception &&
+      !fd.observations?.trim()
+    );
+  };
+
+  const formulaireEvolutionEstVide = (fd) => {
+    return (
+      !fd.nomProjet?.trim() &&
+      !fd.dateReception &&
+      !(fd.societesDemandeurs?.length > 0 && fd.societesDemandeurs[0]) &&
+      !fd.interlocuteur &&
+      !fd.demandeur?.trim() &&
+      !fd.descriptionProjet?.trim() &&
+      !fd.descriptionPerimetre?.trim()
+    );
+  };
+
+  const formulaireProspecteEstVide = (fd) => {
+    return (
+      !fd.nomProjet?.trim() &&
+      !(fd.societesDemandeurs?.length > 0 && fd.societesDemandeurs[0]) &&
+      !fd.interlocuteur &&
+      !fd.dateReception &&
+      !fd.descriptionPerimetre?.trim() &&
+      !fd.dateTransmissionBacklog &&
+      !fd.chargeDeveloppement &&
+      !fd.chargeTIF &&
+      !fd.tarifHommeJour
+    );
+  };
+
+  // Quand on quitte le module Demandes (changement de module), sauvegarder
+  // automatiquement en brouillon le formulaire en cours, sans validation —
+  // sauf si rien n'a été renseigné, auquel cas il n'y a rien à sauvegarder.
+  useEffect(() => {
+    return () => {
+      const snap = etatFormulairesRef.current;
+      if (!snap) return;
+      if (snap.showNouvelleDemandeForm && !formulaireNouvelleEstVide(snap.nouvelleDemandeFormData)) {
+        enregistrerBrouillonAutoNouvelle(snap.nouvelleDemandeFormData, snap.nouvelleDemandeStep);
+      }
+      if (snap.showEvolutionForm && !formulaireEvolutionEstVide(snap.evolutionFormData)) {
+        enregistrerBrouillonAutoEvolution(snap.evolutionFormData, snap.evolutionStep);
+      }
+      if (snap.showProspecteForm && !formulaireProspecteEstVide(snap.prospecteFormData)) {
+        enregistrerBrouillonAutoProspecte(snap.prospecteFormData, snap.prospecteStep);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Quand l'utilisateur clique sur "Gestion des Demandes" dans le menu alors
+  // qu'il est déjà sur cette page (donc pas de changement de route, le
+  // nettoyage ci-dessus ne se déclenche pas) : sauvegarder le formulaire en
+  // cours en brouillon, puis revenir à la page principale (liste/sélection).
+  useEffect(() => {
+    const handleRetourListe = () => {
+      const snap = etatFormulairesRef.current;
+      if (!snap) return;
+      if (snap.showNouvelleDemandeForm && !formulaireNouvelleEstVide(snap.nouvelleDemandeFormData)) {
+        enregistrerBrouillonAutoNouvelle(snap.nouvelleDemandeFormData, snap.nouvelleDemandeStep);
+      }
+      if (snap.showEvolutionForm && !formulaireEvolutionEstVide(snap.evolutionFormData)) {
+        enregistrerBrouillonAutoEvolution(snap.evolutionFormData, snap.evolutionStep);
+      }
+      if (snap.showProspecteForm && !formulaireProspecteEstVide(snap.prospecteFormData)) {
+        enregistrerBrouillonAutoProspecte(snap.prospecteFormData, snap.prospecteStep);
+      }
+      localStorage.removeItem(FORM_STORAGE_KEY);
+      localStorage.removeItem(PROSPECTE_STORAGE_KEY);
+      localStorage.removeItem(EVOLUTION_STORAGE_KEY);
+      setIsModificationMode(false);
+      setShowNouvelleDemandeForm(false);
+      setShowEvolutionForm(false);
+      setShowProspecteForm(false);
+      setProspecteStep(1);
+      setShowSelectionCards(true);
+      setDemandeMessage({ type: "", text: "" });
+      chargerLesDemandes();
+    };
+    window.addEventListener("julee:retour-liste-demandes", handleRetourListe);
+    return () => window.removeEventListener("julee:retour-liste-demandes", handleRetourListe);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCreateDemande = () => {
     setShowProspecteForm(false);
@@ -1380,6 +1599,7 @@ const Demandes = () => {
     localStorage.removeItem(FORM_STORAGE_KEY);
     localStorage.removeItem(EVOLUTION_STORAGE_KEY);
     setProspecteFormData(getProspecteInitialState());
+    setProspecteStep(1);
     setErrorsProspecte({});
     setShowProspecteForm(true);
     setShowSelectionCards(false);
@@ -1403,16 +1623,51 @@ const Demandes = () => {
     localStorage.removeItem(PROSPECTE_STORAGE_KEY);
     setShowProspecteForm(false);
     setShowSelectionCards(true);
+    setProspecteStep(1);
     setDemandeMessage({ type: "", text: "" });
     setErrorsProspecte({});
     setIsModificationMode(false);
   };
 
-  const handleProspecteSubmit = async (e) => {
-    e.preventDefault();
-    setDemandeMessage({ type: "", text: "" });
+  const PROSPECTE_STEP_LABELS = { 1: "Info demande", 2: "Backlog & budget" };
 
+  // Charge support recette = toujours 10% de la charge de développement (calculé, non saisi)
+  const calculerChargeSupportRecette = (fd) => {
+    const dev = parseFloat(fd.chargeDeveloppement);
+    if (!dev || isNaN(dev)) return 0;
+    return Math.round(dev * 0.10 * 100) / 100;
+  };
+
+  const calculerChargeGlobale = (fd) => {
+    const dev = parseFloat(fd.chargeDeveloppement) || 0;
+    const tif = parseFloat(fd.chargeTIF) || 0;
+    const support = calculerChargeSupportRecette(fd);
+    return Math.round((dev + tif + support) * 100) / 100;
+  };
+
+  const calculerBudgetAlloue = (fd) => {
+    const globale = calculerChargeGlobale(fd);
+    const tarif = parseFloat(fd.tarifHommeJour) || 0;
+    return Math.round(globale * tarif * 100) / 100;
+  };
+
+  // L'écart entre la charge TIF saisie et les 10% attendus de la charge dev :
+  // si la charge dev et la charge TIF sont toutes les deux renseignées et que
+  // l'écart n'est pas nul, un motif devient obligatoire.
+  const ecartChargeTIFDetecte = (fd) => {
+    const dev = parseFloat(fd.chargeDeveloppement);
+    const tif = parseFloat(fd.chargeTIF);
+    if (!dev || isNaN(dev) || fd.chargeTIF === "" || isNaN(tif)) return false;
+    const attendu = Math.round(dev * 0.10 * 100) / 100;
+    return Math.round(tif * 100) / 100 !== attendu;
+  };
+
+  const handleProspecteNext = () => {
+    setDemandeMessage({ type: "", text: "" });
     const newErrors = {};
+    if (!prospecteFormData.dateEnregistrement) {
+      newErrors.dateEnregistrement = "La date d'enregistrement est obligatoire.";
+    }
     if (!prospecteFormData.societesDemandeurs?.[0]) {
       newErrors.societesDemandeurs = "Veuillez sélectionner une société.";
     }
@@ -1426,6 +1681,41 @@ const Demandes = () => {
     }
     if (!prospecteFormData.interlocuteur) {
       newErrors.interlocuteur = "L'interlocuteur est obligatoire.";
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrorsProspecte(newErrors);
+      setTimeout(() => {
+        const el = document.querySelector('[data-field-error="true"]');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
+    setErrorsProspecte({});
+    setProspecteStep(2);
+    scrollToFormTop();
+  };
+
+  const handleProspecteRetour = () => {
+    setErrorsProspecte({});
+    setProspecteStep(1);
+    scrollToFormTop();
+  };
+
+  const handleProspecteSubmit = async (e) => {
+    e.preventDefault();
+    setDemandeMessage({ type: "", text: "" });
+
+    if (prospecteStep === 1) {
+      handleProspecteNext();
+      return;
+    }
+
+    const newErrors = {};
+    if (!prospecteFormData.dateTransmissionBacklog) {
+      newErrors.dateTransmissionBacklog = "La date de transmission du backlog est obligatoire.";
+    }
+    if (ecartChargeTIFDetecte(prospecteFormData) && !prospecteFormData.motifEcartChargeTIF?.trim()) {
+      newErrors.motifEcartChargeTIF = "La charge TIF ne correspond pas à 10% de la charge de développement : merci de préciser le motif.";
     }
     if (Object.keys(newErrors).length > 0) {
       setErrorsProspecte(newErrors);
@@ -1452,9 +1742,22 @@ const Demandes = () => {
         societeDemandeur: societyName,
         interlocuteur: prospecteFormData.interlocuteur,
         descriptionPerimetre: prospecteFormData.descriptionPerimetre || "",
+        statutDemande: prospecteFormData.statutDemande || null,
+        dateTransmissionBacklog: prospecteFormData.dateTransmissionBacklog || null,
+        dateLimiteReponseDev: prospecteFormData.dateLimiteReponseDev || null,
+        dateLimiteReponseTif: prospecteFormData.dateLimiteReponseTif || null,
+        dateRetourEquipesDev: prospecteFormData.dateRetourEquipesDev || null,
+        dateRetourEquipesTif: prospecteFormData.dateRetourEquipesTif || null,
+        chargeDeveloppement: prospecteFormData.chargeDeveloppement ? parseFloat(prospecteFormData.chargeDeveloppement) : null,
+        chargeTIF: prospecteFormData.chargeTIF ? parseFloat(prospecteFormData.chargeTIF) : null,
+        motifEcartChargeTIF: ecartChargeTIFDetecte(prospecteFormData) ? prospecteFormData.motifEcartChargeTIF || null : null,
+        chargeSupportRecette: calculerChargeSupportRecette(prospecteFormData),
+        chargeGlobale: calculerChargeGlobale(prospecteFormData),
+        tarifHommeJour: prospecteFormData.tarifHommeJour ? parseFloat(prospecteFormData.tarifHommeJour) : null,
+        budgetAlloue: calculerBudgetAlloue(prospecteFormData),
         isDraft: false,
-        draftStep: 1,
-        draftStepLabel: "Info demande",
+        draftStep: 2,
+        draftStepLabel: PROSPECTE_STEP_LABELS[2],
         utilisateurId: user?.id || 1,
       };
 
@@ -1470,11 +1773,75 @@ const Demandes = () => {
       localStorage.removeItem(PROSPECTE_STORAGE_KEY);
       setShowProspecteForm(false);
       setShowSelectionCards(true);
+      setProspecteStep(1);
       setIsModificationMode(false);
       setDemandeMessage({ type: "success", text: "Demande prospecte créée avec succès !" });
       setTimeout(() => setDemandeMessage({ type: "", text: "" }), 3000);
     } catch (error) {
       setDemandeMessage({ type: "error", text: `Impossible de créer la demande. ${error?.message || "Vérifiez la connexion."}` });
+    }
+  };
+
+  // Enregistrement manuel d'un brouillon "Prospecte" — sans validation,
+  // utilisable depuis n'importe quelle étape (1 ou 2).
+  const sauvegarderProspecteBrouillon = async () => {
+    try {
+      setDemandeMessage({ type: "info", text: "Enregistrement du brouillon..." });
+      const fd = prospecteFormData;
+      const societe = societes.find((s) => s.id.toString() === fd.societesDemandeurs?.[0]);
+      const societyName = societe?.nom || fd.societesDemandeurs?.[0] || "";
+
+      const payload = {
+        typeProjet: "Prospecte",
+        nomProjet: fd.nomProjet?.trim() || "Brouillon sans nom",
+        dateEnregistrement: fd.dateEnregistrement || new Date().toISOString().split("T")[0],
+        dateReception: fd.dateReception || null,
+        societesDemandeurs: societyName || null,
+        societeDemandeur: societyName || null,
+        interlocuteur: fd.interlocuteur || null,
+        descriptionPerimetre: fd.descriptionPerimetre || null,
+        statutDemande: fd.statutDemande || null,
+        dateTransmissionBacklog: fd.dateTransmissionBacklog || null,
+        dateLimiteReponseDev: fd.dateLimiteReponseDev || null,
+        dateLimiteReponseTif: fd.dateLimiteReponseTif || null,
+        dateRetourEquipesDev: fd.dateRetourEquipesDev || null,
+        dateRetourEquipesTif: fd.dateRetourEquipesTif || null,
+        chargeDeveloppement: fd.chargeDeveloppement ? parseFloat(fd.chargeDeveloppement) : null,
+        chargeTIF: fd.chargeTIF ? parseFloat(fd.chargeTIF) : null,
+        motifEcartChargeTIF: fd.motifEcartChargeTIF || null,
+        chargeSupportRecette: calculerChargeSupportRecette(fd),
+        chargeGlobale: calculerChargeGlobale(fd),
+        tarifHommeJour: fd.tarifHommeJour ? parseFloat(fd.tarifHommeJour) : null,
+        budgetAlloue: calculerBudgetAlloue(fd),
+        isDraft: true,
+        draftStep: prospecteStep,
+        draftStepLabel: PROSPECTE_STEP_LABELS[prospecteStep],
+        utilisateurId: user?.id || 1,
+      };
+
+      const id = fd.id;
+      let resp;
+      if (id) {
+        resp = await apiFetch(`/demandes/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+      } else {
+        resp = await apiFetch(`/demandes`, { method: "POST", body: JSON.stringify(payload) });
+      }
+      if (!resp.ok) throw new Error(`Erreur HTTP ${resp.status}`);
+      if (!id) {
+        const created = await resp.json();
+        setProspecteFormData((prev) => ({ ...prev, id: created.id }));
+      }
+
+      await chargerLesDemandes();
+      localStorage.removeItem(PROSPECTE_STORAGE_KEY);
+      setShowProspecteForm(false);
+      setShowSelectionCards(true);
+      setProspecteStep(1);
+      setProspecteFormData(getProspecteInitialState());
+      setDemandeMessage({ type: "success", text: id ? "Brouillon mis à jour avec succès." : "Brouillon enregistré avec succès." });
+      setTimeout(() => setDemandeMessage({ type: "", text: "" }), 3000);
+    } catch (error) {
+      setDemandeMessage({ type: "error", text: `Impossible d'enregistrer le brouillon. ${error?.message || "Vérifiez la connexion."}` });
     }
   };
 
@@ -1571,15 +1938,24 @@ const Demandes = () => {
         } else if (evolutionFormData.planningDateDebut && evolutionFormData.planningDateFin < evolutionFormData.planningDateDebut) {
           newErrEv3.planningDateFin = "Ne peut pas être avant la date de début.";
         }
+        if (!evolutionFormData.dateDemandeDevolution) {
+          newErrEv3.dateDemandeDevolution = "La date de demande d'évolution est obligatoire.";
+        }
+        if (!evolutionFormData.dateReponseDevolution) {
+          newErrEv3.dateReponseDevolution = "La date de réponse d'évolution est obligatoire.";
+        } else if (evolutionFormData.dateDemandeDevolution && evolutionFormData.dateReponseDevolution < evolutionFormData.dateDemandeDevolution) {
+          newErrEv3.dateReponseDevolution = "Ne peut pas être avant la date de demande.";
+        }
+        if (!evolutionFormData.slt?.trim()) {
+          newErrEv3.slt = "Les SLT sont obligatoires.";
+        }
+        if (!evolutionFormData.aleasNormeParJour?.trim()) {
+          newErrEv3.aleasNormeParJour = "L'aléas en norme par jour est obligatoire.";
+        }
         if (Object.keys(newErrEv3).length > 0) {
           setErrorsEvolution(newErrEv3);
           setTimeout(() => { const el = document.querySelector('[data-field-error="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
           return;
-        }
-        if (evolutionFormData.dateDemandeDevolution && evolutionFormData.dateReponseDevolution &&
-            evolutionFormData.dateReponseDevolution < evolutionFormData.dateDemandeDevolution) {
-          setDemandeMessage({ type: "error", text: "La date de réponse dévolution ne peut pas être avant la date de demande." });
-          scrollToFormTop(); return;
         }
       }
 
@@ -1860,7 +2236,19 @@ const Demandes = () => {
         interlocuteur: demande.interlocuteur || demande.interlocuteurClient || "",
         nomProjet: demande.nomProjet || "",
         descriptionPerimetre: demande.descriptionPerimetre || "",
+        statutDemande: demande.statutDemande || "",
+        dateTransmissionBacklog: formatDateForInput(demande.dateTransmissionBacklog || ""),
+        dateLimiteReponseDev: formatDateForInput(demande.dateLimiteReponseDev || ""),
+        dateLimiteReponseTif: formatDateForInput(demande.dateLimiteReponseTif || ""),
+        dateRetourEquipesDev: formatDateForInput(demande.dateRetourEquipesDev || ""),
+        dateRetourEquipesTif: formatDateForInput(demande.dateRetourEquipesTif || ""),
+        chargeDeveloppement: demande.chargeDeveloppement != null ? String(demande.chargeDeveloppement) : "",
+        chargeTIF: demande.chargeTIF != null ? String(demande.chargeTIF) : "",
+        motifEcartChargeTIF: demande.motifEcartChargeTIF || "",
+        tarifHommeJour: demande.tarifHommeJour != null ? String(demande.tarifHommeJour) : "",
       }));
+      const savedStep = Number(demande.draftStep) || 1;
+      setProspecteStep(Math.min(Math.max(savedStep, 1), 2));
       setShowSelectionCards(false);
       setShowProspecteForm(true);
       setDemandeMessage({ type: "", text: "" });
@@ -2425,6 +2813,22 @@ const Demandes = () => {
                             nouvelleDemandeFormData.dateEnregistrement,
                           )}
                           onChange={handleNouvelleDemandeInputChange}
+                          disabled
+                          style={{ backgroundColor: "#e9ecef", cursor: "not-allowed" }}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>
+                          Date de réception de la demande
+                        </label>
+                        <input
+                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={formatDateForInput(nouvelleDemandeFormData.dateEnregistrement) || `${new Date().getFullYear() + 15}-12-31`}
+                          name="dateReception"
+                          value={formatDateForInput(
+                            nouvelleDemandeFormData.dateReception,
+                          )}
+                          onChange={handleNouvelleDemandeInputChange}
                           required
                         />
                       </div>
@@ -2519,6 +2923,26 @@ const Demandes = () => {
                           <option value="Classique">Classique</option>
                         </select>
                       </div>
+                      <div className="form-group">
+                        <label>
+                          Statut de la demande
+                        </label>
+                        <select
+                          name="statutDemande"
+                          value={nouvelleDemandeFormData.statutDemande}
+                          onChange={handleNouvelleDemandeInputChange}
+                          required
+                        >
+                          <option value="">Sélectionnez un statut</option>
+                          {statutsDisponibles
+                            .filter((statut) => statut.actif)
+                            .map((statut) => (
+                              <option key={statut.id} value={statut.nom}>
+                                {statut.nom}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
                       <div
                         className="form-group"
                         style={{ gridColumn: "1 / -1" }}
@@ -2562,50 +2986,19 @@ const Demandes = () => {
                           required
                         />
                       </div>
-                      <div className="form-group">
+                      <div
+                        className="form-group"
+                        style={{ gridColumn: "1 / -1" }}
+                      >
                         <label>
                           Périmètre
                         </label>
-                        <input
-                          type="text"
+                        <textarea
                           name="descriptionPerimetre"
                           value={nouvelleDemandeFormData.descriptionPerimetre}
                           onChange={handleNouvelleDemandeInputChange}
+                          rows={4}
                           placeholder="Saisir le périmètre de la demande..."
-                          required
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>
-                          Statut de la demande
-                        </label>
-                        <select
-                          name="statutDemande"
-                          value={nouvelleDemandeFormData.statutDemande}
-                          onChange={handleNouvelleDemandeInputChange}
-                          required
-                        >
-                          <option value="">Sélectionnez un statut</option>
-                          {statutsDisponibles
-                            .filter((statut) => statut.actif)
-                            .map((statut) => (
-                              <option key={statut.id} value={statut.nom}>
-                                {statut.nom}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>
-                          Date de réception de la demande
-                        </label>
-                        <input
-                          type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={formatDateForInput(nouvelleDemandeFormData.dateEnregistrement) || `${new Date().getFullYear() + 15}-12-31`}
-                          name="dateReception"
-                          value={formatDateForInput(
-                            nouvelleDemandeFormData.dateReception,
-                          )}
-                          onChange={handleNouvelleDemandeInputChange}
                           required
                         />
                       </div>
@@ -2646,7 +3039,7 @@ const Demandes = () => {
                     {/* Dates sur 2 colonnes */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>
+                        <label style={{ display: "block", textAlign: "left", marginBottom: "6px", fontWeight: "500" }}>
                           Date de transmission du backlog <span style={{ color: "#ef4444" }}>*</span>
                         </label>
                         <input
@@ -2660,7 +3053,7 @@ const Demandes = () => {
                         />
                       </div>
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>
+                        <label style={{ display: "block", textAlign: "left", marginBottom: "6px", fontWeight: "500" }}>
                           Date de confirmation de validation <span style={{ color: "#ef4444" }}>*</span>
                         </label>
                         <input
@@ -2677,7 +3070,7 @@ const Demandes = () => {
 
                     {/* Lien CDC pleine largeur */}
                     <div className="form-group" style={{ marginBottom: "20px" }}>
-                      <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>
+                      <label style={{ display: "block", textAlign: "left", marginBottom: "6px", fontWeight: "500" }}>
                         Lien Ingrid CDC
                       </label>
                       <input
@@ -2692,7 +3085,7 @@ const Demandes = () => {
 
                     {/* Zone de commentaires pour remplir l'espace */}
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>
+                      <label style={{ display: "block", textAlign: "left", marginBottom: "6px", fontWeight: "500" }}>
                         Observations / Commentaires
                       </label>
                       <textarea
@@ -3075,7 +3468,13 @@ const Demandes = () => {
                                         <input
                                           type="number"
                                           value={sprintData.avancement || ""}
-                                          onChange={(e) => handleSprintDataChange(i, "avancement", Math.min(100, Math.max(0, Number(e.target.value))))}
+                                          onChange={(e) => {
+                                            const val = Math.min(100, Math.max(0, Number(e.target.value)));
+                                            handleSprintDataChange(i, "avancement", val);
+                                            if (val > 0 && (sprintData.statutSprint || "en attente") === "en attente") {
+                                              handleSprintDataChange(i, "statutSprint", "en cours");
+                                            }
+                                          }}
                                           min="0"
                                           max="100"
                                           placeholder="0"
@@ -3304,7 +3703,7 @@ const Demandes = () => {
           </div>
         )}
 
-        {/* Formulaire "Demande prospecte" - 1 étape simple */}
+        {/* Formulaire "Demande prospecte" - 2 étapes */}
         {showProspecteForm && (
           <div
             className="nouvelle-demande-form-container"
@@ -3329,6 +3728,92 @@ const Demandes = () => {
               Demande Prospecte
             </h2>
 
+            {/* Indicateur de progression des étapes */}
+            <div
+              className="steps-indicator"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "40px",
+                padding: "0 20px",
+                position: "relative",
+              }}
+            >
+              {[
+                { num: 1, label: "Info demande" },
+                { num: 2, label: "Backlog & budget" },
+              ].map((step, index) => (
+                <div
+                  key={step.num}
+                  onClick={() => step.num <= prospecteStep && setProspecteStep(step.num)}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    position: "relative",
+                    zIndex: 1,
+                    cursor: step.num <= prospecteStep ? "pointer" : "default",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      backgroundColor:
+                        prospecteStep >= step.num ? "#FF6B35" : "#e5e7eb",
+                      color:
+                        prospecteStep >= step.num ? "white" : "#6b7280",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: "bold",
+                      marginBottom: "8px",
+                      transition: "all 0.3s ease",
+                      border:
+                        prospecteStep === step.num
+                          ? "3px solid #d9531e"
+                          : "none",
+                      boxShadow:
+                        prospecteStep === step.num
+                          ? "0 0 0 4px rgba(255, 107, 53, 0.2)"
+                          : "none",
+                    }}
+                  >
+                    {step.num}
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      color:
+                        prospecteStep >= step.num ? "#FF6B35" : "#6b7280",
+                      fontWeight:
+                        prospecteStep >= step.num ? "600" : "400",
+                      textAlign: "center",
+                    }}
+                  >
+                    {step.label}
+                  </span>
+                  {index < 1 && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "24px",
+                        left: "calc(50% + 24px)",
+                        width: "calc(100% - 96px)",
+                        height: "3px",
+                        backgroundColor:
+                          prospecteStep > step.num ? "#FF6B35" : "#e5e7eb",
+                        zIndex: 0,
+                        transition: "all 0.3s ease",
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
             <form autoComplete="off" noValidate onSubmit={handleProspecteSubmit}>
               {demandeMessage.text && demandeMessage.type !== "error" && (
                 <div
@@ -3346,6 +3831,7 @@ const Demandes = () => {
                 </div>
               )}
 
+              {prospecteStep === 1 && (
               <div
                 className="form-step-content"
                 style={{
@@ -3371,6 +3857,9 @@ const Demandes = () => {
                       name="dateEnregistrement"
                       value={formatDateForInput(prospecteFormData.dateEnregistrement)}
                       onChange={handleProspecteInputChange}
+                      data-field-error={errorsProspecte.dateEnregistrement ? "true" : undefined}
+                      disabled
+                      style={{ backgroundColor: "#e9ecef", cursor: "not-allowed", borderColor: errorsProspecte.dateEnregistrement ? "#EF4444" : undefined }}
                     />
                   </div>
                   <div className="form-group">
@@ -3456,20 +3945,177 @@ const Demandes = () => {
                       placeholder="Nom du projet"
                     />
                   </div>
-                  <div className="form-group">
+                  <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                     <label>
                       Périmètre
                     </label>
-                    <input
-                      type="text"
+                    <textarea
                       name="descriptionPerimetre"
                       value={prospecteFormData.descriptionPerimetre}
                       onChange={handleProspecteInputChange}
+                      rows={4}
                       placeholder="Décrivez le périmètre..."
                     />
                   </div>
+                  <div className="form-group">
+                    <label>
+                      Statut de la demande
+                    </label>
+                    <select
+                      name="statutDemande"
+                      value={prospecteFormData.statutDemande}
+                      onChange={handleProspecteInputChange}
+                    >
+                      <option value="">Sélectionnez un statut</option>
+                      {statutsDisponibles
+                        .filter((statut) => statut.actif)
+                        .map((statut) => (
+                          <option key={statut.id} value={statut.nom}>
+                            {statut.nom}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
               </div>
+              )}
+
+              {prospecteStep === 2 && (
+              <div
+                className="form-step-content"
+                style={{
+                  backgroundColor: "white",
+                  padding: "40px",
+                  borderRadius: "12px",
+                  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "24px",
+                  }}
+                >
+                  <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                    <label>
+                      Date de transmission du backlog <span className="required">*</span>
+                    </label>
+                    <input
+                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                      name="dateTransmissionBacklog"
+                      value={formatDateForInput(prospecteFormData.dateTransmissionBacklog)}
+                      onChange={handleProspecteInputChange}
+                      data-field-error={errorsProspecte.dateTransmissionBacklog ? "true" : undefined}
+                      style={{ borderColor: errorsProspecte.dateTransmissionBacklog ? "#EF4444" : undefined }}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Délai de réponse — équipe DEV</label>
+                    <input
+                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                      name="dateLimiteReponseDev"
+                      value={formatDateForInput(prospecteFormData.dateLimiteReponseDev)}
+                      onChange={handleProspecteInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Délai de réponse — équipe TIF</label>
+                    <input
+                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                      name="dateLimiteReponseTif"
+                      value={formatDateForInput(prospecteFormData.dateLimiteReponseTif)}
+                      onChange={handleProspecteInputChange}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Date de retour effectif — équipe DEV</label>
+                    <input
+                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                      name="dateRetourEquipesDev"
+                      value={formatDateForInput(prospecteFormData.dateRetourEquipesDev)}
+                      onChange={handleProspecteInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Date de retour effectif — équipe TIF</label>
+                    <input
+                      type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min="2000-01-01" max={`${new Date().getFullYear() + 15}-12-31`}
+                      name="dateRetourEquipesTif"
+                      value={formatDateForInput(prospecteFormData.dateRetourEquipesTif)}
+                      onChange={handleProspecteInputChange}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Charge de développement (homme/jour)</label>
+                    <input
+                      type="number" min="0" step="0.5"
+                      name="chargeDeveloppement"
+                      value={prospecteFormData.chargeDeveloppement}
+                      onChange={handleProspecteInputChange}
+                      placeholder="Ex: 20"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Charge TIF (homme/jour)</label>
+                    <input
+                      type="number" min="0" step="0.5"
+                      name="chargeTIF"
+                      value={prospecteFormData.chargeTIF}
+                      onChange={handleProspecteInputChange}
+                      placeholder="Par défaut 10% de la charge dev"
+                    />
+                    <small style={{ color: "#6b7280" }}>
+                      Attendu : {calculerChargeSupportRecette(prospecteFormData)} homme/jour (10% de la charge dev)
+                    </small>
+                  </div>
+
+                  {ecartChargeTIFDetecte(prospecteFormData) && (
+                    <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                      <label>
+                        Motif de l'écart charge TIF / 10% charge dev <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="motifEcartChargeTIF"
+                        value={prospecteFormData.motifEcartChargeTIF}
+                        onChange={handleProspecteInputChange}
+                        data-field-error={errorsProspecte.motifEcartChargeTIF ? "true" : undefined}
+                        style={{ borderColor: errorsProspecte.motifEcartChargeTIF ? "#EF4444" : undefined }}
+                        placeholder="Expliquez l'écart par rapport aux 10% attendus"
+                      />
+                    </div>
+                  )}
+
+                  <div className="form-group">
+                    <label>Charge support recette (calculé)</label>
+                    <input type="text" value={`${calculerChargeSupportRecette(prospecteFormData)} h/j`} disabled style={{ backgroundColor: "#e9ecef", cursor: "not-allowed" }} />
+                  </div>
+                  <div className="form-group">
+                    <label>Charge globale (calculé)</label>
+                    <input type="text" value={`${calculerChargeGlobale(prospecteFormData)} h/j`} disabled style={{ backgroundColor: "#e9ecef", cursor: "not-allowed" }} />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Tarif Homme/Jour</label>
+                    <input
+                      type="number" min="0" step="0.01"
+                      name="tarifHommeJour"
+                      value={prospecteFormData.tarifHommeJour}
+                      onChange={handleProspecteInputChange}
+                      placeholder="Ex: 350"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Budget alloué (calculé)</label>
+                    <input type="text" value={calculerBudgetAlloue(prospecteFormData)} disabled style={{ backgroundColor: "#e9ecef", cursor: "not-allowed", fontWeight: "600" }} />
+                  </div>
+                </div>
+              </div>
+              )}
 
               {/* Boutons d'action */}
               <div
@@ -3482,19 +4128,40 @@ const Demandes = () => {
                   borderTop: "2px solid #e5e7eb",
                 }}
               >
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={handleProspecteCancel}
-                >
-                  ← Retour à la page principale
-                </button>
-                <div style={{ display: "flex", gap: "12px" }}>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ padding: "6px 10px", fontSize: "12px" }}
+                    onClick={handleProspecteCancel}
+                  >
+                    ← Retour à la page principale
+                  </button>
+                  {prospecteStep === 2 && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ padding: "6px 10px", fontSize: "12px" }}
+                      onClick={handleProspecteRetour}
+                    >
+                      ← Retour
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ padding: "6px 10px", fontSize: "12px" }}
+                    onClick={() => sauvegarderProspecteBrouillon()}
+                  >
+                    Enregistrer le brouillon
+                  </button>
                   {isModificationMode && (
                     <button
                       type="button"
                       className="btn-secondary"
-                      style={{ color: "#EF4444", borderColor: "#EF4444" }}
+                      style={{ padding: "6px 10px", fontSize: "12px", color: "#EF4444", borderColor: "#EF4444" }}
                       onClick={() => {
                         localStorage.removeItem(PROSPECTE_STORAGE_KEY);
                         setIsModificationMode(false);
@@ -3511,11 +4178,15 @@ const Demandes = () => {
                     type="submit"
                     className="btn-primary"
                     style={{
+                      padding: "6px 10px",
+                      fontSize: "12px",
                       background: "linear-gradient(135deg, #FF6B35 0%, #FF6B35dd 100%)",
                       boxShadow: "0 4px 12px rgba(255, 107, 53, 0.3)",
                     }}
                   >
-                    {isModificationMode ? "Enregistrer les modifications" : "Créer la demande prospecte"}
+                    {prospecteStep === 1
+                      ? "Suivant →"
+                      : isModificationMode ? "Enregistrer les modifications" : "Créer la demande prospecte"}
                   </button>
                 </div>
               </div>
@@ -3715,6 +4386,8 @@ const Demandes = () => {
                             evolutionFormData.dateEnregistrement,
                           )}
                           onChange={handleEvolutionInputChange}
+                          disabled
+                          style={{ backgroundColor: "#e9ecef", cursor: "not-allowed" }}
                           required
                         />
                       </div>
@@ -3958,6 +4631,8 @@ const Demandes = () => {
                           name="dateDemandeDevolution"
                           value={evolutionFormData.dateDemandeDevolution}
                           onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.dateDemandeDevolution ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.dateDemandeDevolution ? "#EF4444" : undefined }}
                           required
                         />
                       </div>
@@ -3971,6 +4646,8 @@ const Demandes = () => {
                           name="dateReponseDevolution"
                           value={evolutionFormData.dateReponseDevolution}
                           onChange={handleEvolutionInputChange}
+                          data-field-error={errorsEvolution.dateReponseDevolution ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.dateReponseDevolution ? "#EF4444" : undefined }}
                           required
                         />
                       </div>
@@ -3987,6 +4664,8 @@ const Demandes = () => {
                           onChange={handleEvolutionInputChange}
                           rows={4}
                           placeholder="Saisissez les SLT..."
+                          data-field-error={errorsEvolution.slt ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.slt ? "#EF4444" : undefined }}
                           required
                         />
                       </div>
@@ -4004,6 +4683,8 @@ const Demandes = () => {
                           value={evolutionFormData.aleasNormeParJour}
                           onChange={handleEvolutionInputChange}
                           placeholder="Ex: 0.5"
+                          data-field-error={errorsEvolution.aleasNormeParJour ? "true" : undefined}
+                          style={{ borderColor: errorsEvolution.aleasNormeParJour ? "#EF4444" : undefined }}
                           required
                         />
                       </div>
@@ -4046,6 +4727,8 @@ const Demandes = () => {
                           name="dateEnregistrement"
                           value={formatDateForInput(evolutionFormData.dateEnregistrement)}
                           onChange={handleEvolutionInputChange}
+                          disabled
+                          style={{ backgroundColor: "#e9ecef", cursor: "not-allowed" }}
                         />
                       </div>
                       <div className="form-group">
@@ -4124,14 +4807,14 @@ const Demandes = () => {
                     </h3>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>Date de transmission du backlog <span style={{ color: "#ef4444" }}>*</span></label>
+                        <label style={{ display: "block", textAlign: "left", marginBottom: "6px", fontWeight: "500" }}>Date de transmission du backlog <span style={{ color: "#ef4444" }}>*</span></label>
                         <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateReception || formatDateForInput(evolutionFormData.dateEnregistrement) || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateTransmissionBacklog" value={evolutionFormData.dateTransmissionBacklog} onChange={handleEvolutionInputChange}
                           data-field-error={errorsEvolution.dateTransmissionBacklog ? "true" : undefined}
                           style={{ width: "100%", padding: "10px", border: `1px solid ${errorsEvolution.dateTransmissionBacklog ? "#EF4444" : "#d1d5db"}`, borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
                       </div>
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>Date de confirmation de validation <span style={{ color: "#ef4444" }}>*</span></label>
+                        <label style={{ display: "block", textAlign: "left", marginBottom: "6px", fontWeight: "500" }}>Date de confirmation de validation <span style={{ color: "#ef4444" }}>*</span></label>
                         <input type="date" onKeyDown={(e) => { if (e.key !== "Tab") e.preventDefault(); }} min={evolutionFormData.dateTransmissionBacklog || evolutionFormData.dateReception || "2000-01-01"} max={`${new Date().getFullYear() + 15}-12-31`}
                           name="dateConfirmationValidation" value={evolutionFormData.dateConfirmationValidation} onChange={handleEvolutionInputChange}
                           data-field-error={errorsEvolution.dateConfirmationValidation ? "true" : undefined}
@@ -4139,12 +4822,12 @@ const Demandes = () => {
                       </div>
                     </div>
                     <div className="form-group" style={{ marginBottom: "20px" }}>
-                      <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>Lien Ingrid CDC</label>
+                      <label style={{ display: "block", textAlign: "left", marginBottom: "6px", fontWeight: "500" }}>Lien Ingrid CDC</label>
                       <input type="text" name="lienIngridCDC" value={evolutionFormData.lienIngridCDC || ""} onChange={handleEvolutionInputChange} placeholder="URL du Cahier Des Charges dans Ingrid..."
                         style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: "block", textAlign: "center", marginBottom: "6px", fontWeight: "500" }}>Observations / Commentaires</label>
+                      <label style={{ display: "block", textAlign: "left", marginBottom: "6px", fontWeight: "500" }}>Observations / Commentaires</label>
                       <textarea name="observations" value={evolutionFormData.observations || ""} onChange={handleEvolutionInputChange}
                         placeholder="Notez ici les observations issues de la clarification..." rows={6}
                         style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", resize: "vertical", boxSizing: "border-box" }} />
@@ -4414,7 +5097,7 @@ const Demandes = () => {
                                     </td>
                                     <td style={{ padding: "8px 12px", border: "1px solid #e5e7eb" }}>
                                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                        <input type="number" value={sprintData.avancement || ""} onChange={(e) => handleEvolutionSprintDataChange(i, "avancement", Math.min(100, Math.max(0, Number(e.target.value))))}
+                                        <input type="number" value={sprintData.avancement || ""} onChange={(e) => { const val = Math.min(100, Math.max(0, Number(e.target.value))); handleEvolutionSprintDataChange(i, "avancement", val); if (val > 0 && (sprintData.statutSprint || "en attente") === "en attente") { handleEvolutionSprintDataChange(i, "statutSprint", "en cours"); } }}
                                           min="0" max="100" placeholder="0" disabled={isBloque}
                                           style={{ width: "60px", padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "13px", background: isBloque ? "#f3f4f6" : "white", cursor: isBloque ? "not-allowed" : "default" }} />
                                         <span style={{ color: "#6b7280" }}>%</span>
@@ -4829,10 +5512,10 @@ const Demandes = () => {
                               </span>
                             ) : (
                               <span style={{ color: "#9ca3af", fontSize: "13px" }}>
-                                {normalizeTypeProjet(demande.typeProjet) === "prospecte" ? "Aucun statut" : "—"}
+                                —
                               </span>
                             )}
-                            {peutModifierDemande && normalizeTypeProjet(demande.typeProjet) !== "prospecte" && (
+                            {peutModifierDemande && (
                               <button
                                 className="btn-secondary"
                                 onClick={() => handleEditStatus(demande.statutInfo || { id: demande.statutId, nom: demande.statutDemande }, demande.id)}
@@ -4912,7 +5595,7 @@ const Demandes = () => {
                                   onClick={() => handlePoursuivreDemande(demande)}
                                   style={{ padding: "6px 10px", fontSize: "13px", whiteSpace: "nowrap" }}
                                 >
-                                  Modifier
+                                  Poursuivre
                                 </button>
                               )}
                               {peutSupprimerDemande && (
@@ -5115,6 +5798,8 @@ const Demandes = () => {
             row("Interlocuteur", interlocuteur) +
             row("Type de projet", getTypeDemandeLabel(d.typeProjet)) +
             row("Nom du projet", d.nomProjet) +
+            row("Statut de la demande", d.statutDemande) +
+            row("Date de réception", fmtD(d.dateReception)) +
             (isProspecte ? row("Périmètre", d.descriptionPerimetre || d.perimetre) : row("Description", d.descriptionProjet));
 
           const evoRows = isEvolution ? (
@@ -5128,6 +5813,21 @@ const Demandes = () => {
             row("Date réponse dévolution", fmtD(d.dateReponseDevolution)) +
             row("Aléas norme par jour", d.aleasNormeParJour) +
             row("SLT", d.slt)
+          ) : "";
+
+          const prospRows = isProspecte ? (
+            row("Date transmission backlog", fmtD(d.dateTransmissionBacklog)) +
+            row("Délai de réponse — équipe DEV", fmtD(d.dateLimiteReponseDev)) +
+            row("Délai de réponse — équipe TIF", fmtD(d.dateLimiteReponseTif)) +
+            row("Date retour effectif — équipe DEV", fmtD(d.dateRetourEquipesDev)) +
+            row("Date retour effectif — équipe TIF", fmtD(d.dateRetourEquipesTif)) +
+            row("Charge de développement (h/j)", d.chargeDeveloppement) +
+            row("Charge TIF (h/j)", d.chargeTIF) +
+            row("Motif écart charge TIF", d.motifEcartChargeTIF) +
+            row("Charge support recette (h/j)", d.chargeSupportRecette) +
+            row("Charge globale (h/j)", d.chargeGlobale) +
+            row("Tarif Homme/Jour", d.tarifHommeJour) +
+            row("Budget alloué", d.budgetAlloue)
           ) : "";
 
           const clarRows = !isProspecte ? (
@@ -5174,13 +5874,20 @@ const Demandes = () => {
           ) : "";
 
           const docsRows = !isProspecte ? (
-            ""
+            row("Lien Ingrid Kickoff", d.lienIngridKickoff) +
+            row("Lien Ingrid Points contrôle TIF", d.lienIngridPointsControleTIF) +
+            row("Lien Ingrid Signoff", d.lienIngridSignoff)
           ) : "";
 
           const livrRows = !isProspecte ? (
-            row("Statut livraison client", d.statutLivraisonClient) +
+            row("Statut livraison client", d.statutLivraison || d.statutLivraisonClient) +
             row("Date effective livraison client", fmtD(d.dateEffectiveLivraisonClient)) +
             row("Motifs de retard client", d.motifsRetardClient)
+          ) : "";
+
+          const suspRows = d.motifSuspension ? (
+            row("Motif de suspension", d.motifSuspension) +
+            row("Date de suspension", fmtD(d.dateSuspension))
           ) : "";
 
           const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
@@ -5202,12 +5909,14 @@ const Demandes = () => {
             <div class="meta">${d.typeProjet || ""} — Enregistré le ${fmtI(d.dateEnregistrement)}</div>
             ${section(isProspecte ? "" : "Identification", identRows)}
             ${isEvolution ? section("Informations Évolution", evoRows) : ""}
+            ${isProspecte ? section("Backlog & budget", prospRows) : ""}
             ${!isProspecte ? section("Clarification", clarRows) : ""}
             ${!isProspecte ? section("Planification", planRows) : ""}
             ${sprintTable}
             ${!isProspecte ? section("Réalisation", realRows) : ""}
             ${!isProspecte ? section("Documents", docsRows) : ""}
             ${!isProspecte ? section("Livraison", livrRows) : ""}
+            ${section("Suspension", suspRows)}
             <script>window.onload = function(){ window.print(); }</script>
             </body></html>`;
 
@@ -5272,6 +5981,9 @@ const Demandes = () => {
                   <InfoField label="Interlocuteur" value={interlocuteur} />
                   <InfoField label="Type de projet" value={getTypeDemandeLabel(selectedDemandeDetail.typeProjet)} />
                   <InfoField label="Nom du projet" value={selectedDemandeDetail.nomProjet} />
+                  {selectedDemandeDetail.statutDemande && (
+                    <InfoField label="Statut de la demande" value={selectedDemandeDetail.statutDemande} />
+                  )}
                   {selectedDemandeDetail.typeProjet !== "Prospecte" && (
                     <InfoField label="Description" value={selectedDemandeDetail.descriptionProjet} full />
                   )}
@@ -5297,6 +6009,26 @@ const Demandes = () => {
                   {selectedDemandeDetail.slt && (
                     <InfoField label="SLT" value={selectedDemandeDetail.slt} full />
                   )}
+                </Section>
+              )}
+
+              {/* Section spécifique Prospecte — suite formulaire étape 2 */}
+              {selectedDemandeDetail.typeProjet === "Prospecte" && (
+                <Section icon="fa-solid fa-chart-line" title="Backlog & budget" color="#FF6B35">
+                  <InfoField label="Date transmission backlog" value={formatDateForDisplay(selectedDemandeDetail.dateTransmissionBacklog)} />
+                  <InfoField label="Délai de réponse — équipe DEV" value={formatDateForDisplay(selectedDemandeDetail.dateLimiteReponseDev)} />
+                  <InfoField label="Délai de réponse — équipe TIF" value={formatDateForDisplay(selectedDemandeDetail.dateLimiteReponseTif)} />
+                  <InfoField label="Date retour effectif — équipe DEV" value={formatDateForDisplay(selectedDemandeDetail.dateRetourEquipesDev)} />
+                  <InfoField label="Date retour effectif — équipe TIF" value={formatDateForDisplay(selectedDemandeDetail.dateRetourEquipesTif)} />
+                  <InfoField label="Charge de développement (h/j)" value={selectedDemandeDetail.chargeDeveloppement} />
+                  <InfoField label="Charge TIF (h/j)" value={selectedDemandeDetail.chargeTIF} />
+                  {selectedDemandeDetail.motifEcartChargeTIF && (
+                    <InfoField label="Motif écart charge TIF" value={selectedDemandeDetail.motifEcartChargeTIF} full />
+                  )}
+                  <InfoField label="Charge support recette (h/j)" value={selectedDemandeDetail.chargeSupportRecette} />
+                  <InfoField label="Charge globale (h/j)" value={selectedDemandeDetail.chargeGlobale} />
+                  <InfoField label="Tarif Homme/Jour" value={selectedDemandeDetail.tarifHommeJour} />
+                  <InfoField label="Budget alloué" value={selectedDemandeDetail.budgetAlloue} />
                 </Section>
               )}
 
@@ -5416,7 +6148,7 @@ const Demandes = () => {
               {selectedDemandeDetail.typeProjet !== "Prospecte" &&
                 selectedDemandeDetail.typeProjet !== "Evolution" && (
                 <Section icon="fa-solid fa-truck" title="Livraison effective au client" color={typeColor}>
-                  <InfoField label="Statut livraison client" value={selectedDemandeDetail.statutLivraisonClient} fieldName="statutLivraisonClient" />
+                  <InfoField label="Statut livraison client" value={selectedDemandeDetail.statutLivraison || selectedDemandeDetail.statutLivraisonClient} fieldName="statutLivraisonClient" />
                   <InfoField label="Date effective livraison client" value={formatDateForDisplay(selectedDemandeDetail.dateEffectiveLivraisonClient)} />
                   {selectedDemandeDetail.motifsRetardClient && (
                     <InfoField label="Motifs de retard client" value={selectedDemandeDetail.motifsRetardClient} full />

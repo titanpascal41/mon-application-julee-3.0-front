@@ -39,6 +39,12 @@ import {
   verifierDemandesInterlocuteur,
 } from "../../data/gestionInterlocuteurs";
 
+import {
+  chargerDepartements,
+  creerDepartement,
+  mettreAJourDepartement,
+} from "../../data/gestionDepartements";
+
 import { PermissionGuard, usePermissions } from "../PermissionGuard";
 
 const DEPARTEMENTS_PAR_CODE = {
@@ -61,6 +67,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const aActionsSocietes = hasPermission("parametrage", "societes", "update") || hasPermission("parametrage", "societes", "delete");
   const aActionsUO = hasPermission("parametrage", "uo", "update") || hasPermission("parametrage", "uo", "delete");
   const aActionsInterlocuteurs = hasPermission("parametrage", "interlocuteurs", "update") || hasPermission("parametrage", "interlocuteurs", "delete");
+  const aActionsDepartements = hasPermission("parametrage", "departements", "update") || hasPermission("parametrage", "departements", "delete");
 
   const [activeSubPage, setActiveSubPage] = useState("societes");
 
@@ -213,7 +220,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     email: "",
     telephone: "",
     actif: true,
-    uoId: "",
+    departementId: "",
   });
 
   const [interlocuteurMessage, setInterlocuteurMessage] = useState({
@@ -227,6 +234,23 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const [showInterlocuteurDeleteConfirm, setShowInterlocuteurDeleteConfirm] = useState(false);
   const [interlocuteurToDelete, setInterlocuteurToDelete] = useState(null);
   const [interlocuteurDeleteError, setInterlocuteurDeleteError] = useState("");
+
+  // États pour la gestion des départements
+
+  const [departements, setDepartements] = useState([]);
+  const [showDepartementForm, setShowDepartementForm] = useState(false);
+  const [editingDepartement, setEditingDepartement] = useState(null);
+  const [departementFormData, setDepartementFormData] = useState({
+    code: "",
+    nom: "",
+    societeId: "",
+    actif: true,
+  });
+  const [departementMessage, setDepartementMessage] = useState({ type: "", text: "" });
+  const [errorsDepartement, setErrorsDepartement] = useState({});
+  const [pageDepartements, setPageDepartements] = useState(1);
+  const [rechercheDepartements, setRechercheDepartements] = useState("");
+  const [filtreStatutDepartements, setFiltreStatutDepartements] = useState("tous");
   const [showDeactivateInterlocuteurModal, setShowDeactivateInterlocuteurModal] = useState(false);
   const [interlocuteurToToggle, setInterlocuteurToToggle] = useState(null);
   const [motifDesactivationInterlocuteur, setMotifDesactivationInterlocuteur] = useState("");
@@ -245,6 +269,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
         setActiveSubPage("statuts");
       else if (activeSubPageProp.includes("interlocuteurs"))
         setActiveSubPage("interlocuteurs");
+      else if (activeSubPageProp.includes("departements"))
+        setActiveSubPage("departements");
     }
   }, [activeSubPageProp]);
 
@@ -277,6 +303,18 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setLoading(false);
   }, []);
 
+  const chargerLesDepartements = useCallback(async () => {
+    setLoading(true);
+    const departementsCharges = await chargerDepartements();
+    setDepartements(
+      departementsCharges.map((d) => ({
+        ...d,
+        societeNom: d.societe ? d.societe.code : "",
+      })),
+    );
+    setLoading(false);
+  }, []);
+
   // Charger les données au montage et quand on change de sous-page
 
   useEffect(() => {
@@ -286,11 +324,15 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
       chargerLesSocietes(); // Pour les dropdowns
 
       chargerLesUO();
+      chargerLesDepartements(); // Pour le dropdown département
     } else if (activeSubPage === "statuts") {
       chargerLesStatuts();
     } else if (activeSubPage === "interlocuteurs") {
       chargerLesInterlocuteurs();
       chargerLesUO();
+    } else if (activeSubPage === "departements") {
+      chargerLesSocietes(); // Pour le dropdown société
+      chargerLesDepartements();
     }
   }, [
     activeSubPage,
@@ -302,6 +344,8 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     chargerLesStatuts,
 
     chargerLesInterlocuteurs,
+
+    chargerLesDepartements,
   ]);
 
   // Tableaux filtrés (recherche + statut actif/inactif)
@@ -326,10 +370,11 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     return filtered;
   };
 
-  const societesFiltrees       = applyFiltre(societes,       rechercheSocietes,       filtreStatutSocietes,       ["code","nom","departement"]);
+  const societesFiltrees       = applyFiltre(societes,       rechercheSocietes,       filtreStatutSocietes,       ["code","nom"]);
   const uoFiltrees             = applyFiltre(uoList,         rechercheUO,             filtreStatutUO,             ["code","nom","chefUO","departement"]);
   const statutsFiltrees        = applyFiltre(statuts,        rechercheStatuts,        filtreStatutStatuts,        ["nom","description"]);
-  const interlocuteursFiltrees = applyFiltre(interlocuteurs, rechercheInterlocuteurs, filtreStatutInterlocuteurs, ["nom","email","telephone","structureUO"]);
+  const interlocuteursFiltrees = applyFiltre(interlocuteurs, rechercheInterlocuteurs, filtreStatutInterlocuteurs, ["nom","email","telephone"]);
+  const departementsFiltrees   = applyFiltre(departements,  rechercheDepartements,   filtreStatutDepartements,   ["code","nom","societeNom"]);
 
   // Recule d'une page si la page courante devient vide après suppression ou filtrage
   useEffect(() => {
@@ -352,11 +397,17 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     if (pageInterlocuteurs > max) setPageInterlocuteurs(max);
   }, [interlocuteursFiltrees.length, pageInterlocuteurs, ITEMS_PER_PAGE]);
 
+  useEffect(() => {
+    const max = Math.max(1, Math.ceil(departementsFiltrees.length / ITEMS_PER_PAGE));
+    if (pageDepartements > max) setPageDepartements(max);
+  }, [departementsFiltrees.length, pageDepartements, ITEMS_PER_PAGE]);
+
   // Remettre à la page 1 quand filtre ou recherche change
   useEffect(() => { setPageSocietes(1); }, [rechercheSocietes, filtreStatutSocietes]);
   useEffect(() => { setPageUO(1); }, [rechercheUO, filtreStatutUO]);
   useEffect(() => { setPageStatuts(1); }, [rechercheStatuts, filtreStatutStatuts]);
   useEffect(() => { setPageInterlocuteurs(1); }, [rechercheInterlocuteurs, filtreStatutInterlocuteurs]);
+  useEffect(() => { setPageDepartements(1); }, [rechercheDepartements, filtreStatutDepartements]);
 
   // Fonctions pour la gestion des sociétés
 
@@ -375,7 +426,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     setSocieteMessage({ type: "", text: "" });
     setErrorsSociete({});
     setSelectedExistingSociete("");
-    setSocietePopupMode("choice");
+    setSocietePopupMode("create");
     setShowSocieteForm(true);
   };
 
@@ -1075,6 +1126,103 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
     }
   };
 
+  // Fonctions pour la gestion des départements
+
+  const handleDepartementInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setDepartementFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+    if (departementMessage.text) setDepartementMessage({ type: "", text: "" });
+    if (errorsDepartement[name]) setErrorsDepartement((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handleCreateDepartement = () => {
+    setEditingDepartement(null);
+    setDepartementFormData({ code: "", nom: "", societeId: "", actif: true });
+    setShowDepartementForm(true);
+    setDepartementMessage({ type: "", text: "" });
+    setErrorsDepartement({});
+  };
+
+  const handleEditDepartement = (departement) => {
+    setEditingDepartement(departement);
+    setDepartementFormData({
+      code: departement.code || "",
+      nom: departement.nom,
+      societeId: departement.societeId ? departement.societeId.toString() : "",
+      actif: departement.actif,
+    });
+    setShowDepartementForm(true);
+    setDepartementMessage({ type: "", text: "" });
+    setErrorsDepartement({});
+  };
+
+  const handleCancelDepartement = () => {
+    setShowDepartementForm(false);
+    setDepartementFormData({ code: "", nom: "", societeId: "", actif: true });
+    setEditingDepartement(null);
+    setDepartementMessage({ type: "", text: "" });
+    setErrorsDepartement({});
+  };
+
+  const handleDepartementSubmit = async (e) => {
+    e.preventDefault();
+    setDepartementMessage({ type: "", text: "" });
+    setErrorsDepartement({});
+
+    const errors = {};
+    if (!departementFormData.code.trim()) errors.code = "Le code du département est obligatoire.";
+    if (!departementFormData.nom.trim()) errors.nom = "Le libellé du département est obligatoire.";
+    if (!departementFormData.societeId) errors.societeId = "La société est obligatoire.";
+    if (Object.keys(errors).length > 0) {
+      setErrorsDepartement(errors);
+      setTimeout(() => {
+        const el = document.querySelector('[data-field-error="true"]');
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+      return;
+    }
+
+    let resultat;
+    if (editingDepartement) {
+      resultat = await mettreAJourDepartement(editingDepartement.id, departementFormData);
+    } else {
+      resultat = await creerDepartement(departementFormData);
+    }
+
+    if (resultat.succes) {
+      const action = editingDepartement ? "modifié" : "créé";
+      setDepartementMessage({ type: "success", text: `Département "${departementFormData.nom}" ${action} avec succès` });
+      await chargerLesDepartements();
+      setShowDepartementForm(false);
+      setDepartementFormData({ code: "", nom: "", societeId: "", actif: true });
+      setEditingDepartement(null);
+      setTimeout(() => setDepartementMessage({ type: "", text: "" }), 3000);
+    } else {
+      setDepartementMessage({ type: "error", text: resultat.message });
+      setTimeout(() => setDepartementMessage({ type: "", text: "" }), 5000);
+    }
+  };
+
+  const handleToggleActivationDepartement = async (departement) => {
+    const resultat = await mettreAJourDepartement(departement.id, {
+      code: departement.code,
+      nom: departement.nom,
+      societeId: departement.societeId,
+      actif: !departement.actif,
+    });
+    if (resultat.succes) {
+      await chargerLesDepartements();
+      setDepartementMessage({ type: "success", text: `Département "${departement.nom}" ${!departement.actif ? "activé" : "désactivé"}.` });
+      setTimeout(() => setDepartementMessage({ type: "", text: "" }), 3000);
+    } else {
+      setDepartementMessage({ type: "error", text: resultat.message || "Opération impossible." });
+      setTimeout(() => setDepartementMessage({ type: "", text: "" }), 5000);
+    }
+  };
+
   // Fonctions pour la gestion des interlocuteurs
 
   const handleInterlocuteurInputChange = (e) => {
@@ -1098,7 +1246,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const handleCreateInterlocuteur = () => {
     setEditingInterlocuteur(null);
 
-    setInterlocuteurFormData({ nom: "", email: "", telephone: "", actif: true, uoId: "" });
+    setInterlocuteurFormData({ nom: "", email: "", telephone: "", actif: true, departementId: "" });
     setShowInterlocuteurForm(true);
     setInterlocuteurMessage({ type: "", text: "" });
     setErrorsInterlocuteur({});
@@ -1112,7 +1260,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
       email: interlocuteur.email || "",
       telephone: interlocuteur.telephone || "",
       actif: interlocuteur.actif,
-      uoId: interlocuteur.uoId ? interlocuteur.uoId.toString() : "",
+      departementId: interlocuteur.departementId ? interlocuteur.departementId.toString() : "",
     });
 
     setShowInterlocuteurForm(true);
@@ -1227,7 +1375,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
       setShowInterlocuteurForm(false);
 
-      setInterlocuteurFormData({ nom: "", email: "", telephone: "", actif: true, uoId: "" });
+      setInterlocuteurFormData({ nom: "", email: "", telephone: "", actif: true, departementId: "" });
       setEditingInterlocuteur(null);
 
     } else {
@@ -1240,7 +1388,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
   const handleCancelInterlocuteur = () => {
     setShowInterlocuteurForm(false);
 
-    setInterlocuteurFormData({ nom: "", email: "", telephone: "", actif: true, uoId: "" });
+    setInterlocuteurFormData({ nom: "", email: "", telephone: "", actif: true, departementId: "" });
     setEditingInterlocuteur(null);
     setInterlocuteurMessage({ type: "", text: "" });
 
@@ -1416,30 +1564,10 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         style={{ borderColor: errorsSociete.nom ? "#EF4444" : undefined }}
                       />
                     </div>
-                    <div className="form-group">
-                      <label htmlFor="societeDepartement">Département</label>
-                      <input
-                        type="text"
-                        id="societeDepartement"
-                        name="departement"
-                        value={societeFormData.departement}
-                        onChange={handleSocieteInputChange}
-                        placeholder="Ex: Département Audit Interne"
-                      />
-                    </div>
                     <div className="modal-actions">
                       <button type="submit" className="btn-primary">
                         {editingSociete ? "Mettre à jour" : "Créer"}
                       </button>
-                      {!editingSociete && (
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          onClick={() => setSocietePopupMode("choice")}
-                        >
-                          ← Retour
-                        </button>
-                      )}
                       <button
                         type="button"
                         className="btn-secondary"
@@ -1736,7 +1864,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   <tr>
                     <th>Code</th>
                     <th>Libellé</th>
-                    <th>Département</th>
                     {aActionsSocietes && <th>Actions</th>}
                   </tr>
                 </thead>
@@ -1759,11 +1886,6 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                         </span>
                       </td>
                       <td>{societe.nom}</td>
-                      <td>
-                        {societe.departement || (
-                          <span style={{ color: "#9ca3af" }}>—</span>
-                        )}
-                      </td>
                       {aActionsSocietes && (
                         <td style={{ whiteSpace: "nowrap" }}>
                           <PermissionGuard module="parametrage" submodule="societes" action="update">
@@ -1919,63 +2041,71 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                   </div>
 
                   {/* Département : toujours visible quand une société est sélectionnée */}
-                  {uoSelectedCode && (
-                    <div className="form-group">
-                      <label htmlFor="uoDepartement">
-                        Département
-                        {(DEPARTEMENTS_PAR_CODE[uoSelectedCode] ||
-                          toutesSocietes.filter((s) => s.code === uoSelectedCode && s.actif).length > 1) && (
-                          <span className="required"> *</span>
-                        )}
-                      </label>
-                      {DEPARTEMENTS_PAR_CODE[uoSelectedCode] ? (
-                        <select
-                          id="uoDepartement"
-                          value={uoFormData.departement}
-                          onChange={(e) => handleUODeptChange(e.target.value)}
-                        >
-                          <option value="">-- Choisir un département --</option>
-                          {DEPARTEMENTS_PAR_CODE[uoSelectedCode].map((d) => (
-                            <option key={d} value={d}>{d}</option>
-                          ))}
-                        </select>
-                      ) : toutesSocietes.filter((s) => s.code === uoSelectedCode && s.actif).length > 1 ? (
-                        <select
-                          id="uoDepartement"
-                          value={uoFormData.departement}
-                          onChange={(e) => {
-                            const dept = e.target.value;
-                            const societe = toutesSocietes.find(
-                              (s) => s.code === uoSelectedCode && s.actif && (s.departement || "") === dept
-                            );
-                            setUOFormData((prev) => ({
-                              ...prev,
-                              departement: dept,
-                              societeId: societe ? String(societe.id) : "",
-                            }));
-                          }}
-                        >
-                          <option value="">-- Choisir un département --</option>
-                          {toutesSocietes
-                            .filter((s) => s.code === uoSelectedCode && s.actif)
-                            .map((s) => (
-                              <option key={s.id} value={s.departement || ""}>
-                                {s.departement || "(sans département)"}
-                              </option>
+                  {uoSelectedCode && (() => {
+                    const societeIdPourCode = toutesSocietes.find(
+                      (s) => s.code === uoSelectedCode && s.actif,
+                    )?.id;
+                    const departementsDeLaSociete = departements.filter(
+                      (d) => d.societeId === societeIdPourCode && d.actif,
+                    );
+                    return (
+                      <div className="form-group">
+                        <label htmlFor="uoDepartement">
+                          Département
+                          {(departementsDeLaSociete.length > 0 ||
+                            toutesSocietes.filter((s) => s.code === uoSelectedCode && s.actif).length > 1) && (
+                            <span className="required"> *</span>
+                          )}
+                        </label>
+                        {departementsDeLaSociete.length > 0 ? (
+                          <select
+                            id="uoDepartement"
+                            value={uoFormData.departement}
+                            onChange={(e) => handleUODeptChange(e.target.value)}
+                          >
+                            <option value="">-- Choisir un département --</option>
+                            {departementsDeLaSociete.map((d) => (
+                              <option key={d.id} value={d.nom}>{d.nom}</option>
                             ))}
-                        </select>
-                      ) : (
-                        <input
-                          type="text"
-                          id="uoDepartement"
-                          name="departement"
-                          value={uoFormData.departement}
-                          onChange={handleUOInputChange}
-                          placeholder="Ex: Département Informatique"
-                        />
-                      )}
-                    </div>
-                  )}
+                          </select>
+                        ) : toutesSocietes.filter((s) => s.code === uoSelectedCode && s.actif).length > 1 ? (
+                          <select
+                            id="uoDepartement"
+                            value={uoFormData.departement}
+                            onChange={(e) => {
+                              const dept = e.target.value;
+                              const societe = toutesSocietes.find(
+                                (s) => s.code === uoSelectedCode && s.actif && (s.departement || "") === dept
+                              );
+                              setUOFormData((prev) => ({
+                                ...prev,
+                                departement: dept,
+                                societeId: societe ? String(societe.id) : "",
+                              }));
+                            }}
+                          >
+                            <option value="">-- Choisir un département --</option>
+                            {toutesSocietes
+                              .filter((s) => s.code === uoSelectedCode && s.actif)
+                              .map((s) => (
+                                <option key={s.id} value={s.departement || ""}>
+                                  {s.departement || "(sans département)"}
+                                </option>
+                              ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            id="uoDepartement"
+                            name="departement"
+                            value={uoFormData.departement}
+                            onChange={handleUOInputChange}
+                            placeholder="Ex: Département Informatique"
+                          />
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <div className="form-group">
                     <label htmlFor="uoNom">
@@ -2539,11 +2669,11 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                     </div>
 
                     <div className="form-group">
-                      <label htmlFor="collabUO">Structure UO</label>
+                      <label htmlFor="collabDepartement">Département</label>
                       <select
-                        id="collabUO"
-                        name="uoId"
-                        value={interlocuteurFormData.uoId}
+                        id="collabDepartement"
+                        name="departementId"
+                        value={interlocuteurFormData.departementId}
                         onChange={handleInterlocuteurInputChange}
                         style={{
                           width: "100%",
@@ -2552,11 +2682,11 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                           borderRadius: "6px",
                         }}
                       >
-                        <option value="">— Sélectionner une UO —</option>
-                        {uoList.map((uo) => (
-                          <option key={uo.id} value={uo.id}>
-                            {uo.code ? `${uo.code} - ` : ""}
-                            {uo.nom}
+                        <option value="">— Sélectionner un département —</option>
+                        {departements.map((dep) => (
+                          <option key={dep.id} value={dep.id}>
+                            {dep.societe?.code ? `${dep.societe.code} - ` : ""}
+                            {dep.nom}
                           </option>
                         ))}
                       </select>
@@ -2622,7 +2752,7 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
                       <th>Nom et prenoms</th>
                       <th>Email</th>
                       <th>Téléphone</th>
-                      <th>Structure UO</th>
+                      <th>Département</th>
 
                       {aActionsInterlocuteurs && <th>Actions</th>}
                     </tr>
@@ -2637,23 +2767,14 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
 
                         <td>{interlocuteur.telephone || "-"}</td>
                         <td>
-                          {interlocuteur.uoId ? (
-                            (() => {
-                              const uo = uoList.find(
-                                (u) => u.id === interlocuteur.uoId,
-                              );
-                              return uo ? (
-                                <span style={{ fontSize: "13px" }}>
-                                  {uo.code ? <strong>{uo.code}</strong> : null}
-                                  {uo.code ? " — " : ""}
-                                  {uo.nom}
-                                </span>
-                              ) : (
-                                interlocuteur.structureUO || "—"
-                              );
-                            })()
-                          ) : interlocuteur.structureUO ? (
-                            <span style={{ fontSize: "13px" }}>{interlocuteur.structureUO}</span>
+                          {interlocuteur.departement ? (
+                            <span style={{ fontSize: "13px" }}>
+                              {interlocuteur.departement.societe?.code ? (
+                                <strong>{interlocuteur.departement.societe.code}</strong>
+                              ) : null}
+                              {interlocuteur.departement.societe?.code ? " — " : ""}
+                              {interlocuteur.departement.nom}
+                            </span>
                           ) : (
                             <span style={{ color: "#9ca3af" }}>—</span>
                           )}
@@ -2688,6 +2809,210 @@ const Parametrage = ({ activeSubPage: activeSubPageProp }) => {
               )}
               {renderPagination(interlocuteursFiltrees.length, pageInterlocuteurs, setPageInterlocuteurs)}
             </div>
+          </div>
+        </div>
+      ),
+    },
+
+    departements: {
+      title: "Gestion des Départements",
+
+      content: (
+        <div>
+          <div className="action-buttons">
+            <PermissionGuard
+              module="parametrage"
+              submodule="departements"
+              action="create"
+            >
+              <button className="btn-primary" onClick={handleCreateDepartement}>
+                Ajouter un département
+              </button>
+            </PermissionGuard>
+          </div>
+
+          {showDepartementForm && (
+            <div className="modal-overlay" onClick={handleCancelDepartement}>
+              <div
+                className="modal-content"
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: "600px" }}
+              >
+                <div className="modal-header">
+                  <h3>
+                    {editingDepartement ? "Modifier le département" : "Ajouter un département"}
+                  </h3>
+                </div>
+
+                {departementMessage.text && (
+                  <div
+                    className={`info-box ${departementMessage.type === "error" ? "error-box" : "success-box"}`}
+                    style={{
+                      margin: "16px 24px 0 24px",
+                      padding: "12px",
+                      borderRadius: "6px",
+                      backgroundColor: departementMessage.type === "error" ? "#fee2e2" : "#d1fae5",
+                      border: `1px solid ${departementMessage.type === "error" ? "#fecaca" : "#a7f3d0"}`,
+                      color: departementMessage.type === "error" ? "#991b1b" : "#065f46",
+                    }}
+                  >
+                    <p style={{ margin: 0 }}>{departementMessage.text}</p>
+                  </div>
+                )}
+
+                <form autoComplete="off" noValidate onSubmit={handleDepartementSubmit}>
+                  <div className="form-group">
+                    <label htmlFor="departementCode">
+                      Code <span className="required">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="departementCode"
+                      name="code"
+                      value={departementFormData.code}
+                      onChange={handleDepartementInputChange}
+                      placeholder="Ex: AUDIT"
+                      data-field-error={errorsDepartement.code ? "true" : undefined}
+                      style={{ textTransform: "uppercase", borderColor: errorsDepartement.code ? "#EF4444" : undefined }}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="departementNom">
+                      Libellé du département <span className="required">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="departementNom"
+                      name="nom"
+                      value={departementFormData.nom}
+                      onChange={handleDepartementInputChange}
+                      placeholder="Ex: Département Audit Interne"
+                      data-field-error={errorsDepartement.nom ? "true" : undefined}
+                      style={{ borderColor: errorsDepartement.nom ? "#EF4444" : undefined }}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="departementSociete">
+                      Société <span className="required">*</span>
+                    </label>
+                    <select
+                      id="departementSociete"
+                      name="societeId"
+                      value={departementFormData.societeId}
+                      onChange={handleDepartementInputChange}
+                      data-field-error={errorsDepartement.societeId ? "true" : undefined}
+                      style={{ borderColor: errorsDepartement.societeId ? "#EF4444" : undefined }}
+                    >
+                      <option value="">-- Choisir une société --</option>
+                      {toutesSocietes
+                        .filter((s) => s.actif)
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.code}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="modal-actions">
+                    <button type="submit" className="btn-primary">
+                      {editingDepartement ? "Mettre à jour" : "Créer"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handleCancelDepartement}
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          <div className="table-container" style={{ marginTop: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "10px", flexWrap: "wrap" }}>
+              {(!loading && departements.length > 0) && <h3 style={{ margin: 0 }}>Liste des départements</h3>}
+              {departements.length > 10 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ position: "relative" }}>
+                  <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", fontSize: "12px", pointerEvents: "none" }} />
+                  <input type="text" placeholder="Rechercher..." value={rechercheDepartements} onChange={e => setRechercheDepartements(e.target.value)}
+                    style={{ padding: "7px 10px 7px 30px", borderRadius: "8px", border: "1px solid #D1D5DB", fontSize: "13px", width: "180px", outline: "none" }} />
+                </div>
+                <select value={filtreStatutDepartements} onChange={e => setFiltreStatutDepartements(e.target.value)}
+                  className="form-select form-select-sm" style={{ width: "130px" }}>
+                  <option value="tous">Tous</option>
+                  <option value="actif">Actifs</option>
+                  <option value="inactif">Désactivés</option>
+                </select>
+              </div>
+              )}
+            </div>
+
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "32px", color: "#4A90E2" }} />
+              </div>
+            ) : departementsFiltrees.length === 0 ? (
+              departements.length === 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", marginTop: "60px" }}>
+                  <i className="fa-solid fa-building-shield" style={{ fontSize: "52px", color: "#E5E7EB", marginBottom: "16px" }} />
+                  <p style={{ margin: 0, fontSize: "14px", color: "#9CA3AF" }}>Aucun département créé pour le moment.</p>
+                </div>
+              ) : (
+                <p style={{ color: "#6b7280", marginTop: "16px", textAlign: "center" }}>
+                  {filtreStatutDepartements === "actif" ? "Aucun département actif." : filtreStatutDepartements === "inactif" ? "Aucun département désactivé." : "Aucun résultat pour cette recherche."}
+                </p>
+              )
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Libellé</th>
+                    <th>Société</th>
+                    {aActionsDepartements && <th>Actions</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {departementsFiltrees.slice((pageDepartements - 1) * ITEMS_PER_PAGE, pageDepartements * ITEMS_PER_PAGE).map((departement) => (
+                    <tr key={departement.id} style={departement.actif === false ? { opacity: 0.6, backgroundColor: "#F3F4F6" } : {}}>
+                      <td>{departement.code || "-"}</td>
+                      <td>{departement.nom}</td>
+                      <td>{departement.societeNom || "-"}</td>
+                      {aActionsDepartements && (
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          <PermissionGuard module="parametrage" submodule="departements" action="update">
+                            <button
+                              onClick={() => handleEditDepartement(departement)}
+                              disabled={departement.actif === false}
+                              data-tooltip-id="param-tooltip" data-tooltip-content="Modifier"
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: departement.actif === false ? "#D1D5DB" : "#4a90e2", cursor: departement.actif === false ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px", marginRight: "4px" }}
+                            >
+                              <i className="fa-solid fa-pen"></i>
+                            </button>
+                          </PermissionGuard>
+                          <PermissionGuard module="parametrage" submodule="departements" action="delete">
+                            <button
+                              onClick={() => handleToggleActivationDepartement(departement)}
+                              data-tooltip-id="param-tooltip" data-tooltip-content={departement.actif !== false ? "Désactiver" : "Activer"}
+                              style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: departement.actif !== false ? "#4a90e2" : "#10B981", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}
+                            >
+                              <i className={departement.actif !== false ? "fa-solid fa-ban" : "fa-solid fa-circle-check"}></i>
+                            </button>
+                          </PermissionGuard>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {renderPagination(departementsFiltrees.length, pageDepartements, setPageDepartements)}
           </div>
         </div>
       ),
